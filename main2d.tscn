@@ -1,0 +1,81 @@
+[gd_scene load_steps=8 format=3 uid="uid://bei2owprqu720"]
+
+[ext_resource type="Script" uid="uid://cyir2ydn6b8l0" path="res://Scripts/MapViewer.cs" id="1_c47n3"]
+[ext_resource type="Script" uid="uid://bpyeehm0dbjhk" path="res://Scripts/VoronoiWorld.cs" id="2_1qsgr"]
+[ext_resource type="Texture2D" uid="uid://bfpueoui461xu" path="res://map_noise.tres" id="2_botvf"]
+[ext_resource type="Script" uid="uid://dxomrv877ea6c" path="res://Scripts/WorldMap.cs" id="3_r2hvk"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_xdepj"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_w74eu"]
+noise_type = 3
+seed = 51
+fractal_octaves = 3
+fractal_weighted_strength = 0.5
+cellular_return_type = 0
+domain_warp_type = 2
+domain_warp_amplitude = 32.0
+domain_warp_frequency = 0.02
+domain_warp_fractal_octaves = 2
+domain_warp_fractal_lacunarity = 2.0
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_1w0k7"]
+width = 1
+height = 1
+noise = SubResource("FastNoiseLite_w74eu")
+seamless = true
+seamless_blend_skirt = 0.5
+
+[node name="main2D" type="Node2D"]
+
+[node name="CameraController" type="Node2D" parent="." node_paths=PackedStringArray("cam1", "map", "cellText", "LineOverlay")]
+script = ExtResource("1_c47n3")
+cam1 = NodePath("Camera2D")
+map = NodePath("../WorldMap")
+cellText = NodePath("Camera2D/Control/RichTextLabel")
+LineOverlay = NodePath("../Overlay")
+camSpeed = 20.0
+zoomSpeed = 1.5
+
+[node name="Camera2D" type="Camera2D" parent="CameraController"]
+
+[node name="Control" type="Control" parent="CameraController/Camera2D"]
+layout_mode = 3
+anchors_preset = 0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RichTextLabel" type="RichTextLabel" parent="CameraController/Camera2D/Control"]
+z_index = 5
+layout_mode = 0
+offset_left = -573.0
+offset_top = -321.0
+offset_right = 177.0
+offset_bottom = -271.0
+text = "Cell:"
+
+[node name="MeshInstance2D" type="MeshInstance2D" parent="."]
+texture_filter = 1
+scale = Vector2(600, 300)
+mesh = SubResource("QuadMesh_xdepj")
+texture = ExtResource("2_botvf")
+
+[node name="Overlay" type="Node2D" parent="."]
+
+[node name="VoronoiMap" type="Node2D" parent="." node_paths=PackedStringArray("map")]
+visible = false
+texture_filter = 1
+script = ExtResource("2_1qsgr")
+map = NodePath("../WorldMap")
+dimensions = 5
+numSites = 20
+lineWidth = 0.16
+
+[node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("mapDisplay", "voronoi")]
+script = ExtResource("3_r2hvk")
+worldWidth = 500
+worldHeight = 250
+noiseGen = SubResource("FastNoiseLite_w74eu")
+noiseTex = SubResource("NoiseTexture2D_1w0k7")
+mapDisplay = NodePath("../MeshInstance2D")
+voronoi = NodePath("../VoronoiMap")
