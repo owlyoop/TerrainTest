@@ -12,7 +12,9 @@ public partial class Cell2D : GodotObject
     float[] temperatures = new float[12];
     public Color color;
 
-    public Plate2D owner;
+    public Plate2D plate;
+	public Vector2I localPos;	//The local position relative to the plate
+	public Vector2 position;
 
     public Cell2D(int widthPos, int heightPos)
     {

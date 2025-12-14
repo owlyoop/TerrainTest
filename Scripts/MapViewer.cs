@@ -41,7 +41,8 @@ public partial class MapViewer : Node
     void UpdateCellText(Cell2D cell)
     {
         if (cell != null)
-            cellText.Text = "Cell(" + cell.x + ',' + cell.y + ") height: " + cell.height + ", color is: " + cell.color + ", plateID: " + cell.owner.ID;
+            cellText.Text = "Cell(" + cell.x + ',' + cell.y + ") height: " + cell.height + ", color is: " + cell.color + ", plateID: " + cell.plate.ID
+				 + " LocalPos(" + cell.localPos.X + "," + cell.localPos.Y + ")";
     }
 
     void OnCellSelected(Cell2D cell)
@@ -49,6 +50,7 @@ public partial class MapViewer : Node
         selectedCell = cell;
         UpdateCellText(selectedCell);
         HighlightSelectedCell(cell);
+		HighlightSelectedPlate(cell);
     }
 
     void HighlightSelectedCell(Cell2D cell)
@@ -78,6 +80,25 @@ public partial class MapViewer : Node
         }
 
     }
+
+	void HighlightSelectedPlate(Cell2D cell)
+	{
+		var plate = cell.plate;
+
+		foreach(var p in plate.points)
+		{
+			var n = new Vector2(p.X + 0.5f, p.Y + 0.5f);
+			var s = new Vector2(p.X + 0.5f, p.Y);
+			var line = new Line2D();
+			line.Width = 0.32f;
+			line.DefaultColor = new Color(1, 1, 1, 0.5f);
+			var l = new Vector2[2];
+			l[0] = n;
+			l[1] = s;
+			line.Points = l;
+			LineOverlay.AddChild(line);
+		}
+	}
 
     public override void _Input(InputEvent @event)
     {

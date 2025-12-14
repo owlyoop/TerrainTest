@@ -50,6 +50,16 @@ public partial class WorldMap : Node
         //redraw map
     }
 
+	public void MovePlates()
+	{
+
+	}
+
+	public void UpdateCellOwnership()
+	{
+
+	}
+
     void AddTectonicPlate(Plate2D plate)
     {
         plates.Add(plate);
@@ -77,8 +87,6 @@ public partial class WorldMap : Node
         AssignSiteIDsOnCells();
         //FillVoronoiCells();
         RasterizeVoronoiEdges();
-        //FloodFill();
-        //MovePlateTest();
         var texture = ImageTexture.CreateFromImage(img);
         mapDisplay.Texture = texture;
     }
@@ -165,7 +173,7 @@ public partial class WorldMap : Node
             {
                 float min = float.MaxValue;
                 Plate2D closestPlate = plates[0];
-                foreach(var p in plates)
+                foreach (var p in plates)
                 {
                     float dist = p.origin.DistanceTo(new Vector2(i + 0.5f, j + 0.5f));
                     if (dist < min)
@@ -174,58 +182,16 @@ public partial class WorldMap : Node
                         closestPlate = p;
                     }
                 }
-                cells[i, j].owner = closestPlate;
-                closestPlate.cells.Add(cells[i, j]);
-            }
+                cells[i, j].plate = closestPlate;
+				cells[i, j].localPos = new Vector2I((int)closestPlate.origin.X + (int)cells[i, j].x, 
+													(int)closestPlate.origin.Y + (int)cells[i, j].y);
+				//closestPlate.points.Add(cells[i, j].localPos);
+				closestPlate.points.Add(new Vector2(cells[i, j].x, cells[i, j].y));
+			}
         }
     }
 
-    void MovePlateTest()
-    {
-        
-        var newcells = cells;
-        int[,] counts = new int[cells.GetLength(0), cells.GetLength(1)];
-        for (int i = 0; i < counts.GetLength(0); i++)
-        {
-            for (int j = 0; j < counts.GetLength(1); j++)
-            {
-                counts[i, j] = 0;
-            }
-        }
-
-        foreach(var p in plates)
-        {
-            foreach(var c in p.cells)
-            {
-                var h = cells[(c.x + 4) % cells.GetLength(0),
-                    (c.y + 8) % cells.GetLength(1)].height;
-
-
-                newcells[c.x, c.y].height += h;
-                newcells[c.x, c.y].SetColor();
-                counts[c.x, c.y] += 1;
-            }
-        }
-
-        for (int i = 0; i < cells.GetLength(0); i++)
-        {
-            for (int j = 0; j < cells.GetLength(1); j++)
-            {
-                if (counts[i,j] > 0)
-                {
-                    newcells[i, j].height /= counts[i, j];
-                }
-                else
-                {
-                    newcells[i,j].height = 0;
-                }
-                cells[i, j].height = newcells[i, j].height;
-                cells[i, j].SetColor();
-
-            }
-        }
-    }
-
+	
     void RasterizeVoronoiEdges()
     {
         int c = 0;
@@ -238,9 +204,9 @@ public partial class WorldMap : Node
             {
                 var p1 = s.Value.points[i];
                 var p2 = s.Value.points[0];
-                if (i+1 < s.Value.points.Count)
-                    p2 = s.Value.points[i+1];
-                
+                if (i + 1 < s.Value.points.Count)
+                    p2 = s.Value.points[i + 1];
+
                 var num = Mathf.CeilToInt(p1.DistanceTo(p2));
                 if (num < 0)
                     GD.Print("negative");
