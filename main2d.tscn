@@ -68,7 +68,7 @@ texture_filter = 1
 script = ExtResource("2_1qsgr")
 map = NodePath("../WorldMap")
 dimensions = 5
-numSites = 20
+numSites = 12
 lineWidth = 0.16
 
 [node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("mapDisplay", "voronoi")]

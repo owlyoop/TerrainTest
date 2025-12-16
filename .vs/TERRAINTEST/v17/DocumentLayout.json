@@ -3,24 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|c:\\users\\treyk\\godot\\projects\\terraintest\\scripts\\voronoiworld.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|solutionrelative:scripts\\voronoiworld.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|c:\\users\\treyk\\godot\\projects\\terraintest\\scripts\\worldcomponents\\voronoipolygon.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|solutionrelative:scripts\\worldcomponents\\voronoipolygon.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|c:\\users\\treyk\\godot\\projects\\terraintest\\scripts\\worldcomponents\\plate2d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|solutionrelative:scripts\\worldcomponents\\plate2d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|c:\\users\\treyk\\godot\\projects\\terraintest\\scripts\\mapviewer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|solutionrelative:scripts\\mapviewer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|c:\\users\\treyk\\godot\\projects\\terraintest\\scripts\\worldmap.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|solutionrelative:scripts\\worldmap.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|c:\\users\\treyk\\godot\\projects\\terraintest\\scripts\\mapviewer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|solutionrelative:scripts\\mapviewer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|c:\\users\\treyk\\godot\\projects\\terraintest\\scripts\\voronoiworld.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|solutionrelative:scripts\\voronoiworld.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|c:\\users\\treyk\\godot\\projects\\terraintest\\scripts\\worldcomponents\\voronoipolygon.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|solutionrelative:scripts\\worldcomponents\\voronoipolygon.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{4CF6470C-B0FC-4E32-9E5B-96620162C6E0}|TerrainTest.csproj|c:\\users\\treyk\\godot\\projects\\terraintest\\scripts\\worldcomponents\\cell2d.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -34,7 +34,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 11,
+          "SelectedChildIndex": 8,
           "Children": [
             {
               "$type": "Bookmark",
@@ -70,26 +70,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "WorldMap.cs",
-              "DocumentMoniker": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\WorldMap.cs",
-              "RelativeDocumentMoniker": "Scripts\\WorldMap.cs",
-              "ToolTip": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\WorldMap.cs",
-              "RelativeToolTip": "Scripts\\WorldMap.cs",
-              "ViewState": "AgIAAEAAAAAAAAAAAAAmwFgAAAAgAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-12T19:35:39.499Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "Plate2D.cs",
               "DocumentMoniker": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\WorldComponents\\Plate2D.cs",
               "RelativeDocumentMoniker": "Scripts\\WorldComponents\\Plate2D.cs",
               "ToolTip": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\WorldComponents\\Plate2D.cs",
               "RelativeToolTip": "Scripts\\WorldComponents\\Plate2D.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAACQAAAAAAAAAA==",
+              "ViewState": "AgIAACYAAAAAAAAAAAAiwDwAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-12T21:08:38.558Z",
               "EditorCaption": ""
@@ -102,27 +89,39 @@
               "RelativeDocumentMoniker": "Scripts\\WorldComponents\\Cell2D.cs",
               "ToolTip": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\WorldComponents\\Cell2D.cs",
               "RelativeToolTip": "Scripts\\WorldComponents\\Cell2D.cs",
-              "ViewState": "AgIAABMAAAAAAAAAAAAswA8AAAAWAAAAAAAAAA==",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAA8AAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-12T19:35:33.095Z",
+              "WhenOpened": "2025-12-12T19:35:33.095Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "WorldMap.cs",
+              "DocumentMoniker": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\WorldMap.cs",
+              "RelativeDocumentMoniker": "Scripts\\WorldMap.cs",
+              "ToolTip": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\WorldMap.cs",
+              "RelativeToolTip": "Scripts\\WorldMap.cs",
+              "ViewState": "AgIAAFQAAAAAAAAAAAAQwGAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-12T19:35:39.499Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "VoronoiWorld.cs",
               "DocumentMoniker": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\VoronoiWorld.cs",
               "RelativeDocumentMoniker": "Scripts\\VoronoiWorld.cs",
               "ToolTip": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\VoronoiWorld.cs",
               "RelativeToolTip": "Scripts\\VoronoiWorld.cs",
-              "ViewState": "AgIAAGEAAAAAAAAAAAAswDsAAAAYAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACcAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-12T20:49:24.959Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "VoronoiPolygon.cs",
               "DocumentMoniker": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\WorldComponents\\VoronoiPolygon.cs",
               "RelativeDocumentMoniker": "Scripts\\WorldComponents\\VoronoiPolygon.cs",
@@ -130,18 +129,17 @@
               "RelativeToolTip": "Scripts\\WorldComponents\\VoronoiPolygon.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-12T23:20:13.924Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-12T23:20:13.924Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 1,
               "Title": "MapViewer.cs",
               "DocumentMoniker": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\MapViewer.cs",
               "RelativeDocumentMoniker": "Scripts\\MapViewer.cs",
               "ToolTip": "C:\\Users\\treyk\\Godot\\projects\\TerrainTest\\Scripts\\MapViewer.cs",
               "RelativeToolTip": "Scripts\\MapViewer.cs",
-              "ViewState": "AgIAABwAAAAAAAAAAADwv1oAAAAoAAAAAAAAAA==",
+              "ViewState": "AgIAAFAAAAAAAAAAAAAwwHIAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-12T22:27:03.621Z",
               "EditorCaption": ""

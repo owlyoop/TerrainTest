@@ -49,8 +49,12 @@ public partial class MapViewer : Node
     {
         selectedCell = cell;
         UpdateCellText(selectedCell);
-        HighlightSelectedCell(cell);
-		HighlightSelectedPlate(cell);
+		if (cell != null)
+		{
+			HighlightSelectedCell(cell);
+			HighlightSelectedPlate(cell);
+		}
+
     }
 
     void HighlightSelectedCell(Cell2D cell)
@@ -87,8 +91,8 @@ public partial class MapViewer : Node
 
 		foreach(var p in plate.points)
 		{
-			var n = new Vector2(p.X + 0.5f, p.Y + 0.5f);
-			var s = new Vector2(p.X + 0.5f, p.Y);
+			var n = new Vector2(p.position.X + 0.5f, p.position.Y + 0.5f);
+			var s = new Vector2(p.position.X + 0.5f, p.position.Y);
 			var line = new Line2D();
 			line.Width = 0.32f;
 			line.DefaultColor = new Color(1, 1, 1, 0.5f);

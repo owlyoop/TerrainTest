@@ -26,7 +26,7 @@ public partial class WorldMap : Node
     {
         plates = new List<Plate2D>();
         int ID = plates.Count;
-        foreach (var s in voronoi.basePolygons)
+        foreach (var s in voronoi.polygons)
         {
             
             Plate2D plate = new Plate2D(s.Key, ID);
@@ -37,14 +37,18 @@ public partial class WorldMap : Node
         GenerateCells(worldWidth, worldHeight);
 
         CreateMesh();
-        
+
+		plates[0].MovePlate(new Vector2(7.3f, 7.3f));
     }
 
     //Main Tectonic Plate Loop
     public void Timestep()
     {
         //move plates
+		foreach(var p in plates)
+		{
 
+		}
         //update cell ownership
 
         //redraw map
@@ -182,11 +186,27 @@ public partial class WorldMap : Node
                         closestPlate = p;
                     }
                 }
-                cells[i, j].plate = closestPlate;
+
+				var height = cells[i, j].height;
+				var x = cells[i, j].x;
+				var y = cells[i, j].y;
+				//make the points that should loop over instead not, making the plate continous. later we will duplicate the plates.
+				if (closestPlate.origin.X < 0)
+				{
+					closestPlate = plates[closestPlate.ID - 1];
+					x = x + img.GetSize().X;
+				}
+				else if (closestPlate.origin.X >= img.GetSize().X)
+				{
+					closestPlate = plates[closestPlate.ID - 2];
+					x = x - img.GetSize().X;
+				}
+
+				cells[i, j].plate = closestPlate;
 				cells[i, j].localPos = new Vector2I((int)closestPlate.origin.X + (int)cells[i, j].x, 
 													(int)closestPlate.origin.Y + (int)cells[i, j].y);
-				//closestPlate.points.Add(cells[i, j].localPos);
-				closestPlate.points.Add(new Vector2(cells[i, j].x, cells[i, j].y));
+
+				closestPlate.AddPointToPlate(new Vector2(x, y), height);
 			}
         }
     }
