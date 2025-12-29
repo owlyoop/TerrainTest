@@ -6,13 +6,22 @@ public partial class MapViewer : Node
 {
 	[Export] public Camera2D cam1;
     [Export] public WorldMap map;
-    [Export] public RichTextLabel cellText;
     [Export] public Node2D LineOverlay;
     [Export] public float camSpeed;
     [Export] public float zoomSpeed;
-    // Called when the node enters the scene tree for the first time.
 
-    Cell2D selectedCell;
+    [ExportCategory("UI")]
+    [Export] public Control PlateInfoGroup;
+    [Export] public Control CellInfoGroup;
+    [Export] public SpinBox PlateSpinBox;
+	[Export] public CheckButton PlateCheckButton;
+    [Export] public RichTextLabel SelectedPlatePosition;
+	[Export] public RichTextLabel SelectedPlateRotation;
+	[Export] public RichTextLabel SelectedPlateDensity;
+	[Export] public RichTextLabel SelectedCellInfo;
+    [Export] public RichTextLabel NumPlatePointsInCell;
+
+	Cell2D selectedCell;
 
     public override void _Ready()
 	{
@@ -38,23 +47,37 @@ public partial class MapViewer : Node
         cam1.Scale = new Vector2(1 / cam1.Zoom.X, 1 / cam1.Zoom.Y);
     }
 
-    void UpdateCellText(Cell2D cell)
+    void DisplayPlateInfo(Plate2D plate)
     {
-        if (cell != null)
-            cellText.Text = "Cell(" + cell.x + ',' + cell.y + ") height: " + cell.height + ", color is: " + cell.color + ", plateID: " + cell.plate.ID
-				 + " LocalPos(" + cell.localPos.X + "," + cell.localPos.Y + ")";
+        SelectedPlatePosition.Text = plate.origin.ToString();
+        //SelectedPlateRotation.Text = plate.rot
+        SelectedPlateDensity.Text = plate.density.ToString();
     }
+
+    public void OnSpinBoxValueChanged(float value)
+    {
+		foreach (var n in LineOverlay.GetChildren())
+		{
+			LineOverlay.RemoveChild(n);
+			n.QueueFree();
+		}
+
+		int i = (int)value;
+		var plate = map.GetPlateByIndex(i);
+		HighlightSelectedPlate(plate);
+		DisplayPlateInfo(plate);
+
+	}
 
     void OnCellSelected(Cell2D cell)
     {
         selectedCell = cell;
-        UpdateCellText(selectedCell);
-		if (cell != null)
-		{
-			HighlightSelectedCell(cell);
-			HighlightSelectedPlate(cell);
-		}
-
+        if (cell != null)
+        {
+            HighlightSelectedCell(cell);
+            SelectedCellInfo.Text = cell.x.ToString() + ", " + cell.y.ToString();
+            NumPlatePointsInCell.Text = map.hashgrid.grid[cell.x, cell.y].Count().ToString();
+        }
     }
 
     void HighlightSelectedCell(Cell2D cell)
@@ -85,9 +108,8 @@ public partial class MapViewer : Node
 
     }
 
-	void HighlightSelectedPlate(Cell2D cell)
+	void HighlightSelectedPlate(Plate2D plate)
 	{
-		var plate = cell.plate;
 
 		foreach(var p in plate.points)
 		{
@@ -108,12 +130,23 @@ public partial class MapViewer : Node
     {
         if (@event.IsActionPressed("Select"))
         {
-            //GD.Print(GetViewport().GetMousePosition());
-            var viewToWorld = cam1.GetCanvasTransform().AffineInverse();
-            var worldPos = viewToWorld * GetViewport().GetMousePosition();
-            GD.Print(worldPos);
-            OnCellSelected(map.GetCellFromPosition(worldPos));
-        }
+			if (PlateCheckButton.ButtonPressed)
+            {
+                PlateInfoGroup.Visible = false;
+                CellInfoGroup.Visible = true;
+			    //GD.Print(GetViewport().GetMousePosition());
+                var viewToWorld = cam1.GetCanvasTransform().AffineInverse();
+                var worldPos = viewToWorld * GetViewport().GetMousePosition();
+                GD.Print(worldPos);
+                OnCellSelected(map.GetCellFromPosition(worldPos));
+			}
+            else
+            {
+                PlateInfoGroup.Visible = true;
+                CellInfoGroup.Visible = false;
+            }
+
+		}
         if (@event.IsActionPressed("Cam_Zoom_In"))
         {
             cam1.Zoom *= zoomSpeed;

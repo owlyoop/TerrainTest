@@ -28,31 +28,154 @@ seamless_blend_skirt = 0.5
 
 [node name="main2D" type="Node2D"]
 
-[node name="CameraController" type="Node2D" parent="." node_paths=PackedStringArray("cam1", "map", "cellText", "LineOverlay")]
+[node name="MapViewer" type="Node2D" parent="." node_paths=PackedStringArray("cam1", "map", "LineOverlay", "PlateInfoGroup", "CellInfoGroup", "PlateSpinBox", "PlateCheckButton", "SelectedPlatePosition", "SelectedPlateRotation", "SelectedPlateDensity", "SelectedCellInfo", "NumPlatePointsInCell")]
 script = ExtResource("1_c47n3")
-cam1 = NodePath("Camera2D")
+cam1 = NodePath("../CameraController/Camera2D")
 map = NodePath("../WorldMap")
-cellText = NodePath("Camera2D/Control/RichTextLabel")
 LineOverlay = NodePath("../Overlay")
 camSpeed = 20.0
 zoomSpeed = 1.5
+PlateInfoGroup = NodePath("../CanvasLayer/Plate Info UI")
+CellInfoGroup = NodePath("../CanvasLayer/Cell Info UI")
+PlateSpinBox = NodePath("../CanvasLayer/Plate Info UI/SpinBox")
+PlateCheckButton = NodePath("../CanvasLayer/CheckButton")
+SelectedPlatePosition = NodePath("../CanvasLayer/Plate Info UI/Selected Plate Pos")
+SelectedPlateRotation = NodePath("../CanvasLayer/Plate Info UI/Selected Plate Rot")
+SelectedPlateDensity = NodePath("../CanvasLayer/Plate Info UI/Selected Plate Density")
+SelectedCellInfo = NodePath("../CanvasLayer/Cell Info UI/Selected Cell")
+NumPlatePointsInCell = NodePath("../CanvasLayer/Cell Info UI/NumPlatePoints")
 
-[node name="Camera2D" type="Camera2D" parent="CameraController"]
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="Control" type="Control" parent="CameraController/Camera2D"]
+[node name="CheckButton" type="CheckButton" parent="CanvasLayer"]
+offset_left = 175.0
+offset_top = 4.0
+offset_right = 219.0
+offset_bottom = 28.0
+
+[node name="Cell Info UI" type="Control" parent="CanvasLayer"]
 layout_mode = 3
 anchors_preset = 0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="RichTextLabel" type="RichTextLabel" parent="CameraController/Camera2D/Control"]
+[node name="Cell Label" type="RichTextLabel" parent="CanvasLayer/Cell Info UI"]
 z_index = 5
 layout_mode = 0
-offset_left = -573.0
-offset_top = -321.0
-offset_right = 177.0
-offset_bottom = -271.0
-text = "Cell:"
+offset_left = 5.0
+offset_top = 35.0
+offset_right = 305.0
+offset_bottom = 60.0
+text = "Image Cell:"
+
+[node name="Selected Cell" type="RichTextLabel" parent="CanvasLayer/Cell Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 170.0
+offset_top = 35.0
+offset_right = 470.0
+offset_bottom = 60.0
+text = "444,444"
+
+[node name="NumPlatePoints Label" type="RichTextLabel" parent="CanvasLayer/Cell Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 5.0
+offset_top = 70.0
+offset_right = 305.0
+offset_bottom = 95.0
+text = "# of PlatePoints in Cell:"
+
+[node name="NumPlatePoints" type="RichTextLabel" parent="CanvasLayer/Cell Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 190.0
+offset_top = 70.0
+offset_right = 490.0
+offset_bottom = 95.0
+text = "22"
+
+[node name="Plate Info UI" type="Control" parent="CanvasLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Plate Num Label" type="RichTextLabel" parent="CanvasLayer/Plate Info UI"]
+z_index = 5
+layout_mode = 1
+offset_left = 5.0
+offset_top = 5.0
+offset_right = 89.0
+offset_bottom = 30.0
+text = "Plate #: "
+
+[node name="SpinBox" type="SpinBox" parent="CanvasLayer/Plate Info UI"]
+layout_mode = 0
+offset_left = 70.0
+offset_top = 2.0
+offset_right = 170.0
+offset_bottom = 33.0
+rounded = true
+
+[node name="Plate Position Label" type="RichTextLabel" parent="CanvasLayer/Plate Info UI"]
+z_index = 5
+layout_mode = 1
+offset_left = 5.0
+offset_top = 35.0
+offset_right = 305.0
+offset_bottom = 60.0
+text = "Plate origin position:"
+
+[node name="Selected Plate Pos" type="RichTextLabel" parent="CanvasLayer/Plate Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 170.0
+offset_top = 35.0
+offset_right = 470.0
+offset_bottom = 60.0
+text = "333,333"
+
+[node name="Plate Rotation Label" type="RichTextLabel" parent="CanvasLayer/Plate Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 5.0
+offset_top = 70.0
+offset_right = 305.0
+offset_bottom = 95.0
+text = "Plate origin rotation:"
+
+[node name="Selected Plate Rot" type="RichTextLabel" parent="CanvasLayer/Plate Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 170.0
+offset_top = 70.0
+offset_right = 470.0
+offset_bottom = 95.0
+text = "333,333"
+
+[node name="Plate Density Label" type="RichTextLabel" parent="CanvasLayer/Plate Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 5.0
+offset_top = 100.0
+offset_right = 305.0
+offset_bottom = 125.0
+text = "Density:"
+
+[node name="Selected Plate Density" type="RichTextLabel" parent="CanvasLayer/Plate Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 75.0
+offset_top = 100.0
+offset_right = 375.0
+offset_bottom = 125.0
+text = "4"
+
+[node name="CameraController" type="Node2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="CameraController"]
 
 [node name="MeshInstance2D" type="MeshInstance2D" parent="."]
 texture_filter = 1
@@ -79,3 +202,5 @@ noiseGen = SubResource("FastNoiseLite_w74eu")
 noiseTex = SubResource("NoiseTexture2D_1w0k7")
 mapDisplay = NodePath("../MeshInstance2D")
 voronoi = NodePath("../VoronoiMap")
+
+[connection signal="value_changed" from="CanvasLayer/Plate Info UI/SpinBox" to="MapViewer" method="OnSpinBoxValueChanged"]

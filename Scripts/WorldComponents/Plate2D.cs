@@ -6,10 +6,13 @@ using System.Collections.Generic;
 
 public class PlatePoint
 {
-	public Vector2 position; //The world position
-	public Vector2 localPos;
+	public Vector2 position;	//The world position
 	public float height;
-	public Plate plate;
+	public Plate2D plate;
+
+	public bool isBoundary = false;		//If the point is on the edge of the plate
+	public bool isColliding = false;    //If the point is 'colliding' with another point on a different plate
+
 
 	public PlatePoint(Vector2 pos, float height)
 	{
@@ -25,12 +28,15 @@ public class PlatePoint
 
 	public void UpdatePosition(Vector2 newPos)
 	{
-		this.position = newPos;
+
+		plate.map.hashgrid.MovePoint(this, newPos);
+		
 	}
 }
 
-public partial class Plate2D : Node
+public partial class Plate2D
 {
+	public WorldMap map;
     public Vector2 origin; //The origin of the plate created from voronoi polygons. not the actual center
 	public Vector2 position;
 	public Vector2 center;
@@ -45,21 +51,31 @@ public partial class Plate2D : Node
 
     public int ID;
 
-	public Plate2D PlateClone;	//the duplicated plate for the tiling world
+	public Plate2D PlateClone;  //the duplicated plate for the tiling world
 
-    public Plate2D(Vector2 origin, int ID)
+	List<Plate2D> collidingPlates;	//other plates that are colliding with this one.
+
+    public Plate2D(WorldMap map, Vector2 origin, int ID)
     {
+		this.map = map;
         this.origin = origin;
 		this.position = Vector2.Zero;
 		points = new List<PlatePoint>();
         this.ID = ID;
     }
 
-	public void AddPointToPlate(Vector2 pos, float height)
+	public PlatePoint AddPointToPlate(Vector2 pos, float height)
 	{
 		var p = new PlatePoint(pos, height);
-		p.localPos = pos - origin;
+		//p.localPos = pos - origin;
+		p.plate = this;
 		points.Add(p);
+		return p;
+
+	}
+
+	public void RemovePoint()
+	{
 
 	}
     public void SetVelocity(Vector2 velocity)
@@ -76,7 +92,8 @@ public partial class Plate2D : Node
 	{
 		foreach(var p in points)
 		{
-			p.position += direction;
+			p.UpdatePosition(p.position + direction);
+			
 		}
 		this.position += direction;
 	}
@@ -89,7 +106,7 @@ public partial class Plate2D : Node
 		{
 			var diff = p.position - this.origin;
 			var rotated = diff.Rotated(Mathf.DegToRad(degrees)) + this.origin;
-			p.position = rotated;
+			p.UpdatePosition(rotated);
 
 		}
 	}

@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class WorldMap : Node
 {
@@ -19,8 +20,10 @@ public partial class WorldMap : Node
     List<Plate2D> plates;
     Image img;
 
-
     int timestep = 1;
+
+    //X and Y are image dimensions. Used for collision detecting between platepoints of differing plates
+    public HashGrid hashgrid;
 
     public override void _Ready()
     {
@@ -29,46 +32,53 @@ public partial class WorldMap : Node
         foreach (var s in voronoi.polygons)
         {
             
-            Plate2D plate = new Plate2D(s.Key, ID);
+            Plate2D plate = new Plate2D(this, s.Key, ID);
             plates.Add(plate);
             ID++;
         }
-
+        hashgrid = new HashGrid(worldWidth, worldHeight);
         GenerateCells(worldWidth, worldHeight);
 
-        CreateMesh();
+		CreateMesh();
 
-		plates[0].MovePlate(new Vector2(7.3f, 7.3f));
-    }
+		DisplayHashgridCounts();
+		var texture = ImageTexture.CreateFromImage(img);
+		mapDisplay.Texture = texture;
+	}
 
     //Main Tectonic Plate Loop
     public void Timestep()
     {
-        //move plates
-		foreach(var p in plates)
+        //move all tect plates
+		for (int i = 0; i < plates.Count; i++)
 		{
-
+			plates[i].RotatePlate(i * 6f);
 		}
-        //update cell ownership
+
+
+        //check for collisions
+
+        //
 
         //redraw map
+        RedrawMap();
+	}
+
+
+    void RedrawMap()
+    {
+
     }
-
-	public void MovePlates()
-	{
-
-	}
-
-	public void UpdateCellOwnership()
-	{
-
-	}
 
     void AddTectonicPlate(Plate2D plate)
     {
         plates.Add(plate);
     }
 
+    public Plate2D GetPlateByIndex(int index)
+    {
+        return plates[index];
+    }
     void GenerateCells(int width, int height)
     {
         cells = new Cell2D[width, height];
@@ -88,12 +98,20 @@ public partial class WorldMap : Node
         mapDisplay.Position = new Vector2(worldWidth / 2f, worldHeight / 2f);
 
         img = CreateImageFromCells();
+        //img = InitializeImage();
         AssignSiteIDsOnCells();
         //FillVoronoiCells();
         RasterizeVoronoiEdges();
+        //DisplayHashgridCounts();
         var texture = ImageTexture.CreateFromImage(img);
         mapDisplay.Texture = texture;
     }
+
+    Image InitializeImage()
+    {
+        var img = Image.CreateEmpty(worldWidth, worldHeight, false, Image.Format.Rgb8);
+        return img;
+	}
 
     public Cell2D GetCellFromPosition(Vector2 pos)
     {
@@ -168,7 +186,36 @@ public partial class WorldMap : Node
         }
     }
 
+    void DisplayHashgridCounts()
+    {
+        for (int i = 0; i < hashgrid.grid.GetLength(0); i++)
+        {
+            for (int j = 0; j < hashgrid.grid.GetLength(1); j++)
+            {
+                int num = hashgrid.grid[i, j].Count();
 
+				int d = 0;
+				float h = 0;
+				if (num >= 1)
+                {
+                    foreach(var n in hashgrid.grid[i,j])
+                    {
+                        
+                        if (n.plate.density > d)
+                        {
+                            d = n.plate.density;
+							h = n.height;
+						}
+                            
+                    }
+                }
+                Color color = new Color(0.1f * h, 0.2f * h, 0.3f * h, 1f);
+                SetPixelWorld(i, j, color);
+            }
+        }
+    }
+
+    //TODO: it isnt needed to assign plate stuff to image cells so move the needed functionality out of this func
     void AssignSiteIDsOnCells()
     {
         for (int i = 0; i < cells.GetLength(0); i++)
@@ -203,10 +250,11 @@ public partial class WorldMap : Node
 				}
 
 				cells[i, j].plate = closestPlate;
-				cells[i, j].localPos = new Vector2I((int)closestPlate.origin.X + (int)cells[i, j].x, 
-													(int)closestPlate.origin.Y + (int)cells[i, j].y);
+				//cells[i, j].localPos = new Vector2I((int)closestPlate.origin.X + (int)cells[i, j].x, 
+				//									(int)closestPlate.origin.Y + (int)cells[i, j].y);
 
-				closestPlate.AddPointToPlate(new Vector2(x, y), height);
+				var pt = closestPlate.AddPointToPlate(new Vector2(i, j), height);
+                hashgrid.AddPoint(pt);
 			}
         }
     }
