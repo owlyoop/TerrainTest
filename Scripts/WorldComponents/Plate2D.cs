@@ -6,22 +6,25 @@ using System.Collections.Generic;
 
 public class PlatePoint
 {
-	public Vector2 position;	//The world position
+	public Vector2 localPos;
+	public Vector2 worldPos;    //The world position
 	public float height;
 	public Plate2D plate;
+	public Vector2I gridIndex; //Index for the hashgrid
 
 	public bool isBoundary = false;		//If the point is on the edge of the plate
 	public bool isColliding = false;    //If the point is 'colliding' with another point on a different plate
 
-	public PlatePoint(Vector2 pos, float height)
+	public PlatePoint(Vector2 localPos, float height, Plate2D plate)
 	{
-		this.position = pos;
+		this.localPos = localPos;
 		this.height = height;
+		this.plate = plate;
 	}
 
 	public PlatePoint(Vector2 pos)
 	{
-		this.position = pos;
+		this.worldPos = pos;
 		this.height = 0f;
 	}
 
@@ -64,12 +67,36 @@ public partial class Plate2D
         this.ID = ID;
     }
 
-	public PlatePoint AddPointToPlate(Vector2 pos, float height)
+	Vector2 WorldToLocal(Vector2 worldPos)
 	{
-		var p = new PlatePoint(pos, height);
-		//p.localPos = pos - origin;
-		p.plate = this;
+		float dx = worldPos.X - origin.X;
+
+		// wrap X into [-width/2, width/2]
+		float halfW = map.worldWidth * 0.5f;
+		if (dx > halfW) dx -= map.worldWidth;
+		if (dx < -halfW) dx += map.worldWidth;
+
+		float dy = worldPos.Y - origin.Y;
+
+		return new Vector2(dx, dy);
+	}
+
+	void UpdatePointWorldPosition(PlatePoint p)
+	{
+		Vector2 world = origin + position + p.localPos.Rotated(Mathf.DegToRad(rotation));
+
+		world.X = Mathf.PosMod(world.X, map.worldWidth);
+
+		p.worldPos = world;
+		map.hashgrid.MovePoint(p, world);
+	}
+
+	public PlatePoint AddPointToPlate(Vector2 worldPos, float height)
+	{
+		Vector2 local = WorldToLocal(worldPos);
+		var p = new PlatePoint(local, height, this);
 		points.Add(p);
+		UpdatePointWorldPosition(p);
 		return p;
 
 	}
@@ -88,14 +115,15 @@ public partial class Plate2D
 
 	}
 
-	public void MovePlate(Vector2 direction)
+	public void MovePlate(Vector2 delta)
 	{
-		foreach(var p in points)
+		position += delta;
+		position.X = Mathf.PosMod(position.X, map.worldWidth);
+
+		foreach (var p in points)
 		{
-			p.UpdatePosition(p.position + direction);
-			
+			UpdatePointWorldPosition(p);
 		}
-		this.position += direction;
 	}
 
 	public void RotatePlate(float degrees)
@@ -105,9 +133,10 @@ public partial class Plate2D
 		rotation += degrees;
 		foreach(var p in points)
 		{
-			var diff = p.position - this.origin;
-			var rotated = diff.Rotated(Mathf.DegToRad(degrees)) + this.origin;
-			p.UpdatePosition(rotated);
+			//var diff = p.worldPos - this.origin;
+			//var rotated = diff.Rotated(Mathf.DegToRad(degrees)) + this.origin;
+			//p.UpdatePosition(rotated);
+			UpdatePointWorldPosition(p);
 
 		}
 	}

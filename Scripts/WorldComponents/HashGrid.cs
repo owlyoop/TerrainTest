@@ -27,36 +27,45 @@ public partial class HashGrid
 
 	public void AddPoint(PlatePoint point)
 	{
-		var tuple = GetIndexFromPosition(point.position);
-		
-		if (CheckIfIndexInBounds(tuple.Item1, tuple.Item2) == true)
-		{
-			grid[tuple.Item1, tuple.Item2].Add(point);
-		}
-			
+		var idx = GetIndexFromPosition(point.worldPos);
+
+		point.gridIndex = new Vector2I(idx.Item1, idx.Item2);
+		grid[idx.Item1, idx.Item2].Add(point);
 	}
 
 	public void RemovePoint(PlatePoint point)
 	{
-		var tuple = GetIndexFromPosition(point.position);
-		grid[tuple.Item1, tuple.Item2].Remove(point);
+		var idx = point.gridIndex;
+
+		if (CheckIfIndexInBounds(idx.X, idx.Y))
+			grid[idx.X, idx.Y].Remove(point);
 	}
 
-	public void MovePoint(PlatePoint point, Vector2 newPos)
+	public void MovePoint(PlatePoint point, Vector2 newWorldPos)
 	{
-		//todo: check if point moved cells
-		Vector2 oldPos = point.position;
-		//GD.Print(oldPos, newPos);
-		RemovePoint(point);
-		point.position = newPos;
-		AddPoint(point);
+		newWorldPos.X = Mathf.PosMod(newWorldPos.X, Width);
+		newWorldPos.Y = Mathf.Clamp(newWorldPos.Y, 0, Height - 1);
+
+		var oldIdx = point.gridIndex;
+		var newIdxTuple = GetIndexFromPosition(newWorldPos);
+		var newIdx = new Vector2I(newIdxTuple.Item1, newIdxTuple.Item2);
+
+		if (oldIdx != newIdx)
+		{
+			grid[oldIdx.X, oldIdx.Y].Remove(point);
+			grid[newIdx.X, newIdx.Y].Add(point);
+			point.gridIndex = newIdx;
+		}
+
+		point.worldPos = newWorldPos;
 	}
 
 	public Tuple<int, int> GetIndexFromPosition(Vector2 pos)
 	{
 		//todo: make this properly get the correct image cell index and also handle image wrapping
-		int x = (int)Math.Round(pos.X);
-		int y = (int)Math.Round(pos.Y);
+		int x = Mathf.FloorToInt(Mathf.PosMod(pos.X, Width));
+		int y = Mathf.FloorToInt(Mathf.Clamp(pos.Y, 0, Height - 1));
+
 		return new Tuple<int, int>(x, y);
 	}
 

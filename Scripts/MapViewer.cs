@@ -111,24 +111,7 @@ public partial class MapViewer : Node
 
     }
 
-	//deprecated
-	void HighlightSelectedPlateOld(Plate2D plate)
-	{
-
-		foreach(var p in plate.points)
-		{
-			var n = new Vector2(p.position.X + 0.5f, p.position.Y + 0.5f);
-			var s = new Vector2(p.position.X + 0.5f, p.position.Y);
-			var line = new Line2D();
-			line.Width = 0.32f;
-			line.DefaultColor = new Color(1, 1, 1, 0.5f);
-			var l = new Vector2[2];
-			l[0] = n;
-			l[1] = s;
-			line.Points = l;
-			LineOverlay.AddChild(line);
-		}
-	}
+	
 
 	void HighlightSelectedPlate(Plate2D plate)
 	{
@@ -144,7 +127,7 @@ public partial class MapViewer : Node
 		for (int i = 0; i < plate.points.Count(); i++)
 		{
 			var p = plate.points[i];
-			mm.SetInstanceTransform2D(i, new Transform2D(Mathf.DegToRad(plate.rotation), p.position + new Vector2(0.5f, 0.5f)));
+			mm.SetInstanceTransform2D(i, new Transform2D(Mathf.DegToRad(plate.rotation), p.worldPos + new Vector2(0.5f, 0.5f)));
 		}
 	}
 

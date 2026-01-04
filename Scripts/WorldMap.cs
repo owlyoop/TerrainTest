@@ -32,7 +32,7 @@ public partial class WorldMap : Node
 		//Init
         plates = new List<Plate2D>();
         int ID = plates.Count;
-        foreach (var s in voronoi.polygons)
+        foreach (var s in voronoi.basePolygons)
         {
             
             Plate2D plate = new Plate2D(this, s.Key, ID);
@@ -59,7 +59,7 @@ public partial class WorldMap : Node
         //move all tect plates
 		for (int i = 0; i < plates.Count; i++)
 		{
-			plates[i].RotatePlate(i * 0f);
+			plates[i].RotatePlate(i * 2f);
 		}
 
 
@@ -101,9 +101,10 @@ public partial class WorldMap : Node
 
         img = CreateImageFromCells();
         //img = InitializeImage();
-        AssignSiteIDsOnCells();
-        //FillVoronoiCells();
-        RasterizeVoronoiEdges();
+        //AssignSiteIDsOnCells();
+		AssignSiteIDs();
+		//FillVoronoiCells();
+		RasterizeVoronoiEdges();
 		//DisplayHashgridCounts();
 		//DisplayHashgridPoints();
         var texture = ImageTexture.CreateFromImage(img);
@@ -248,52 +249,49 @@ public partial class WorldMap : Node
 		}
 	}
 
-    //TODO: it isnt needed to assign plate stuff to image cells so move the needed functionality out of this func
-    void AssignSiteIDsOnCells()
-    {
-        for (int i = 0; i < cells.GetLength(0); i++)
-        {
-            for (int j = 0; j < cells.GetLength(1); j++)
-            {
-                float min = float.MaxValue;
-                Plate2D closestPlate = plates[0];
-                foreach (var p in plates)
-                {
-                    float dist = p.origin.DistanceTo(new Vector2(i + 0.5f, j + 0.5f));
-                    if (dist < min)
-                    {
-                        min = dist;
-                        closestPlate = p;
-                    }
-                }
+	void AssignSiteIDs()
+	{
+		for (int i = 0; i < cells.GetLength(0); i++)
+		{
+			for (int j = 0; j < cells.GetLength(1); j++)
+			{
+				float min = float.MaxValue;
+				Plate2D closestPlate = null;
+				Vector2 cellPos = new Vector2(i + 0.5f, j + 0.5f);
 
-				var height = cells[i, j].height;
-				var x = cells[i, j].x;
-				var y = cells[i, j].y;
-				//make the points that should loop over instead not, making the plate continous. later we will duplicate the plates.
-				if (closestPlate.origin.X < 0)
+				foreach (var p in plates)
 				{
-					closestPlate = plates[closestPlate.ID - 1];
-					x = x + img.GetSize().X;
-				}
-				else if (closestPlate.origin.X >= img.GetSize().X)
-				{
-					closestPlate = plates[closestPlate.ID - 2];
-					x = x - img.GetSize().X;
+					float dist = WrappedDistance(cellPos, p.origin, worldWidth);
+
+					if (dist < min)
+					{
+						min = dist;
+						closestPlate = p;
+					}
 				}
 
 				cells[i, j].plate = closestPlate;
-				//cells[i, j].localPos = new Vector2I((int)closestPlate.origin.X + (int)cells[i, j].x, 
-				//									(int)closestPlate.origin.Y + (int)cells[i, j].y);
-
-				var pt = closestPlate.AddPointToPlate(new Vector2(i, j), height);
-                hashgrid.AddPoint(pt);
+				var pt = closestPlate.AddPointToPlate(new Vector2(i, j),cells[i, j].height);
+				hashgrid.AddPoint(pt);
 			}
-        }
-    }
+		}
+	}
 
-	
-    void RasterizeVoronoiEdges()
+	float WrappedDX(float a, float b, float width)
+	{
+		float dx = Mathf.Abs(a - b);
+		return Mathf.Min(dx, width - dx);
+	}
+
+	float WrappedDistance(Vector2 a, Vector2 b, float width)
+	{
+		float dx = WrappedDX(a.X, b.X, width);
+		float dy = Mathf.Abs(a.Y - b.Y); // no vertical wrap
+		return Mathf.Sqrt(dx * dx + dy * dy);
+	}
+
+
+	void RasterizeVoronoiEdges()
     {
         int c = 0;
         int m = voronoi.polygons.Count;
