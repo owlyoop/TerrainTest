@@ -23,7 +23,10 @@ public partial class MapViewer : Node
 
 	Cell2D selectedCell;
 
-    public override void _Ready()
+	MultiMeshInstance2D plateOverlay;
+	MultiMesh mm;
+
+	public override void _Ready()
 	{
         cam1.Position = new Vector2(map.worldWidth / 2f, map.worldHeight / 2f);
         cam1.Zoom *= 2.5f;
@@ -108,7 +111,8 @@ public partial class MapViewer : Node
 
     }
 
-	void HighlightSelectedPlate(Plate2D plate)
+	//deprecated
+	void HighlightSelectedPlateOld(Plate2D plate)
 	{
 
 		foreach(var p in plate.points)
@@ -124,6 +128,60 @@ public partial class MapViewer : Node
 			line.Points = l;
 			LineOverlay.AddChild(line);
 		}
+	}
+
+	void HighlightSelectedPlate(Plate2D plate)
+	{
+		if (mm != null)
+			mm.InstanceCount = 0;
+
+		if (mm == null || mm.InstanceCount != plate.points.Count())
+		{
+			CreatePlateOverlay(plate);
+		}
+
+
+		for (int i = 0; i < plate.points.Count(); i++)
+		{
+			var p = plate.points[i];
+			mm.SetInstanceTransform2D(i, new Transform2D(Mathf.DegToRad(plate.rotation), p.position + new Vector2(0.5f, 0.5f)));
+		}
+	}
+
+	void CreatePlateOverlay(Plate2D plate)
+	{
+
+		mm = new MultiMesh();
+		mm.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
+		mm.InstanceCount = plate.points.Count();
+
+		var mesh = CreateWireBox();
+		mm.Mesh = mesh;
+
+		plateOverlay = new MultiMeshInstance2D();
+		plateOverlay.Multimesh = mm;
+		plateOverlay.Modulate = Colors.Yellow;
+
+		AddChild(plateOverlay);
+
+	}
+	ArrayMesh CreateWireBox()
+	{
+		var vertices = new Vector2[]
+		{
+			new(-0.5f, -0.5f), new(0.5f, -0.5f),
+			new(0.5f, -0.5f), new(0.5f, 0.5f),
+			new(0.5f, 0.5f), new(-0.5f, 0.5f),
+			new(-0.5f, 0.5f), new(-0.5f, -0.5f)
+		};
+		var mesh = new ArrayMesh();
+
+		var arrays = new Godot.Collections.Array();
+		arrays.Resize((int)Mesh.ArrayType.Max);
+		arrays[(int)Mesh.ArrayType.Vertex] = vertices;
+		mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Lines, arrays);
+
+		return mesh;
 	}
 
     public override void _Input(InputEvent @event)

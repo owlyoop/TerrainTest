@@ -13,7 +13,6 @@ public class PlatePoint
 	public bool isBoundary = false;		//If the point is on the edge of the plate
 	public bool isColliding = false;    //If the point is 'colliding' with another point on a different plate
 
-
 	public PlatePoint(Vector2 pos, float height)
 	{
 		this.position = pos;
@@ -40,6 +39,7 @@ public partial class Plate2D
     public Vector2 origin; //The origin of the plate created from voronoi polygons. not the actual center
 	public Vector2 position;
 	public Vector2 center;
+	public float rotation; //in degrees
 
 	public List<PlatePoint> points; //the points that make up this plate, initially created from points on a grid that were inside the voronoi polygon
     public int density = 5;	//crust density
@@ -102,6 +102,7 @@ public partial class Plate2D
 	{
 		/* func rotated_point(_center, _angle, _distance):
     	return _center + Vector2(sin(_angle),cos(_angle)) * _distance*/
+		rotation += degrees;
 		foreach(var p in points)
 		{
 			var diff = p.position - this.origin;

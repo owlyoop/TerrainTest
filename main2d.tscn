@@ -178,6 +178,7 @@ text = "4"
 [node name="Camera2D" type="Camera2D" parent="CameraController"]
 
 [node name="MeshInstance2D" type="MeshInstance2D" parent="."]
+z_index = -1
 texture_filter = 1
 scale = Vector2(600, 300)
 mesh = SubResource("QuadMesh_xdepj")

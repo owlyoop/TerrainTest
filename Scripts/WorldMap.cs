@@ -1,7 +1,9 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using Color = Godot.Color;
 
 public partial class WorldMap : Node
 {
@@ -27,6 +29,7 @@ public partial class WorldMap : Node
 
     public override void _Ready()
     {
+		//Init
         plates = new List<Plate2D>();
         int ID = plates.Count;
         foreach (var s in voronoi.polygons)
@@ -39,11 +42,15 @@ public partial class WorldMap : Node
         hashgrid = new HashGrid(worldWidth, worldHeight);
         GenerateCells(worldWidth, worldHeight);
 
+		
+
+		//Processing
 		CreateMesh();
 
-		DisplayHashgridCounts();
-		var texture = ImageTexture.CreateFromImage(img);
-		mapDisplay.Texture = texture;
+		Timestep();
+
+		
+
 	}
 
     //Main Tectonic Plate Loop
@@ -52,28 +59,23 @@ public partial class WorldMap : Node
         //move all tect plates
 		for (int i = 0; i < plates.Count; i++)
 		{
-			plates[i].RotatePlate(i * 6f);
+			plates[i].RotatePlate(i * 0f);
 		}
 
 
         //check for collisions
-
-        //
-
-        //redraw map
-        RedrawMap();
+		hashgrid.UpdatePoints();
+		//DisplayHashgridPoints();
+		//redraw map
+		RedrawMap();
 	}
 
 
     void RedrawMap()
     {
-
-    }
-
-    void AddTectonicPlate(Plate2D plate)
-    {
-        plates.Add(plate);
-    }
+		var texture = ImageTexture.CreateFromImage(img);
+		mapDisplay.Texture = texture;
+	}
 
     public Plate2D GetPlateByIndex(int index)
     {
@@ -102,7 +104,8 @@ public partial class WorldMap : Node
         AssignSiteIDsOnCells();
         //FillVoronoiCells();
         RasterizeVoronoiEdges();
-        //DisplayHashgridCounts();
+		//DisplayHashgridCounts();
+		//DisplayHashgridPoints();
         var texture = ImageTexture.CreateFromImage(img);
         mapDisplay.Texture = texture;
     }
@@ -214,6 +217,36 @@ public partial class WorldMap : Node
             }
         }
     }
+
+	void DisplayHashgridPoints()
+	{
+		Color empty = new Color(0f, 0f, 0f);
+		Color collision = new Color(1f, 1f, 0f);
+		Color boundary = new Color(1f, 0f, 1f);
+		Color both = new Color(1f, 1f, 1f);
+		Color error = new Color(0f, 0f, 1f);
+
+		for (int i = 0; i < hashgrid.grid.GetLength(0); i++)
+		{
+			for (int j = 0; j < hashgrid.grid.GetLength(1); j++)
+			{
+				if (hashgrid.grid[i, j].Count == 0)
+				{
+					SetPixelWorld(i, j, empty);
+				}
+				else
+				{
+					if (hashgrid.grid[i, j][0].isBoundary && hashgrid.grid[i, j][0].isColliding)
+						SetPixelWorld(i, j, both);
+					else if (hashgrid.grid[i, j][0].isBoundary && !hashgrid.grid[i, j][0].isColliding)
+						SetPixelWorld(i, j, boundary);
+					else if (!hashgrid.grid[i, j][0].isBoundary && hashgrid.grid[i, j][0].isColliding)
+						SetPixelWorld(i, j, collision);
+					else SetPixelWorld(i, j, error);
+				}
+			}
+		}
+	}
 
     //TODO: it isnt needed to assign plate stuff to image cells so move the needed functionality out of this func
     void AssignSiteIDsOnCells()
