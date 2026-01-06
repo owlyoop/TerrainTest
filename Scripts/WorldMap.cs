@@ -41,33 +41,49 @@ public partial class WorldMap : Node
         }
         hashgrid = new HashGrid(worldWidth, worldHeight);
         GenerateCells(worldWidth, worldHeight);
-
 		
-
 		//Processing
 		CreateMesh();
+		hashgrid.InitializeBoundaries();
+
+		GD.Randomize();
+		foreach(var p in plates)
+		{
+			float rx = (float)GD.RandRange(-1f, 1f);
+			float ry = (float)GD.RandRange(-1f, 1f);
+			float speed = (float)GD.RandRange(0f, 1f);
+			p.MovementDirection = new Vector2(rx,ry);
+			p.MovementSpeed = speed;
+		}
 
 		Timestep();
+		//Lower density crust rises, higher density crust sinks
+		//When a boundary platepoint has moved far enough without colliding, spawn a new platepoint behind it.
 
-		
 
 	}
 
-    //Main Tectonic Plate Loop
-    public void Timestep()
+	//Main Tectonic Plate Loop
+	public void Timestep()
     {
-        //move all tect plates
+		
+		//move all tect plates
 		for (int i = 0; i < plates.Count; i++)
 		{
-			plates[i].RotatePlate(i * 2f);
+			plates[i].RotatePlate(i * 3f);
+			//plates[i].MovePlate();
 		}
+		
+		//check for collisions
 
-
-        //check for collisions
 		hashgrid.UpdatePoints();
+		DisplayHashgridCounts();
 		//DisplayHashgridPoints();
+		//update platepoint heights?
+		//todo: rebuild heightmap
 		//redraw map
 		RedrawMap();
+
 	}
 
 
@@ -100,13 +116,8 @@ public partial class WorldMap : Node
         mapDisplay.Position = new Vector2(worldWidth / 2f, worldHeight / 2f);
 
         img = CreateImageFromCells();
-        //img = InitializeImage();
-        //AssignSiteIDsOnCells();
 		AssignSiteIDs();
-		//FillVoronoiCells();
 		RasterizeVoronoiEdges();
-		//DisplayHashgridCounts();
-		//DisplayHashgridPoints();
         var texture = ImageTexture.CreateFromImage(img);
         mapDisplay.Texture = texture;
     }
@@ -204,17 +215,23 @@ public partial class WorldMap : Node
                 {
                     foreach(var n in hashgrid.grid[i,j])
                     {
-                        
-                        if (n.plate.density > d)
+						h++;
+                        /*if (n.plate.density > d)
                         {
                             d = n.plate.density;
 							h = n.height;
-						}
+						}*/
                             
                     }
                 }
+				h = h / 4f;
+				
                 Color color = new Color(0.1f * h, 0.2f * h, 0.3f * h, 1f);
-                SetPixelWorld(i, j, color);
+				if (h == 0)
+				{
+					color = Colors.DarkRed;
+				}
+				SetPixelWorld(i, j, color);
             }
         }
     }
@@ -237,13 +254,13 @@ public partial class WorldMap : Node
 				}
 				else
 				{
-					if (hashgrid.grid[i, j][0].isBoundary && hashgrid.grid[i, j][0].isColliding)
-						SetPixelWorld(i, j, both);
-					else if (hashgrid.grid[i, j][0].isBoundary && !hashgrid.grid[i, j][0].isColliding)
-						SetPixelWorld(i, j, boundary);
-					else if (!hashgrid.grid[i, j][0].isBoundary && hashgrid.grid[i, j][0].isColliding)
-						SetPixelWorld(i, j, collision);
-					else SetPixelWorld(i, j, error);
+					if (hashgrid.grid[i, j][0].isColliding && hashgrid.grid[i, j][0].isBoundary)
+						SetPixelWorld(i, j, Colors.HotPink);
+					else if (!hashgrid.grid[i, j][0].isColliding && hashgrid.grid[i, j][0].isBoundary)
+						SetPixelWorld(i, j, Colors.Green);
+					else if (hashgrid.grid[i, j][0].isColliding && !hashgrid.grid[i, j][0].isBoundary)
+						SetPixelWorld(i, j, Colors.Red);
+					else SetPixelWorld(i, j, Colors.DarkSlateGray);
 				}
 			}
 		}
@@ -251,9 +268,37 @@ public partial class WorldMap : Node
 
 	void AssignSiteIDs()
 	{
-		for (int i = 0; i < cells.GetLength(0); i++)
+		int width = cells.GetLength(0);
+		int height = cells.GetLength(1);
+		float spacing = 1f / 1.75f;
+
+		for (float x = 0; x < width; x += spacing)
 		{
-			for (int j = 0; j < cells.GetLength(1); j++)
+			for (float y = 0; y < height; y += spacing)
+			{
+				float min = float.MaxValue;
+				Plate2D closestPlate = null;
+				Vector2 cellPos = new Vector2(x + 0.5f, y + 0.5f);
+
+				foreach (var p in plates)
+				{
+					float dist = WrappedDistance(cellPos, p.origin, worldWidth);
+
+					if (dist < min)
+					{
+						min = dist;
+						closestPlate = p;
+					}
+				}
+
+				cells[(int)x, (int)y].plate = closestPlate;
+				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), cells[(int)x, (int)y].height);
+			}
+		}
+
+		/*for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < height; j++)
 			{
 				float min = float.MaxValue;
 				Plate2D closestPlate = null;
@@ -271,10 +316,23 @@ public partial class WorldMap : Node
 				}
 
 				cells[i, j].plate = closestPlate;
-				var pt = closestPlate.AddPointToPlate(new Vector2(i, j),cells[i, j].height);
-				hashgrid.AddPoint(pt);
+				//4 points per pixel. overkill i think? TODO: properly sample height from noise.
+				for (int sx = 0; sx < 2; sx++)
+				{
+					for (int sy = 0; sy < 2; sy++)
+					{
+						Vector2 p = new Vector2(
+							i + (sx + 0.5f) * 0.5f,
+							j + (sy + 0.5f) * 0.5f
+						);
+						var pt = closestPlate.AddPointToPlate(p, cells[i, j].height);
+					}
+				}
+
+
+				//var pt = closestPlate.AddPointToPlate(new Vector2(i, j),cells[i, j].height);
 			}
-		}
+		}*/
 	}
 
 	float WrappedDX(float a, float b, float width)

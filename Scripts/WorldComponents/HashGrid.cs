@@ -24,7 +24,6 @@ public partial class HashGrid
 		}
 	}
 
-
 	public void AddPoint(PlatePoint point)
 	{
 		var idx = GetIndexFromPosition(point.worldPos);
@@ -49,20 +48,22 @@ public partial class HashGrid
 		var oldIdx = point.gridIndex;
 		var newIdxTuple = GetIndexFromPosition(newWorldPos);
 		var newIdx = new Vector2I(newIdxTuple.Item1, newIdxTuple.Item2);
-
+		point.worldPos = newWorldPos;
 		if (oldIdx != newIdx)
 		{
-			grid[oldIdx.X, oldIdx.Y].Remove(point);
-			grid[newIdx.X, newIdx.Y].Add(point);
+
+			RemovePoint(point);
 			point.gridIndex = newIdx;
+			AddPoint(point);
+			//grid[oldIdx.X, oldIdx.Y].Remove(point);
+			//grid[newIdx.X, newIdx.Y].Add(point);
 		}
 
-		point.worldPos = newWorldPos;
+		
 	}
 
 	public Tuple<int, int> GetIndexFromPosition(Vector2 pos)
 	{
-		//todo: make this properly get the correct image cell index and also handle image wrapping
 		int x = Mathf.FloorToInt(Mathf.PosMod(pos.X, Width));
 		int y = Mathf.FloorToInt(Mathf.Clamp(pos.Y, 0, Height - 1));
 
@@ -76,6 +77,11 @@ public partial class HashGrid
 		else if (y < 0 || y >= Height)
 			return false;
 		else return true;
+	}
+
+	void GetNeighbours()
+	{
+
 	}
 
 	//boundary = if on edge of plate; if any of the bordering grid points are empty or belong to dif plates.
@@ -127,13 +133,12 @@ public partial class HashGrid
 
 						if (CheckIfIndexInBounds(di, dj))
 						{
-							//
-							if (grid[di, dj].Count == 0)
+							if (grid[di,dj].Count == 0)
 							{
-								//Base gridcell borders an empty cell, so it's a boundary
-								boundary = true;
+								foreach (var point in grid[i, j])
+									point.isBoundary = true;
 							}
-							else if (collision) //if theres a collision in the center gridpoint then the 8 surrounding ones should be marked?
+							if (collision) //if theres a collision in the center gridpoint then the 8 surrounding ones should be marked?
 							{
 								foreach(var point in grid[di,dj])
 								{
@@ -145,23 +150,50 @@ public partial class HashGrid
 							{
 								foreach(var otherPoint in grid[di,dj])
 								{
-									if (otherPoint.plate != grid[di, dj][0].plate)
+									if (otherPoint.plate != grid[i, j][0].plate)
 									{
-										boundary = true;
+										collision = true;
+										otherPoint.isColliding = true;
 										break;
 									}
 								}
 							}
+							
+						}
+					}
+				}
+			}
+		}
+	}
 
-							if (boundary) //set center gridcell and bordering gridcell as boundary points
+	//Only called on initial world creation, so every gridcell is guranteed to only have 1 platepoint in it
+	public void InitializeBoundaries()
+	{
+		int width = grid.GetLength(0);
+		int height = grid.GetLength(1);
+
+		for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < height; j++)
+			{
+				if (grid[i, j].Count == 0) continue;
+
+				for (int dx = -1; dx <= 1; dx++)
+				{
+					for (int dy = -1; dy <= 1; dy++)
+					{
+						if (dx == 0 && dy == 0) continue; // skip self
+						//indexes of the bordering gridcell. i,j is the original center, di,dj is one of 8 directions.
+						int di = i + dx;
+						int dj = j + dy;
+
+						if (CheckIfIndexInBounds(di, dj))
+						{
+							if (grid[di, dj].Count > 0)
 							{
-								foreach(var point in grid[di,dj])
+								if (grid[di, dj][0].plate != grid[i, j][0].plate)
 								{
-									point.isBoundary = true;
-								}
-								foreach(var point in grid[i,j])
-								{
-									point.isBoundary = true;
+									grid[i, j][0].isBoundary = true;
 								}
 							}
 						}

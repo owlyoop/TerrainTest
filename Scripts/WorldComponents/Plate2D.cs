@@ -12,27 +12,21 @@ public class PlatePoint
 	public Plate2D plate;
 	public Vector2I gridIndex; //Index for the hashgrid
 
-	public bool isBoundary = false;		//If the point is on the edge of the plate
+	public List<PlatePoint> neighbours;
+
 	public bool isColliding = false;    //If the point is 'colliding' with another point on a different plate
+	public bool isBoundary = false;		//if egde of plate. if moves enough without colliding, spawn a new platepoint behind it.
+
+	float age;
+	float crustThickness;
+	float distNoCollision;	//distance travelled without a collision.
 
 	public PlatePoint(Vector2 localPos, float height, Plate2D plate)
 	{
 		this.localPos = localPos;
 		this.height = height;
 		this.plate = plate;
-	}
-
-	public PlatePoint(Vector2 pos)
-	{
-		this.worldPos = pos;
-		this.height = 0f;
-	}
-
-	public void UpdatePosition(Vector2 newPos)
-	{
-
-		plate.map.hashgrid.MovePoint(this, newPos);
-		
+		neighbours = new List<PlatePoint>();
 	}
 }
 
@@ -47,8 +41,8 @@ public partial class Plate2D
 	public List<PlatePoint> points; //the points that make up this plate, initially created from points on a grid that were inside the voronoi polygon
     public int density = 5;	//crust density
 
-    public Vector2 velocityDirection;
-    public float velocity;
+    public Vector2 MovementDirection;
+    public float MovementSpeed;
 
     public float angularVelocity;
 
@@ -87,7 +81,7 @@ public partial class Plate2D
 
 		world.X = Mathf.PosMod(world.X, map.worldWidth);
 
-		p.worldPos = world;
+		//p.worldPos = world;
 		map.hashgrid.MovePoint(p, world);
 	}
 
@@ -101,23 +95,9 @@ public partial class Plate2D
 
 	}
 
-	public void RemovePoint()
+	public void MovePlate()
 	{
-
-	}
-    public void SetVelocity(Vector2 velocity)
-    {
-
-    }
-
-	public void UpdateCenter()
-	{
-
-	}
-
-	public void MovePlate(Vector2 delta)
-	{
-		position += delta;
+		position += (MovementDirection * MovementSpeed);
 		position.X = Mathf.PosMod(position.X, map.worldWidth);
 
 		foreach (var p in points)
@@ -135,7 +115,6 @@ public partial class Plate2D
 		{
 			//var diff = p.worldPos - this.origin;
 			//var rotated = diff.Rotated(Mathf.DegToRad(degrees)) + this.origin;
-			//p.UpdatePosition(rotated);
 			UpdatePointWorldPosition(p);
 
 		}

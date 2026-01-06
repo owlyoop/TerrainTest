@@ -127,7 +127,7 @@ public partial class MapViewer : Node
 		for (int i = 0; i < plate.points.Count(); i++)
 		{
 			var p = plate.points[i];
-			mm.SetInstanceTransform2D(i, new Transform2D(Mathf.DegToRad(plate.rotation), p.worldPos + new Vector2(0.5f, 0.5f)));
+			mm.SetInstanceTransform2D(i, new Transform2D(Mathf.DegToRad(plate.rotation), p.worldPos + new Vector2(0.0f, 0.0f)));
 		}
 	}
 
@@ -152,10 +152,10 @@ public partial class MapViewer : Node
 	{
 		var vertices = new Vector2[]
 		{
-			new(-0.5f, -0.5f), new(0.5f, -0.5f),
-			new(0.5f, -0.5f), new(0.5f, 0.5f),
-			new(0.5f, 0.5f), new(-0.5f, 0.5f),
-			new(-0.5f, 0.5f), new(-0.5f, -0.5f)
+			new(-0.1f, -0.1f), new(0.1f, -0.1f),
+			new(0.1f, -0.1f), new(0.1f, 0.1f),
+			new(0.1f, 0.1f), new(-0.1f, 0.1f),
+			new(-0.1f, 0.1f), new(-0.1f, -0.1f)
 		};
 		var mesh = new ArrayMesh();
 
