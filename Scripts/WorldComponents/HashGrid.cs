@@ -42,8 +42,8 @@ public partial class HashGrid
 
 	public void MovePoint(PlatePoint point, Vector2 newWorldPos)
 	{
-		newWorldPos.X = Mathf.PosMod(newWorldPos.X, Width);
-		newWorldPos.Y = Mathf.Clamp(newWorldPos.Y, 0, Height - 1);
+		//newWorldPos.X = Mathf.PosMod(newWorldPos.X, Width);
+		//newWorldPos.Y = Mathf.Clamp(newWorldPos.Y, 0, Height - 1);
 
 		var oldIdx = point.gridIndex;
 		var newIdxTuple = GetIndexFromPosition(newWorldPos);
@@ -92,17 +92,23 @@ public partial class HashGrid
 	{
 		int width = grid.GetLength(0);
 		int height = grid.GetLength(1);
-
+		bool collision = false;
+		bool boundary = false;
 		for (int i = 0; i < width; i++)
 		{
 			for (int j = 0; j < height; j++)
 			{
+				collision = false;
+				boundary = false;
 				if (grid[i, j].Count == 0) continue;
-
+				foreach (var p in grid[i, j])
+				{
+					p.isColliding = false;
+					p.isBoundary = false;
+				}
+					
 				//Check for internal collisions (2 dif plates with points in same gridcell
-				
-				bool collision = false;
-				bool boundary = false;
+
 				if (grid[i, j].Count > 1)
 				{
 					//if theres more than 1 point and they have dif plates, its a collision
@@ -112,6 +118,7 @@ public partial class HashGrid
 						if (grid[i, j][p].plate != plate)
 						{
 							collision = true;
+							boundary = true;
 							break;
 						}
 					}
@@ -119,42 +126,48 @@ public partial class HashGrid
 				if (collision)
 					foreach (var p in grid[i, j])
 						p.isColliding = true;
+				if (boundary)
+					foreach (var p in grid[i, j])
+						p.isBoundary = true;
 
 				//Check in the 8 directions around the gridpoint
 				for (int dx = -1; dx <= 1; dx++)
 				{
 					for (int dy = -1; dy <= 1; dy++)
 					{
-						if (dx == 0 && dy == 0) continue; // skip self
+						
 
 						//indexes of the bordering gridcell. i,j is the original center, di,dj is one of 8 directions.
 						int di = i + dx;
 						int dj = j + dy;
+						if (di == 0 && dj == 0) continue; // skip self
 
 						if (CheckIfIndexInBounds(di, dj))
 						{
 							if (grid[di,dj].Count == 0)
 							{
-								foreach (var point in grid[i, j])
-									point.isBoundary = true;
+								boundary = true;
+								foreach (var p in grid[i, j])
+									p.isBoundary = true;
 							}
+
 							if (collision) //if theres a collision in the center gridpoint then the 8 surrounding ones should be marked?
 							{
-								foreach(var point in grid[di,dj])
+								foreach (var point in grid[di, dj])
 								{
 									point.isColliding = true;
 								}
-
 							}
 							else //the center gridpoint should only have 1 unique plate by here. 
 							{
-								foreach(var otherPoint in grid[di,dj])
+								foreach (var otherPoint in grid[di, dj])
 								{
+									collision = false;
+									otherPoint.isColliding = false;
 									if (otherPoint.plate != grid[i, j][0].plate)
 									{
 										collision = true;
 										otherPoint.isColliding = true;
-										break;
 									}
 								}
 							}
@@ -165,6 +178,7 @@ public partial class HashGrid
 			}
 		}
 	}
+
 
 	//Only called on initial world creation, so every gridcell is guranteed to only have 1 platepoint in it
 	public void InitializeBoundaries()
@@ -198,6 +212,58 @@ public partial class HashGrid
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+
+	public void Collide()
+	{
+		int width = grid.GetLength(0);
+		int height = grid.GetLength(1);
+		for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < height; j++)
+			{
+				if (grid[i, j].Count > 0)
+				{
+					var bestplate = grid[i, j][0].plate;
+					bool hasCollision = false;
+					foreach (var p in grid[i,j])
+					{
+						if (p.isColliding)
+						{
+							hasCollision = true;
+							if (p.plate.density > bestplate.density)
+								bestplate = p.plate;
+						}
+					}
+
+					if (hasCollision)
+					{
+						foreach (var p in grid[i, j])
+						{
+							p.plate.points.Remove(p);
+							p.plate = bestplate;
+							p.plate.points.Add(p);
+						}
+					}
+
+
+
+					/*if (grid[i, j][0].isColliding)
+					{
+						var bestplate = grid[i, j][0].plate;
+						foreach (var p in grid[i, j])
+						{
+							if (p.plate.density > bestplate.density)
+								bestplate = p.plate;
+						}
+						foreach (var p in grid[i, j])
+						{
+
+						}
+					}*/
 				}
 			}
 		}

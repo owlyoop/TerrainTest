@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using Color = Godot.Color;
 
 public partial class WorldMap : Node
@@ -17,6 +18,10 @@ public partial class WorldMap : Node
     [Export] public NoiseTexture2D noiseTex;
     [Export] public MeshInstance2D mapDisplay;
     [Export] public VoronoiWorld voronoi;
+
+	[Export] public Timer timer;
+
+	[Export] public float PlatePointDensity = 1.75f;
 
     Cell2D[,] cells;
     List<Plate2D> plates;
@@ -45,15 +50,17 @@ public partial class WorldMap : Node
 		//Processing
 		CreateMesh();
 		hashgrid.InitializeBoundaries();
-
+		timer.Timeout += Timestep;
 		GD.Randomize();
 		foreach(var p in plates)
 		{
 			float rx = (float)GD.RandRange(-1f, 1f);
 			float ry = (float)GD.RandRange(-1f, 1f);
 			float speed = (float)GD.RandRange(0f, 1f);
+			int d = GD.RandRange(1, 32);
 			p.MovementDirection = new Vector2(rx,ry);
 			p.MovementSpeed = speed;
+			p.density = d;
 		}
 
 		Timestep();
@@ -66,29 +73,39 @@ public partial class WorldMap : Node
 	//Main Tectonic Plate Loop
 	public void Timestep()
     {
-		
+		var start = Time.GetTicksUsec();
 		//move all tect plates
 		for (int i = 0; i < plates.Count; i++)
 		{
-			plates[i].RotatePlate(i * 3f);
-			//plates[i].MovePlate();
+			plates[i].RotatePlate(i * 0.02f);
+			plates[i].MovePlate();
 		}
-		
+		var end = Time.GetTicksUsec();
+		var workertime = (end - start) / 100000f;
+		GD.Print("Worker time for moveplate: ", workertime);
+
 		//check for collisions
 
+		start = Time.GetTicksUsec();
 		hashgrid.UpdatePoints();
-		DisplayHashgridCounts();
-		//DisplayHashgridPoints();
+		end = Time.GetTicksUsec();
+		workertime = (end - start) / 100000f;
+		GD.Print("Worker time for updatepoints: ", workertime);
+
+		hashgrid.Collide();
+		DisplayHashgridPoints();
+		//DisplayHashgridCounts();
+
 		//update platepoint heights?
 		//todo: rebuild heightmap
 		//redraw map
 		RedrawMap();
-
 	}
 
 
     void RedrawMap()
     {
+		
 		var texture = ImageTexture.CreateFromImage(img);
 		mapDisplay.Texture = texture;
 	}
@@ -254,11 +271,18 @@ public partial class WorldMap : Node
 				}
 				else
 				{
-					if (hashgrid.grid[i, j][0].isColliding && hashgrid.grid[i, j][0].isBoundary)
+					/*if (hashgrid.grid[i, j][0].isColliding && hashgrid.grid[i, j][0].isBoundary)
 						SetPixelWorld(i, j, Colors.HotPink);
 					else if (!hashgrid.grid[i, j][0].isColliding && hashgrid.grid[i, j][0].isBoundary)
 						SetPixelWorld(i, j, Colors.Green);
 					else if (hashgrid.grid[i, j][0].isColliding && !hashgrid.grid[i, j][0].isBoundary)
+						SetPixelWorld(i, j, Colors.Red);
+					else SetPixelWorld(i, j, Colors.DarkSlateGray);*/
+					if (hashgrid.grid[i, j][0].isBoundary && hashgrid.grid[i, j][0].isColliding)
+						SetPixelWorld(i, j, Colors.Blue);
+					else if (hashgrid.grid[i, j][0].isBoundary)
+						SetPixelWorld(i, j, Colors.DarkSlateGray);
+					else if (hashgrid.grid[i, j][0].isColliding)
 						SetPixelWorld(i, j, Colors.Red);
 					else SetPixelWorld(i, j, Colors.DarkSlateGray);
 				}
@@ -270,7 +294,7 @@ public partial class WorldMap : Node
 	{
 		int width = cells.GetLength(0);
 		int height = cells.GetLength(1);
-		float spacing = 1f / 1.75f;
+		float spacing = 1f / PlatePointDensity;
 
 		for (float x = 0; x < width; x += spacing)
 		{

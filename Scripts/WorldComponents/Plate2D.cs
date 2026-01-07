@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 
 
@@ -81,7 +82,6 @@ public partial class Plate2D
 
 		world.X = Mathf.PosMod(world.X, map.worldWidth);
 
-		//p.worldPos = world;
 		map.hashgrid.MovePoint(p, world);
 	}
 
@@ -98,7 +98,8 @@ public partial class Plate2D
 	public void MovePlate()
 	{
 		position += (MovementDirection * MovementSpeed);
-		position.X = Mathf.PosMod(position.X, map.worldWidth);
+		//position.X = Mathf.PosMod(position.X, map.worldWidth);
+
 
 		foreach (var p in points)
 		{

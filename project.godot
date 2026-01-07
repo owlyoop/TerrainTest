@@ -19,6 +19,11 @@ config/icon="res://icon.svg"
 
 project/assembly_name="TerrainTest"
 
+[editor]
+
+movie_writer/movie_file="C:/Users/treyk/Godot/projects/TerrainTest/Buh.avi"
+movie_writer/fps=30
+
 [editor_plugins]
 
 enabled=PackedStringArray()

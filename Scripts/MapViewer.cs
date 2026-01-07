@@ -53,7 +53,7 @@ public partial class MapViewer : Node
     void DisplayPlateInfo(Plate2D plate)
     {
         SelectedPlatePosition.Text = plate.origin.ToString();
-        //SelectedPlateRotation.Text = plate.rot
+		SelectedPlateRotation.Text = plate.rotation.ToString();
         SelectedPlateDensity.Text = plate.density.ToString();
     }
 

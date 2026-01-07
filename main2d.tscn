@@ -195,13 +195,18 @@ dimensions = 5
 numSites = 12
 lineWidth = 0.16
 
-[node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("mapDisplay", "voronoi")]
+[node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("mapDisplay", "voronoi", "timer")]
 script = ExtResource("3_r2hvk")
-worldWidth = 500
-worldHeight = 250
+worldHeight = 140
 noiseGen = SubResource("FastNoiseLite_w74eu")
 noiseTex = SubResource("NoiseTexture2D_1w0k7")
 mapDisplay = NodePath("../MeshInstance2D")
 voronoi = NodePath("../VoronoiMap")
+timer = NodePath("Timer")
+PlatePointDensity = 1.2
+
+[node name="Timer" type="Timer" parent="WorldMap"]
+wait_time = 0.009999999999999998
+autostart = true
 
 [connection signal="value_changed" from="CanvasLayer/Plate Info UI/SpinBox" to="MapViewer" method="OnSpinBoxValueChanged"]
