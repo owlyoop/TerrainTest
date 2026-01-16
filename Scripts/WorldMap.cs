@@ -91,7 +91,6 @@ public partial class WorldMap : Node
 		var workertime = (end - start) / 100000f;
 		GD.Print("Worker time for moveplate: ", workertime);
 
-
 		start = Time.GetTicksUsec();
 		hashgrid.UpdatePoints();
 		end = Time.GetTicksUsec();
@@ -105,8 +104,6 @@ public partial class WorldMap : Node
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 100000f;
 		GD.Print("Worker time for collide: ", workertime);
-
-
 
 		DisplayPlates();
 		//DisplayHashgridCounts();
@@ -122,7 +119,6 @@ public partial class WorldMap : Node
 
     void RedrawMap()
     {
-		
 		var texture = ImageTexture.CreateFromImage(img);
 		mapDisplay.Texture = texture;
 	}
@@ -329,7 +325,7 @@ public partial class WorldMap : Node
 
 				Color c;
 
-				if (p.isBoundary && p.isColliding)
+				/*if (p.isBoundary && p.isColliding)
 					c = Colors.Cyan;
 				else if (p.isBoundary && !p.isColliding)
 					c = Colors.Blue;
@@ -339,11 +335,19 @@ public partial class WorldMap : Node
 					c = new Color(
 						0.8f - (0.02f * plate.density), 
 						0.02f * plate.density,
+						0.8f - (0.02f * plate.density));*/
+
+				c = new Color(
+						0.8f - (0.02f * plate.density),
+						0.02f * plate.density,
 						0.8f - (0.02f * plate.density));
+
+				if (p.isActive)
+					c *= Colors.Green;
+				else c *= Colors.Red;
 
 				int x = Mathf.FloorToInt(Mathf.PosMod(wp.X, worldWidth));
 				int y = Mathf.FloorToInt(Mathf.PosMod(wp.Y, worldHeight));
-				//int y = Mathf.FloorToInt(Mathf.Clamp(wp.Y, 0, worldHeight - 1));
 
 				SetPixelWorld(x, y, c);
 			}
