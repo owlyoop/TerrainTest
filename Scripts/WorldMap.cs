@@ -3,8 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using Color = Godot.Color;
+using Vector2 = Godot.Vector2;
 
 public partial class WorldMap : Node
 {
@@ -27,8 +29,11 @@ public partial class WorldMap : Node
     List<Plate2D> plates;
     Image img;
 
-    int timestep = 1;
+	[ExportCategory("World Simulation")]
+	[Export] public float Timescale = 0.1f; // how much is added to age per timestep;
 
+	int timestep = 1;
+	public event Action OnTimestepCompleted;
     //X and Y are image dimensions. Used for collision detecting between platepoints of differing plates
     public HashGrid hashgrid;
 
@@ -49,8 +54,8 @@ public partial class WorldMap : Node
 		
 		//Processing
 		CreateMesh();
-		hashgrid.InitializeBoundaries();
-		timer.Timeout += Timestep;
+		
+		
 		GD.Randomize();
 		foreach(var p in plates)
 		{
@@ -59,14 +64,16 @@ public partial class WorldMap : Node
 			float speed = (float)GD.RandRange(0f, 1f);
 			int d = GD.RandRange(1, 32);
 			p.MovementDirection = new Vector2(rx,ry);
-			p.MovementSpeed = speed;
+			p.MovementSpeed = 0.06f * speed;
 			p.density = d;
 		}
-
-		Timestep();
+		hashgrid.InitializeBoundaries();
+		timer.Timeout += Timestep;
+		
+		//timer.Start();
+		//Timestep();
 		//Lower density crust rises, higher density crust sinks
 		//When a boundary platepoint has moved far enough without colliding, spawn a new platepoint behind it.
-
 
 	}
 
@@ -77,14 +84,13 @@ public partial class WorldMap : Node
 		//move all tect plates
 		for (int i = 0; i < plates.Count; i++)
 		{
-			plates[i].RotatePlate(i * 0.02f);
+			//plates[i].RotatePlate(plates[i].MovementSpeed);
 			plates[i].MovePlate();
 		}
 		var end = Time.GetTicksUsec();
 		var workertime = (end - start) / 100000f;
 		GD.Print("Worker time for moveplate: ", workertime);
 
-		//check for collisions
 
 		start = Time.GetTicksUsec();
 		hashgrid.UpdatePoints();
@@ -92,14 +98,25 @@ public partial class WorldMap : Node
 		workertime = (end - start) / 100000f;
 		GD.Print("Worker time for updatepoints: ", workertime);
 
+
+		//check for collisions
+		start = Time.GetTicksUsec();
 		hashgrid.Collide();
-		DisplayHashgridPoints();
+		end = Time.GetTicksUsec();
+		workertime = (end - start) / 100000f;
+		GD.Print("Worker time for collide: ", workertime);
+
+
+
+		DisplayPlates();
 		//DisplayHashgridCounts();
 
 		//update platepoint heights?
 		//todo: rebuild heightmap
 		//redraw map
 		RedrawMap();
+		GD.Print("-----------");
+		OnTimestepCompleted.Invoke();
 	}
 
 
@@ -224,13 +241,13 @@ public partial class WorldMap : Node
         {
             for (int j = 0; j < hashgrid.grid.GetLength(1); j++)
             {
-                int num = hashgrid.grid[i, j].Count();
+                int num = hashgrid.grid[i, j].points.Count();
 
 				int d = 0;
 				float h = 0;
 				if (num >= 1)
                 {
-                    foreach(var n in hashgrid.grid[i,j])
+                    foreach(var n in hashgrid.grid[i,j].points)
                     {
 						h++;
                         /*if (n.plate.density > d)
@@ -253,6 +270,7 @@ public partial class WorldMap : Node
         }
     }
 
+	//TODO: right now it only looks at the first point in the list
 	void DisplayHashgridPoints()
 	{
 		Color empty = new Color(0f, 0f, 0f);
@@ -265,35 +283,77 @@ public partial class WorldMap : Node
 		{
 			for (int j = 0; j < hashgrid.grid.GetLength(1); j++)
 			{
-				if (hashgrid.grid[i, j].Count == 0)
-				{
+				if (hashgrid.grid[i, j].points.Count == 0)
 					SetPixelWorld(i, j, empty);
-				}
-				else
+
+				for (int p = 0; p < hashgrid.grid[i, j].points.Count; p++)
 				{
-					/*if (hashgrid.grid[i, j][0].isColliding && hashgrid.grid[i, j][0].isBoundary)
-						SetPixelWorld(i, j, Colors.HotPink);
-					else if (!hashgrid.grid[i, j][0].isColliding && hashgrid.grid[i, j][0].isBoundary)
-						SetPixelWorld(i, j, Colors.Green);
-					else if (hashgrid.grid[i, j][0].isColliding && !hashgrid.grid[i, j][0].isBoundary)
-						SetPixelWorld(i, j, Colors.Red);
-					else SetPixelWorld(i, j, Colors.DarkSlateGray);*/
-					if (hashgrid.grid[i, j][0].isBoundary && hashgrid.grid[i, j][0].isColliding)
-						SetPixelWorld(i, j, Colors.Blue);
-					else if (hashgrid.grid[i, j][0].isBoundary)
-						SetPixelWorld(i, j, Colors.DarkSlateGray);
-					else if (hashgrid.grid[i, j][0].isColliding)
-						SetPixelWorld(i, j, Colors.Red);
-					else SetPixelWorld(i, j, Colors.DarkSlateGray);
+					var point = hashgrid.grid[i, j].points[p];
+					if (!hashgrid.grid[i, j].points[p].isActive)
+					{ 
+						//SetPixelWorld(i, j, new Color(0.05f * point.plate.ID, 0.05f * point.plate.ID, 0.05f * point.plate.ID)); 
+					}
+					else
+					{
+						
+						if (point.isBoundary && point.isColliding)
+							SetPixelWorld(i, j, Colors.Cyan);
+						else if (point.isBoundary)
+							SetPixelWorld(i, j, Colors.DarkSlateBlue);
+						else if (point.isColliding)
+							SetPixelWorld(i, j, Colors.Red);
+						else SetPixelWorld(i, j, new Color(0.05f * point.plate.ID, 0.05f * point.plate.ID, 0.05f * point.plate.ID));
+					}
 				}
+			}
+		}
+	}
+
+	void DisplayPlates()
+	{
+		for (int i = 0; i < hashgrid.grid.GetLength(0); i++)
+		{
+			for (int j = 0; j < hashgrid.grid.GetLength(1); j++)
+			{
+				SetPixelWorld(i, j, Colors.Black);
+			}
+		}
+
+
+		foreach (var plate in plates)
+		{
+			foreach(var p in plate.points)
+			{
+				Vector2 wp = p.WorldPos;
+				//Vector2I pix = WorldToPixel(wp);
+
+				Color c;
+
+				if (p.isBoundary && p.isColliding)
+					c = Colors.Cyan;
+				else if (p.isBoundary && !p.isColliding)
+					c = Colors.Blue;
+				else if (!p.isBoundary && p.isColliding)
+					c = Colors.Red;
+				else
+					c = new Color(
+						0.8f - (0.02f * plate.density), 
+						0.02f * plate.density,
+						0.8f - (0.02f * plate.density));
+
+				int x = Mathf.FloorToInt(Mathf.PosMod(wp.X, worldWidth));
+				int y = Mathf.FloorToInt(Mathf.PosMod(wp.Y, worldHeight));
+				//int y = Mathf.FloorToInt(Mathf.Clamp(wp.Y, 0, worldHeight - 1));
+
+				SetPixelWorld(x, y, c);
 			}
 		}
 	}
 
 	void AssignSiteIDs()
 	{
-		int width = cells.GetLength(0);
-		int height = cells.GetLength(1);
+		int width = worldWidth;
+		int height = worldHeight;
 		float spacing = 1f / PlatePointDensity;
 
 		for (float x = 0; x < width; x += spacing)
@@ -302,74 +362,39 @@ public partial class WorldMap : Node
 			{
 				float min = float.MaxValue;
 				Plate2D closestPlate = null;
-				Vector2 cellPos = new Vector2(x + 0.5f, y + 0.5f);
+				Vector2 cellPos = new Vector2(x, y);
 
 				foreach (var p in plates)
 				{
-					float dist = WrappedDistance(cellPos, p.origin, worldWidth);
-
-					if (dist < min)
+					//float px = p.origin.X % worldWidth;
+					//float py = p.origin.Y % worldHeight;
+					var px = Mathf.PosMod(p.origin.X, worldWidth);
+					var py = Mathf.PosMod(p.origin.Y, worldHeight);
+					float dist = WrappedDistance(cellPos, p.origin);
+					if (dist <= min)
 					{
 						min = dist;
 						closestPlate = p;
 					}
 				}
 
-				cells[(int)x, (int)y].plate = closestPlate;
-				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), cells[(int)x, (int)y].height);
+				//cells[(int)x, (int)y].plate = closestPlate;
+				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), 0f);
 			}
 		}
-
-		/*for (int i = 0; i < width; i++)
-		{
-			for (int j = 0; j < height; j++)
-			{
-				float min = float.MaxValue;
-				Plate2D closestPlate = null;
-				Vector2 cellPos = new Vector2(i + 0.5f, j + 0.5f);
-
-				foreach (var p in plates)
-				{
-					float dist = WrappedDistance(cellPos, p.origin, worldWidth);
-
-					if (dist < min)
-					{
-						min = dist;
-						closestPlate = p;
-					}
-				}
-
-				cells[i, j].plate = closestPlate;
-				//4 points per pixel. overkill i think? TODO: properly sample height from noise.
-				for (int sx = 0; sx < 2; sx++)
-				{
-					for (int sy = 0; sy < 2; sy++)
-					{
-						Vector2 p = new Vector2(
-							i + (sx + 0.5f) * 0.5f,
-							j + (sy + 0.5f) * 0.5f
-						);
-						var pt = closestPlate.AddPointToPlate(p, cells[i, j].height);
-					}
-				}
-
-
-				//var pt = closestPlate.AddPointToPlate(new Vector2(i, j),cells[i, j].height);
-			}
-		}*/
 	}
 
-	float WrappedDX(float a, float b, float width)
+	float WrappedDimension(float a, float b, float dimension)
 	{
 		float dx = Mathf.Abs(a - b);
-		return Mathf.Min(dx, width - dx);
+		return Mathf.Min(dx, dimension - dx);
 	}
 
-	float WrappedDistance(Vector2 a, Vector2 b, float width)
+	float WrappedDistance(Vector2 a, Vector2 b)
 	{
-		float dx = WrappedDX(a.X, b.X, width);
-		float dy = Mathf.Abs(a.Y - b.Y); // no vertical wrap
-		return Mathf.Sqrt(dx * dx + dy * dy);
+		float dx = WrappedDimension(a.X, b.X, worldWidth);
+		float dy = WrappedDimension(a.Y, b.Y, worldHeight);
+		return dx * dx + dy * dy;
 	}
 
 
@@ -402,6 +427,4 @@ public partial class WorldMap : Node
             c++;
         }
     }
-
-
 }

@@ -38,25 +38,6 @@ public partial class VoronoiWorld : Node
 
 		float mx = map.worldWidth;
 		float my = map.worldHeight;
-		/*
-        for (int i = 1; i <= dim; i++)
-		{
-			for (int j = 1; j <= dim; j++)
-			{
-				float x = (i * w) - (w/2) + random.RandiRange(-15, 15);
-                float y = (j * h) - (h/2) + random.RandiRange(-15, 15);
-                del.Call("add_point", new Vector2(x,y));
-                //del.Call("add_point", new Vector2(x		, y + my));	//down
-                //del.Call("add_point", new Vector2(x + mx, y + my));	//downright
-                del.Call("add_point", new Vector2(x - mx, y		)); //left
-                del.Call("add_point", new Vector2(x + mx, y		));	//right
-                //del.Call("add_point", new Vector2(x + mx, y - my));	//upright
-                //del.Call("add_point", new Vector2(x		, y - my));	//up
-                //del.Call("add_point", new Vector2(x - mx, y - my));	//upleft
-                //del.Call("add_point", new Vector2(x - mx, y + my));	//downleft
-                //del.Call("add_point", new Vector2(50 + i * 100 + random.RandiRange(-15, 15), 50 + j * 50 + random.RandiRange(-15, 15)));
-            }
-		}*/
 		PopulateWithPoints(numSites);
 
 		var tris = del.Call("triangulate").As<Godot.Collections.Array>();
@@ -124,8 +105,16 @@ public partial class VoronoiWorld : Node
             del.Call("add_point", new Vector2(x, y));
 
             del.Call("add_point", new Vector2(x - map.worldWidth, y)); //left
-            del.Call("add_point", new Vector2(x + map.worldWidth, y));	//right
-        }
+            del.Call("add_point", new Vector2(x + map.worldWidth, y));  //right
+
+			del.Call("add_point", new Vector2(x, y + map.worldHeight));  //up
+			del.Call("add_point", new Vector2(x, y - map.worldHeight));  //down
+
+			del.Call("add_point", new Vector2(x + map.worldWidth, y + map.worldHeight));
+			del.Call("add_point", new Vector2(x - map.worldWidth, y + map.worldHeight));
+			del.Call("add_point", new Vector2(x + map.worldWidth, y - map.worldHeight));
+			del.Call("add_point", new Vector2(x - map.worldWidth, y - map.worldHeight));
+		}
 	}
 
 	void DisplaySiteData()

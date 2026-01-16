@@ -8,34 +8,46 @@ using System.Threading.Tasks;
 public class PlatePoint
 {
 	public Vector2 localPos;
-	public Vector2 worldPos;    //The world position
+	public Vector2 WorldPos => plate.LocalToWorld(localPos);    //The world position
+
+	public Vector2 cachedWorldPos;
+
 	public float height;
 	public Plate2D plate;
 	public Vector2I gridIndex; //Index for the hashgrid
 
 	public List<PlatePoint> neighbours;
 
-	public bool isColliding = false;    //If the point is 'colliding' with another point on a different plate
-	public bool isBoundary = false;		//if egde of plate. if moves enough without colliding, spawn a new platepoint behind it.
+	public bool isActive = false;
 
-	float age;
+	public bool isColliding = false;    //If the point is 'colliding' with another point on a different plate
+	public bool isBoundary = false;     //if egde of plate. if moves enough without colliding, spawn a new platepoint behind it.
+
+	float age = 0f;
 	float crustThickness;
-	float distNoCollision;	//distance travelled without a collision.
+	float distNoCollision = 0f;	//distance travelled without a collision.
 
 	public PlatePoint(Vector2 localPos, float height, Plate2D plate)
 	{
 		this.localPos = localPos;
 		this.height = height;
 		this.plate = plate;
+		this.isActive = false;
 		neighbours = new List<PlatePoint>();
 	}
+
+	/*public Vector2 GetWorldPos()
+	{
+		worldPos = plate.origin + plate.position + this.localPos.Rotated(Mathf.DegToRad(plate.rotation));
+		return worldPos;
+	}*/
 }
 
 public partial class Plate2D
 {
 	public WorldMap map;
     public Vector2 origin; //The origin of the plate created from voronoi polygons. not the actual center
-	public Vector2 position;
+	public Vector2 offset;
 	public Vector2 center;
 	public float rotation; //in degrees
 
@@ -57,7 +69,8 @@ public partial class Plate2D
     {
 		this.map = map;
         this.origin = origin;
-		this.position = Vector2.Zero;
+		this.offset = Vector2.Zero;
+		this.center = origin;
 		points = new List<PlatePoint>();
         this.ID = ID;
     }
@@ -66,58 +79,67 @@ public partial class Plate2D
 	{
 		float dx = worldPos.X - origin.X;
 
-		// wrap X into [-width/2, width/2]
 		float halfW = map.worldWidth * 0.5f;
 		if (dx > halfW) dx -= map.worldWidth;
 		if (dx < -halfW) dx += map.worldWidth;
 
 		float dy = worldPos.Y - origin.Y;
-
+		halfW = map.worldHeight * 0.5f;
+		if (dy > halfW) dy -= map.worldHeight;
+		if (dy < -halfW) dy += map.worldHeight;
 		return new Vector2(dx, dy);
 	}
 
-	void UpdatePointWorldPosition(PlatePoint p)
+
+	public Vector2 LocalToWorld(Vector2 local)
 	{
-		Vector2 world = origin + position + p.localPos.Rotated(Mathf.DegToRad(rotation));
+		Vector2 rot = local.Rotated(Mathf.DegToRad(rotation));
 
+		Vector2 world = origin + offset + rot;
 		world.X = Mathf.PosMod(world.X, map.worldWidth);
+		world.Y = Mathf.PosMod(world.Y, map.worldHeight);
+		return world;
+	}
 
-		map.hashgrid.MovePoint(p, world);
+	public void UpdatePointInHashGrid(PlatePoint p)
+	{
+		Vector2 oldWorld = new Vector2(p.WorldPos.X, p.WorldPos.Y);
+		map.hashgrid.MovePoint(p);
+		p.cachedWorldPos = oldWorld;
 	}
 
 	public PlatePoint AddPointToPlate(Vector2 worldPos, float height)
 	{
 		Vector2 local = WorldToLocal(worldPos);
+		Vector2 oldWorld = new Vector2(worldPos.X, worldPos.Y);
 		var p = new PlatePoint(local, height, this);
 		points.Add(p);
-		UpdatePointWorldPosition(p);
+		map.hashgrid.AddPoint(p);
+		p.cachedWorldPos = oldWorld;
 		return p;
 
 	}
 
 	public void MovePlate()
 	{
-		position += (MovementDirection * MovementSpeed);
-		//position.X = Mathf.PosMod(position.X, map.worldWidth);
-
-
+		offset += (MovementDirection * MovementSpeed);
+		offset.X = offset.X % map.worldWidth;
+		offset.Y = offset.Y % map.worldHeight;
+		rotation += MovementSpeed;
 		foreach (var p in points)
 		{
-			UpdatePointWorldPosition(p);
+			if (p.isActive)
+				UpdatePointInHashGrid(p);
 		}
 	}
 
 	public void RotatePlate(float degrees)
 	{
-		/* func rotated_point(_center, _angle, _distance):
-    	return _center + Vector2(sin(_angle),cos(_angle)) * _distance*/
 		rotation += degrees;
 		foreach(var p in points)
 		{
-			//var diff = p.worldPos - this.origin;
-			//var rotated = diff.Rotated(Mathf.DegToRad(degrees)) + this.origin;
-			UpdatePointWorldPosition(p);
-
+			if (p.isActive)
+				UpdatePointInHashGrid(p);
 		}
 	}
 }

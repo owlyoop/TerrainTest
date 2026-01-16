@@ -26,12 +26,16 @@ public partial class MapViewer : Node
 	MultiMeshInstance2D plateOverlay;
 	MultiMesh mm;
 
+	int plateIndex = 0;
+
 	public override void _Ready()
 	{
         cam1.Position = new Vector2(map.worldWidth / 2f, map.worldHeight / 2f);
         cam1.Zoom *= 2.5f;
         OnCameraZoom();
-    }
+		map.OnTimestepCompleted += HighlightSelectedPlate;
+
+	}
 
     public void GetInput()
     {
@@ -50,9 +54,10 @@ public partial class MapViewer : Node
         cam1.Scale = new Vector2(1 / cam1.Zoom.X, 1 / cam1.Zoom.Y);
     }
 
-    void DisplayPlateInfo(Plate2D plate)
+    void DisplayPlateInfo()
     {
-        SelectedPlatePosition.Text = plate.origin.ToString();
+		var plate = map.GetPlateByIndex(plateIndex);
+		SelectedPlatePosition.Text = plate.origin.ToString();
 		SelectedPlateRotation.Text = plate.rotation.ToString();
         SelectedPlateDensity.Text = plate.density.ToString();
     }
@@ -65,10 +70,10 @@ public partial class MapViewer : Node
 			n.QueueFree();
 		}
 
-		int i = (int)value;
-		var plate = map.GetPlateByIndex(i);
-		HighlightSelectedPlate(plate);
-		DisplayPlateInfo(plate);
+		plateIndex = (int)value;
+		
+		HighlightSelectedPlate();
+		DisplayPlateInfo();
 
 	}
 
@@ -79,7 +84,7 @@ public partial class MapViewer : Node
         {
             HighlightSelectedCell(cell);
             SelectedCellInfo.Text = cell.x.ToString() + ", " + cell.y.ToString();
-            NumPlatePointsInCell.Text = map.hashgrid.grid[cell.x, cell.y].Count().ToString();
+            NumPlatePointsInCell.Text = map.hashgrid.grid[cell.x, cell.y].points.Count().ToString();
         }
     }
 
@@ -113,27 +118,29 @@ public partial class MapViewer : Node
 
 	
 
-	void HighlightSelectedPlate(Plate2D plate)
+	void HighlightSelectedPlate()
 	{
+		
 		if (mm != null)
 			mm.InstanceCount = 0;
-
+		var plate = map.GetPlateByIndex(plateIndex);
 		if (mm == null || mm.InstanceCount != plate.points.Count())
 		{
-			CreatePlateOverlay(plate);
+			CreatePlateOverlay();
 		}
 
 
 		for (int i = 0; i < plate.points.Count(); i++)
 		{
 			var p = plate.points[i];
-			mm.SetInstanceTransform2D(i, new Transform2D(Mathf.DegToRad(plate.rotation), p.worldPos + new Vector2(0.0f, 0.0f)));
+
+			mm.SetInstanceTransform2D(i, new Transform2D(Mathf.DegToRad(plate.rotation), p.WorldPos + new Vector2(0.0f, 0.0f)));
 		}
 	}
 
-	void CreatePlateOverlay(Plate2D plate)
+	void CreatePlateOverlay()
 	{
-
+		var plate = map.GetPlateByIndex(plateIndex);
 		mm = new MultiMesh();
 		mm.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
 		mm.InstanceCount = plate.points.Count();
