@@ -300,6 +300,24 @@ public partial class HashGrid
 			for (int j = 0; j < height; j++)
 			{
 				var cell = grid[i, j];
+				/*if (cell.points.Count >= 8)
+				{
+					var plate = cell.points[0].plate;
+					int iter = 0;
+					Vector2 avg = Vector2.Zero;
+					float avgH = 0;
+					foreach (var p in cell.points)
+					{
+						avg += p.WorldPos;
+						avgH += p.height;
+						iter++;
+						p.plate.points.Remove(p);
+					}
+					cell.points.Clear();
+
+					avg = avg / iter;
+					var newp = plate.AddPointToPlate(new Vector2(i,j), avgH / iter);
+				}*/
 				if (!cell.containsCollision || cell.points.Count < 1)
 					continue;
 
@@ -310,6 +328,7 @@ public partial class HashGrid
 						bestPlate = p.plate;
 				}
 
+				var h = 0f;
 				for (int k = 0; k < cell.points.Count; k++)
 				{
 					var p = cell.points[k];
@@ -317,25 +336,28 @@ public partial class HashGrid
 					{
 						p.plate.points.Remove(p);
 						RemovePoint(p);
-						p.plate = bestPlate;
-						AddPoint(p);
-						bestPlate.points.Add(p);
+						//p.plate = bestPlate;
+						if (p.height > 0f)
+							h += p.height * 0.8f;
+						else h += 0.1f;
+						//AddPoint(p);
+						//bestPlate.points.Add(p);
+						//bestPlate.AddExistingPointToPlate(p);
+					}
+				}
+
+				for (int k = 0; k < cell.points.Count; k++)
+				{
+					var p = cell.points[k];
+					if (p.plate.ID == bestPlate.ID)
+					{
+						p.height += h;
 					}
 				}
 
 				cell.containsCollision = false;
 
-				if (cell.points.Count >= 3)
-				{
-					var plate = cell.points[0].plate;
-					foreach(var p in cell.points)
-					{
-						if (p.plate.ID != plate.ID)
-						{
-							GD.Print("HOW");
-						}
-					}
-				}
+				
 			}
 		}
 	}

@@ -117,7 +117,17 @@ public partial class Plate2D
 		map.hashgrid.AddPoint(p);
 		p.cachedWorldPos = oldWorld;
 		return p;
+	}
 
+	public void AddExistingPointToPlate(PlatePoint point)
+	{
+		//need to find new localpos
+		var newpos = point.plate.LocalToWorld(point.localPos);
+		point.plate.points.Remove(point);
+		point.plate = this;
+		point.localPos = WorldToLocal(newpos);
+		points.Add(point);
+		//map.hashgrid.AddPoint(point);
 	}
 
 	public void MovePlate()
@@ -125,7 +135,7 @@ public partial class Plate2D
 		offset += (MovementDirection * MovementSpeed);
 		offset.X = offset.X % map.worldWidth;
 		offset.Y = offset.Y % map.worldHeight;
-		rotation += MovementSpeed;
+		rotation += MovementSpeed * 0.2f;
 		foreach (var p in points)
 		{
 			if (p.isActive)

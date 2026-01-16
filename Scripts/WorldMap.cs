@@ -64,7 +64,7 @@ public partial class WorldMap : Node
 			float speed = (float)GD.RandRange(0f, 1f);
 			int d = GD.RandRange(1, 32);
 			p.MovementDirection = new Vector2(rx,ry);
-			p.MovementSpeed = 0.06f * speed;
+			p.MovementSpeed = 0.1f * speed;
 			p.density = d;
 		}
 		hashgrid.InitializeBoundaries();
@@ -337,15 +337,16 @@ public partial class WorldMap : Node
 						0.02f * plate.density,
 						0.8f - (0.02f * plate.density));*/
 
-				c = new Color(
+				/*c = new Color(
 						0.8f - (0.02f * plate.density),
 						0.02f * plate.density,
-						0.8f - (0.02f * plate.density));
+						0.8f - (0.02f * plate.density));*/
 
-				if (p.isActive)
-					c *= Colors.Green;
-				else c *= Colors.Red;
-
+				//if (p.isActive)
+				//	c *= Colors.Green;
+				//else c *= Colors.Red;
+				c = Colors.DarkSeaGreen;
+				c *= (p.height + 0.45f);
 				int x = Mathf.FloorToInt(Mathf.PosMod(wp.X, worldWidth));
 				int y = Mathf.FloorToInt(Mathf.PosMod(wp.Y, worldHeight));
 
@@ -383,7 +384,7 @@ public partial class WorldMap : Node
 				}
 
 				//cells[(int)x, (int)y].plate = closestPlate;
-				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), 0f);
+				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), noiseGen.GetNoise2D(cellPos.X, cellPos.Y));
 			}
 		}
 	}
