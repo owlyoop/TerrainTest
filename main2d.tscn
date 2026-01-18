@@ -9,9 +9,8 @@
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_w74eu"]
 noise_type = 3
-seed = 51
-fractal_octaves = 3
-fractal_weighted_strength = 0.5
+seed = 190
+fractal_weighted_strength = 0.2
 cellular_return_type = 0
 domain_warp_type = 2
 domain_warp_amplitude = 32.0
@@ -203,7 +202,7 @@ noiseTex = SubResource("NoiseTexture2D_1w0k7")
 mapDisplay = NodePath("../MeshInstance2D")
 voronoi = NodePath("../VoronoiMap")
 timer = NodePath("Timer")
-PlatePointDensity = 1.2
+PlatePointDensity = 1.25
 
 [node name="Timer" type="Timer" parent="WorldMap"]
 wait_time = 0.02

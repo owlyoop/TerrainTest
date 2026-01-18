@@ -78,16 +78,18 @@ public partial class Plate2D
 	Vector2 WorldToLocal(Vector2 worldPos)
 	{
 		float dx = worldPos.X - origin.X;
-
+		
 		float halfW = map.worldWidth * 0.5f;
 		if (dx > halfW) dx -= map.worldWidth;
 		if (dx < -halfW) dx += map.worldWidth;
 
+
 		float dy = worldPos.Y - origin.Y;
+
 		halfW = map.worldHeight * 0.5f;
 		if (dy > halfW) dy -= map.worldHeight;
 		if (dy < -halfW) dy += map.worldHeight;
-		return new Vector2(dx, dy);
+		return new Vector2(dx, dy).Rotated(-Mathf.DegToRad(rotation));
 	}
 
 
@@ -103,7 +105,7 @@ public partial class Plate2D
 
 	public void UpdatePointInHashGrid(PlatePoint p)
 	{
-		Vector2 oldWorld = new Vector2(p.WorldPos.X, p.WorldPos.Y);
+		Vector2 oldWorld = new Vector2(p.cachedWorldPos.X, p.cachedWorldPos.Y);
 		map.hashgrid.MovePoint(p);
 		p.cachedWorldPos = oldWorld;
 	}
@@ -122,24 +124,41 @@ public partial class Plate2D
 	public void AddExistingPointToPlate(PlatePoint point)
 	{
 		//need to find new localpos
-		var newpos = point.plate.LocalToWorld(point.localPos);
+		//var newpos = this.WorldToLocal(point.WorldPos);
+		Vector2 world = point.WorldPos;
 		point.plate.points.Remove(point);
 		point.plate = this;
-		point.localPos = WorldToLocal(newpos);
+		point.localPos = WorldToLocal(world);
 		points.Add(point);
-		//map.hashgrid.AddPoint(point);
+
+
+
 	}
 
 	public void MovePlate()
 	{
+		foreach (var p in points)
+		{
+			p.cachedWorldPos = new Vector2(p.WorldPos.X, p.WorldPos.Y);
+		}
 		offset += (MovementDirection * MovementSpeed);
 		offset.X = offset.X % map.worldWidth;
 		offset.Y = offset.Y % map.worldHeight;
-		rotation += MovementSpeed * 0.2f;
+		rotation += MovementSpeed * 1f;
 		foreach (var p in points)
 		{
-			if (p.isActive)
-				UpdatePointInHashGrid(p);
+			UpdatePointInHashGrid(p);
+
+			var x = p.gridIndex.X;
+			var y = p.gridIndex.Y;
+			var cell = map.hashgrid.grid[x, y];
+
+			//moving every platepoint is a bottleneck, esp if i want 1.71 platepoint density.
+			//
+			//if (cell.containsCollision || cell.containsBoundary)
+			//{
+
+			//}
 		}
 	}
 
@@ -148,8 +167,15 @@ public partial class Plate2D
 		rotation += degrees;
 		foreach(var p in points)
 		{
-			if (p.isActive)
+			//UpdatePointInHashGrid(p);
+
+			var x = p.gridIndex.X;
+			var y = p.gridIndex.Y;
+			var cell = map.hashgrid.grid[x, y];
+			if (cell.containsCollision || cell.containsBoundary)
+			{
 				UpdatePointInHashGrid(p);
+			}
 		}
 	}
 }

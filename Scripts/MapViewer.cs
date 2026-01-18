@@ -85,7 +85,18 @@ public partial class MapViewer : Node
             HighlightSelectedCell(cell);
             SelectedCellInfo.Text = cell.x.ToString() + ", " + cell.y.ToString();
             NumPlatePointsInCell.Text = map.hashgrid.grid[cell.x, cell.y].points.Count().ToString();
-        }
+
+			GD.Print("----------");
+			//GD.Print(cell.x.ToString() + ", " + cell.y.ToString());
+			
+			//GD.Print(map.hashgrid.GetIndexFromPosition(new Vector2(cell.x, cell.y)));
+			GD.Print(map.hashgrid.grid[cell.x, cell.y].points.Count().ToString());
+			foreach(var p in map.hashgrid.grid[cell.x, cell.y].points)
+			{
+				GD.Print(p.plate.ID, " , grid idx: ", p.gridIndex.X, " ", p.gridIndex.Y);
+			}
+			GD.Print("----------");
+		}
     }
 
     void HighlightSelectedCell(Cell2D cell)
@@ -185,7 +196,7 @@ public partial class MapViewer : Node
 			    //GD.Print(GetViewport().GetMousePosition());
                 var viewToWorld = cam1.GetCanvasTransform().AffineInverse();
                 var worldPos = viewToWorld * GetViewport().GetMousePosition();
-                GD.Print(worldPos);
+                //GD.Print(worldPos);
                 OnCellSelected(map.GetCellFromPosition(worldPos));
 			}
             else

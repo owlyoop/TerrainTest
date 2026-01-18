@@ -64,7 +64,7 @@ public partial class WorldMap : Node
 			float speed = (float)GD.RandRange(0f, 1f);
 			int d = GD.RandRange(1, 32);
 			p.MovementDirection = new Vector2(rx,ry);
-			p.MovementSpeed = 0.1f * speed;
+			p.MovementSpeed = 0.24f * speed;
 			p.density = d;
 		}
 		hashgrid.InitializeBoundaries();
@@ -84,26 +84,25 @@ public partial class WorldMap : Node
 		//move all tect plates
 		for (int i = 0; i < plates.Count; i++)
 		{
-			//plates[i].RotatePlate(plates[i].MovementSpeed);
 			plates[i].MovePlate();
 		}
 		var end = Time.GetTicksUsec();
-		var workertime = (end - start) / 100000f;
-		GD.Print("Worker time for moveplate: ", workertime);
+		var workertime = (end - start) / 1000f;
+		GD.Print("Work time for moveplate: ", workertime);
 
 		start = Time.GetTicksUsec();
 		hashgrid.UpdatePoints();
 		end = Time.GetTicksUsec();
-		workertime = (end - start) / 100000f;
-		GD.Print("Worker time for updatepoints: ", workertime);
+		workertime = (end - start) / 1000f;
+		GD.Print("Work time for updatepoints: ", workertime);
 
 
 		//check for collisions
 		start = Time.GetTicksUsec();
 		hashgrid.Collide();
 		end = Time.GetTicksUsec();
-		workertime = (end - start) / 100000f;
-		GD.Print("Worker time for collide: ", workertime);
+		workertime = (end - start) / 1000f;
+		GD.Print("Work time for collide: ", workertime);
 
 		DisplayPlates();
 		//DisplayHashgridCounts();
@@ -125,6 +124,7 @@ public partial class WorldMap : Node
 
     public Plate2D GetPlateByIndex(int index)
     {
+		index = index % plates.Count;
         return plates[index];
     }
     void GenerateCells(int width, int height)
@@ -312,6 +312,19 @@ public partial class WorldMap : Node
 			for (int j = 0; j < hashgrid.grid.GetLength(1); j++)
 			{
 				SetPixelWorld(i, j, Colors.Black);
+
+				/*var cell = hashgrid.grid[i, j];
+				var h = 0f;
+				int count = 0;
+				foreach(var p in cell.points)
+				{
+					h += p.height;
+					count++;
+				}
+				h = h / count;
+				var c = Colors.DarkSeaGreen;
+				c *= (h + 0.5f);
+				SetPixelWorld(i, j, c);*/
 			}
 		}
 
@@ -325,7 +338,7 @@ public partial class WorldMap : Node
 
 				Color c;
 
-				/*if (p.isBoundary && p.isColliding)
+				if (p.isBoundary && p.isColliding)
 					c = Colors.Cyan;
 				else if (p.isBoundary && !p.isColliding)
 					c = Colors.Blue;
@@ -335,18 +348,17 @@ public partial class WorldMap : Node
 					c = new Color(
 						0.8f - (0.02f * plate.density), 
 						0.02f * plate.density,
-						0.8f - (0.02f * plate.density));*/
+						0.8f - (0.02f * plate.density));
 
-				/*c = new Color(
-						0.8f - (0.02f * plate.density),
-						0.02f * plate.density,
-						0.8f - (0.02f * plate.density));*/
+				var gridcell = hashgrid.grid[p.gridIndex.X, p.gridIndex.Y];
 
-				//if (p.isActive)
-				//	c *= Colors.Green;
-				//else c *= Colors.Red;
-				c = Colors.DarkSeaGreen;
-				c *= (p.height + 0.45f);
+				if (gridcell.containsCollision || gridcell.containsBoundary)
+					c = Colors.Green;
+				else c = Colors.Red;
+
+				//c = Colors.DarkSeaGreen;
+				//c *= (p.height + 0.5f);
+
 				int x = Mathf.FloorToInt(Mathf.PosMod(wp.X, worldWidth));
 				int y = Mathf.FloorToInt(Mathf.PosMod(wp.Y, worldHeight));
 
