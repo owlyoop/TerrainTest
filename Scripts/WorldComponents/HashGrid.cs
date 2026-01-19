@@ -7,16 +7,20 @@ using System.Collections.Generic;
 public class GridCell
 {
 	public List<PlatePoint> points;
-	public bool isActive = false;
 
-	public bool containsBoundary = false;	//If any point in this gridcell is a plate boundary
-	public bool containsCollision = false;  //If any point in this gridcell is a plate collision
-	public bool hasCollisionChecked = false;	//Used for the update functions that check for collisions/boundaries to avoid repeated checks.
+	public bool ContainsBoundary { get; private set; }	//If any point in this gridcell is a plate boundary
+	public bool ContainsCollision { get; private set; }  //If any point in this gridcell is a plate collision
+	public bool HasCollisionChecked { get; private set; }   //Used for the update functions that check for collisions/boundaries to avoid repeated checks.
 
 	public GridCell()
 	{
 		points = new List<PlatePoint>();
+		ContainsBoundary = false;
+		ContainsCollision = false;
+		HasCollisionChecked = false;
 	}
+
+	public bool IsEmpty() => points.Count == 0;
 
 	public void AddPoint(PlatePoint point)
 	{
@@ -28,17 +32,35 @@ public class GridCell
 		points.Remove(point);
 	}
 
-	public bool CheckIfActive()
+	public void MarkAsEmpty()
 	{
-		if (containsBoundary) return true;
-		else if (containsCollision) return true;
-		else return false;
+		this.ContainsCollision = false;
+		this.ContainsBoundary = false;
+		foreach(var p in points)
+		{
+			p.isColliding = false;
+			p.isBoundary = false;
+			p.isActive = false;
+		}
 	}
-	public bool CheckIfEmpty()
+
+	public void MarkAsColliding(bool choice)
 	{
-		if (points.Count == 0) 
-			return true; 
-		else return false;
+		this.ContainsCollision = choice;
+		foreach (var p in this.points)
+		{
+			p.isColliding = choice;
+		}
+			
+	}
+
+	public void MarkAsBoundary(bool choice)
+	{
+		this.ContainsBoundary = choice;
+		foreach (var p in this.points)
+		{
+			p.isBoundary = choice;
+		}
 	}
 }
 
@@ -141,12 +163,12 @@ public partial class HashGrid
 			for (int j = 0; j < height; j++)
 			{
 				var cell = grid[i, j];
-
-				if (cell.CheckIfEmpty())
+				bool boundary = false;
+				bool collision = false;
+				if (cell.IsEmpty())
 				{
-					cell.containsBoundary = false;
-					cell.containsCollision = false;
-					cell.isActive = false;
+					cell.MarkAsColliding(false);
+					cell.MarkAsBoundary(false);
 					for (int dx = -1; dx <= 1; dx++)
 					{
 						for (int dy = -1; dy <= 1; dy++)
@@ -158,14 +180,9 @@ public partial class HashGrid
 							if (CheckIfIndexInBounds(di, dj))
 							{
 								var otherCell = grid[di, dj];
-								if (!otherCell.CheckIfEmpty())
+								if (!otherCell.IsEmpty())
 								{
-									otherCell.containsBoundary = true;
-									foreach(var p in otherCell.points)
-									{
-										p.isActive = true;
-										p.isBoundary = true;
-									}
+									otherCell.MarkAsBoundary(true);
 								}
 									
 							}
@@ -178,17 +195,13 @@ public partial class HashGrid
 					if (p.height > 0.9f)
 						p.height -= 0.001f;
 				}
+
 				//if (cell.isActive == false) continue;
 				//if (cell.containsBoundary == false && cell.containsCollision == false) continue;
-				bool collision = false;
-				if (!cell.CheckIfEmpty())
+
+				if (!cell.IsEmpty())
 				{
-					cell.containsBoundary = false;
-					cell.containsCollision = false;
-					foreach (var p in cell.points)
-					{
-						p.isActive = false;
-					}
+					cell.MarkAsEmpty();
 
 					//check if cell contains points from different plates
 					
@@ -203,26 +216,19 @@ public partial class HashGrid
 					}
 					if (collision)
 					{
-						cell.containsCollision = true;
-						cell.containsBoundary = true;
-						cell.isActive = true;
-						foreach (var p in cell.points)
-						{
-							p.isColliding = true;
-							p.isActive = true;
-							p.isBoundary = true;
-						}
+						cell.MarkAsColliding(true);
 					}
 					else
 					{
-						cell.containsCollision = false;
+						//cell.ContainsCollision = false;
 						//cell.containsBoundary = false;
+						cell.MarkAsColliding(false);
 					}
 				}
 				
 
 				//check bordering cells
-				if (!cell.CheckIfEmpty())
+				if (!cell.IsEmpty())
 				{
 					//Check in the 8 directions around the gridpoint
 					for (int dx = -1; dx <= 1; dx++)
@@ -236,9 +242,9 @@ public partial class HashGrid
 							if (CheckIfIndexInBounds(di, dj))
 							{
 								var otherCell = grid[di, dj];
-								if (otherCell.CheckIfEmpty())
+								if (otherCell.IsEmpty())
 								{
-									cell.containsBoundary = true;
+									cell.MarkAsBoundary(true);
 									continue;
 								}
 
@@ -261,19 +267,8 @@ public partial class HashGrid
 
 									if (otherplate)
 									{
-										cell.containsBoundary = true;
-										otherCell.containsBoundary = true;
-										for (int p = otherCell.points.Count - 1; p >= 0; p--)
-										{
-											otherCell.points[p].isActive = true;
-											otherCell.points[p].isBoundary = true;
-											//otherCell.points[p].plate.UpdatePointInHashGrid(otherCell.points[p]);
-										}
-										foreach (var p in otherCell.points)
-										{
-											p.isBoundary = true;
-											p.isActive = true;
-										}
+										cell.MarkAsBoundary(true);
+										otherCell.MarkAsBoundary(true);
 									}
 								}
 							}
@@ -282,14 +277,13 @@ public partial class HashGrid
 				}
 
 				//final point categorization
-				if (cell.containsBoundary)
+				/*if (cell.ContainsBoundary)
 				{
 					foreach (var p in cell.points)
 					{
 						p.isBoundary = true;
 						p.isActive = true;
 					}
-					cell.isActive = true;
 				}
 				else
 				{
@@ -297,14 +291,13 @@ public partial class HashGrid
 						p.isBoundary = false;
 				}
 
-				if (cell.containsCollision)
+				if (cell.ContainsCollision)
 				{
 					foreach (var p in cell.points)
 					{
 						p.isColliding = true;
 						p.isActive = true;
 					}
-					cell.isActive = true;
 				}
 				else
 				{
@@ -312,14 +305,13 @@ public partial class HashGrid
 						p.isColliding = false;
 				}
 
-				if (!cell.containsCollision && !cell.containsBoundary)
+				if (!cell.ContainsCollision && !cell.ContainsBoundary)
 				{
-					cell.isActive = false;
 					foreach (var p in cell.points)
 					{
 						p.isActive = false;
 					}
-				}
+				}*/
 			}
 		}
 	}
@@ -340,7 +332,6 @@ public partial class HashGrid
 				var point = grid[i, j].points[0];
 				point.isActive = false;
 				point.isBoundary = false;
-				grid[i, j].isActive = true;
 
 				for (int dx = -1; dx <= 1; dx++)
 				{
@@ -350,22 +341,14 @@ public partial class HashGrid
 						//indexes of the bordering gridcell. i,j is the original center, di,dj is one of 8 directions.
 						int di = i + dx;
 						int dj = j + dy;
-						//di = di % width;
-						//dj = dj % height;
 						if (CheckIfIndexInBounds(di, dj))
 						{
 							if (grid[di, dj].points.Count > 0)
 							{
 								if (grid[di, dj].points[0].plate != point.plate)
 								{
-									grid[i, j].isActive = true;
-									grid[i, j].containsBoundary = true;
-									grid[di, dj].isActive = true;
-									grid[di, dj].containsBoundary = true;
-									point.isBoundary = true;
-									point.isActive = true;
-									grid[di, dj].points[0].isActive = true;
-									grid[di, dj].points[0].isBoundary = true;
+									grid[i, j].MarkAsBoundary(true);
+									grid[di, dj].MarkAsBoundary(true);
 								}
 							}
 						}
@@ -405,7 +388,7 @@ public partial class HashGrid
 					AddPoint(newp); AddPoint(newp2);
 				}*/
 
-				if (!cell.containsCollision || cell.points.Count < 1)
+				if (!cell.ContainsCollision || cell.points.Count < 1)
 					continue;
 
 				var bestPlate = cell.points[0].plate;
@@ -422,18 +405,18 @@ public partial class HashGrid
 					if (p.plate.ID != bestPlate.ID)
 					{
 						//Vector2 w0 = p.WorldPos;
-						/*p.height -= 0.004f;
+						p.height -= 0.01f;
 						if (p.height < -0.5f)
 						{
 							p.plate.points.Remove(p);
 							RemovePoint(p);
-						}*/
+						}
 
-						p.plate.points.Remove(p);
-						RemovePoint(p);
+						//p.plate.points.Remove(p);
+						//RemovePoint(p);
 						if (p.height > 0f)
-							h += p.height * 0.2f;
-						else h += 0.02f;
+							h += p.height * 0.01f;
+						else h += p.height * 0.005f;
 
 						//AddPoint(p);
 						//bestPlate.points.Add(p);
@@ -466,7 +449,6 @@ public partial class HashGrid
 					{
 						if (dx == 0 && dy == 0)
 						{
-							//cell.containsCollision = false; continue;
 							continue;
 						}
 						int di = i + dx;
@@ -474,17 +456,10 @@ public partial class HashGrid
 						if (CheckIfIndexInBounds(di, dj))
 						{
 							var othercell = grid[di, dj];
-							othercell.containsBoundary = true;
+							othercell.MarkAsBoundary(true);
 							for (int p = othercell.points.Count - 1; p >= 0; p--)
 							{
-								othercell.points[p].isActive = true;
 								othercell.points[p].plate.UpdatePointInHashGrid(othercell.points[p]);
-								//ReactivatePoint(othercell.points[p], othercell.points[p].cachedWorldPos);
-							}
-							foreach (var p in othercell.points)
-							{
-								p.isActive = true;
-								p.isBoundary = true;
 							}
 						}
 					}

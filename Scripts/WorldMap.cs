@@ -352,12 +352,12 @@ public partial class WorldMap : Node
 
 				var gridcell = hashgrid.grid[p.gridIndex.X, p.gridIndex.Y];
 
-				if (gridcell.containsCollision || gridcell.containsBoundary)
-					c = Colors.Green;
-				else c = Colors.Red;
+				//if (gridcell.containsCollision || gridcell.containsBoundary)
+				//	c = Colors.Green;
+				//else c = Colors.Red;
 
-				//c = Colors.DarkSeaGreen;
-				//c *= (p.height + 0.5f);
+				c = Colors.DarkSeaGreen;
+				c *= (p.height + 0.5f);
 
 				int x = Mathf.FloorToInt(Mathf.PosMod(wp.X, worldWidth));
 				int y = Mathf.FloorToInt(Mathf.PosMod(wp.Y, worldHeight));

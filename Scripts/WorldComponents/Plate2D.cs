@@ -144,7 +144,7 @@ public partial class Plate2D
 		offset += (MovementDirection * MovementSpeed);
 		offset.X = offset.X % map.worldWidth;
 		offset.Y = offset.Y % map.worldHeight;
-		rotation += MovementSpeed * 1f;
+		rotation += MovementSpeed * 0.1f;
 		foreach (var p in points)
 		{
 			UpdatePointInHashGrid(p);
@@ -172,7 +172,7 @@ public partial class Plate2D
 			var x = p.gridIndex.X;
 			var y = p.gridIndex.Y;
 			var cell = map.hashgrid.grid[x, y];
-			if (cell.containsCollision || cell.containsBoundary)
+			if (cell.ContainsCollision || cell.ContainsBoundary)
 			{
 				UpdatePointInHashGrid(p);
 			}

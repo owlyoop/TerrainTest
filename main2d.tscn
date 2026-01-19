@@ -8,7 +8,7 @@
 [sub_resource type="QuadMesh" id="QuadMesh_xdepj"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_w74eu"]
-noise_type = 3
+noise_type = 0
 seed = 190
 fractal_weighted_strength = 0.2
 cellular_return_type = 0
@@ -196,13 +196,13 @@ lineWidth = 0.16
 
 [node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("mapDisplay", "voronoi", "timer")]
 script = ExtResource("3_r2hvk")
-worldHeight = 140
+worldWidth = 150
 noiseGen = SubResource("FastNoiseLite_w74eu")
 noiseTex = SubResource("NoiseTexture2D_1w0k7")
 mapDisplay = NodePath("../MeshInstance2D")
 voronoi = NodePath("../VoronoiMap")
 timer = NodePath("Timer")
-PlatePointDensity = 1.25
+PlatePointDensity = 1.5
 
 [node name="Timer" type="Timer" parent="WorldMap"]
 wait_time = 0.02
