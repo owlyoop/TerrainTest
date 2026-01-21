@@ -106,7 +106,7 @@ public partial class Plate2D
 	public void UpdatePointInHashGrid(PlatePoint p)
 	{
 		Vector2 oldWorld = new Vector2(p.cachedWorldPos.X, p.cachedWorldPos.Y);
-		map.hashgrid.MovePoint(p);
+		map.worldGrid.MovePoint(p);
 		p.cachedWorldPos = oldWorld;
 	}
 
@@ -116,7 +116,7 @@ public partial class Plate2D
 		Vector2 oldWorld = new Vector2(worldPos.X, worldPos.Y);
 		var p = new PlatePoint(local, height, this);
 		points.Add(p);
-		map.hashgrid.AddPoint(p);
+		map.worldGrid.AddPoint(p);
 		p.cachedWorldPos = oldWorld;
 		return p;
 	}
@@ -151,7 +151,7 @@ public partial class Plate2D
 
 			var x = p.gridIndex.X;
 			var y = p.gridIndex.Y;
-			var cell = map.hashgrid.grid[x, y];
+			var cell = map.worldGrid.grid[x, y];
 
 			//moving every platepoint is a bottleneck, esp if i want 1.71 platepoint density.
 			//
@@ -171,7 +171,7 @@ public partial class Plate2D
 
 			var x = p.gridIndex.X;
 			var y = p.gridIndex.Y;
-			var cell = map.hashgrid.grid[x, y];
+			var cell = map.worldGrid.grid[x, y];
 			if (cell.ContainsCollision || cell.ContainsBoundary)
 			{
 				UpdatePointInHashGrid(p);

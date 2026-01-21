@@ -84,14 +84,14 @@ public partial class MapViewer : Node
         {
             HighlightSelectedCell(cell);
             SelectedCellInfo.Text = cell.x.ToString() + ", " + cell.y.ToString();
-            NumPlatePointsInCell.Text = map.hashgrid.grid[cell.x, cell.y].points.Count().ToString();
+            NumPlatePointsInCell.Text = map.worldGrid.grid[cell.x, cell.y].points.Count().ToString();
 
 			GD.Print("----------");
 			//GD.Print(cell.x.ToString() + ", " + cell.y.ToString());
 			
 			//GD.Print(map.hashgrid.GetIndexFromPosition(new Vector2(cell.x, cell.y)));
-			GD.Print(map.hashgrid.grid[cell.x, cell.y].points.Count().ToString());
-			foreach(var p in map.hashgrid.grid[cell.x, cell.y].points)
+			GD.Print(map.worldGrid.grid[cell.x, cell.y].points.Count().ToString());
+			foreach(var p in map.worldGrid.grid[cell.x, cell.y].points)
 			{
 				GD.Print(p.plate.ID, " , grid idx: ", p.gridIndex.X, " ", p.gridIndex.Y);
 			}

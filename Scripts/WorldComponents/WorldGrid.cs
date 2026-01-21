@@ -64,13 +64,14 @@ public class GridCell
 	}
 }
 
-public partial class HashGrid
+//Class used for spatially tracking platepoints for collision detecting
+public partial class WorldGrid
 {
 	public GridCell[,] grid;
 	int Width;
 	int Height;
 
-	public HashGrid(int Width, int Height)
+	public WorldGrid(int Width, int Height)
 	{
 		this.Width = Width;
 		this.Height = Height;
@@ -406,17 +407,19 @@ public partial class HashGrid
 					{
 						//Vector2 w0 = p.WorldPos;
 						p.height -= 0.01f;
+						h += p.height * 0.01f;
 						if (p.height < -0.5f)
 						{
 							p.plate.points.Remove(p);
 							RemovePoint(p);
+							h += 0.1f;
 						}
 
 						//p.plate.points.Remove(p);
 						//RemovePoint(p);
-						if (p.height > 0f)
-							h += p.height * 0.01f;
-						else h += p.height * 0.005f;
+						//if (p.height > 0f)
+							//h += p.height * 0.01f;
+						//else h += p.height * 0.005f;
 
 						//AddPoint(p);
 						//bestPlate.points.Add(p);

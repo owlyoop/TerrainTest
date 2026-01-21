@@ -35,7 +35,7 @@ public partial class WorldMap : Node
 	int timestep = 1;
 	public event Action OnTimestepCompleted;
     //X and Y are image dimensions. Used for collision detecting between platepoints of differing plates
-    public HashGrid hashgrid;
+    public WorldGrid worldGrid;
 
     public override void _Ready()
     {
@@ -49,7 +49,7 @@ public partial class WorldMap : Node
             plates.Add(plate);
             ID++;
         }
-        hashgrid = new HashGrid(worldWidth, worldHeight);
+        worldGrid = new WorldGrid(worldWidth, worldHeight);
         GenerateCells(worldWidth, worldHeight);
 		
 		//Processing
@@ -67,7 +67,7 @@ public partial class WorldMap : Node
 			p.MovementSpeed = 0.24f * speed;
 			p.density = d;
 		}
-		hashgrid.InitializeBoundaries();
+		worldGrid.InitializeBoundaries();
 		timer.Timeout += Timestep;
 		
 		//timer.Start();
@@ -91,7 +91,7 @@ public partial class WorldMap : Node
 		GD.Print("Work time for moveplate: ", workertime);
 
 		start = Time.GetTicksUsec();
-		hashgrid.UpdatePoints();
+		worldGrid.UpdatePoints();
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for updatepoints: ", workertime);
@@ -99,7 +99,7 @@ public partial class WorldMap : Node
 
 		//check for collisions
 		start = Time.GetTicksUsec();
-		hashgrid.Collide();
+		worldGrid.Collide();
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for collide: ", workertime);
@@ -233,17 +233,17 @@ public partial class WorldMap : Node
 
     void DisplayHashgridCounts()
     {
-        for (int i = 0; i < hashgrid.grid.GetLength(0); i++)
+        for (int i = 0; i < worldGrid.grid.GetLength(0); i++)
         {
-            for (int j = 0; j < hashgrid.grid.GetLength(1); j++)
+            for (int j = 0; j < worldGrid.grid.GetLength(1); j++)
             {
-                int num = hashgrid.grid[i, j].points.Count();
+                int num = worldGrid.grid[i, j].points.Count();
 
 				int d = 0;
 				float h = 0;
 				if (num >= 1)
                 {
-                    foreach(var n in hashgrid.grid[i,j].points)
+                    foreach(var n in worldGrid.grid[i,j].points)
                     {
 						h++;
                         /*if (n.plate.density > d)
@@ -275,17 +275,17 @@ public partial class WorldMap : Node
 		Color both = new Color(1f, 1f, 1f);
 		Color error = new Color(0f, 0f, 1f);
 
-		for (int i = 0; i < hashgrid.grid.GetLength(0); i++)
+		for (int i = 0; i < worldGrid.grid.GetLength(0); i++)
 		{
-			for (int j = 0; j < hashgrid.grid.GetLength(1); j++)
+			for (int j = 0; j < worldGrid.grid.GetLength(1); j++)
 			{
-				if (hashgrid.grid[i, j].points.Count == 0)
+				if (worldGrid.grid[i, j].points.Count == 0)
 					SetPixelWorld(i, j, empty);
 
-				for (int p = 0; p < hashgrid.grid[i, j].points.Count; p++)
+				for (int p = 0; p < worldGrid.grid[i, j].points.Count; p++)
 				{
-					var point = hashgrid.grid[i, j].points[p];
-					if (!hashgrid.grid[i, j].points[p].isActive)
+					var point = worldGrid.grid[i, j].points[p];
+					if (!worldGrid.grid[i, j].points[p].isActive)
 					{ 
 						//SetPixelWorld(i, j, new Color(0.05f * point.plate.ID, 0.05f * point.plate.ID, 0.05f * point.plate.ID)); 
 					}
@@ -307,9 +307,9 @@ public partial class WorldMap : Node
 
 	void DisplayPlates()
 	{
-		for (int i = 0; i < hashgrid.grid.GetLength(0); i++)
+		for (int i = 0; i < worldGrid.grid.GetLength(0); i++)
 		{
-			for (int j = 0; j < hashgrid.grid.GetLength(1); j++)
+			for (int j = 0; j < worldGrid.grid.GetLength(1); j++)
 			{
 				SetPixelWorld(i, j, Colors.Black);
 
@@ -350,13 +350,15 @@ public partial class WorldMap : Node
 						0.02f * plate.density,
 						0.8f - (0.02f * plate.density));
 
-				var gridcell = hashgrid.grid[p.gridIndex.X, p.gridIndex.Y];
+				var gridcell = worldGrid.grid[p.gridIndex.X, p.gridIndex.Y];
 
 				//if (gridcell.containsCollision || gridcell.containsBoundary)
 				//	c = Colors.Green;
 				//else c = Colors.Red;
 
-				c = Colors.DarkSeaGreen;
+				if (p.height < 0f)
+					c = Colors.DarkBlue;
+				else c = Colors.DarkSeaGreen;
 				c *= (p.height + 0.5f);
 
 				int x = Mathf.FloorToInt(Mathf.PosMod(wp.X, worldWidth));
