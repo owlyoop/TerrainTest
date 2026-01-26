@@ -104,6 +104,11 @@ public partial class WorldMap : Node
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for collide: ", workertime);
 
+		for (int i = 0; i < plates.Count; i++)
+		{
+			plates[i].CheckForNewPoints();
+		}
+
 		DisplayPlates();
 		//DisplayHashgridCounts();
 
@@ -292,11 +297,11 @@ public partial class WorldMap : Node
 					else
 					{
 						
-						if (point.isBoundary && point.isColliding)
+						if (point.IsBoundary && point.IsColliding)
 							SetPixelWorld(i, j, Colors.Cyan);
-						else if (point.isBoundary)
+						else if (point.IsBoundary)
 							SetPixelWorld(i, j, Colors.DarkSlateBlue);
-						else if (point.isColliding)
+						else if (point.IsColliding)
 							SetPixelWorld(i, j, Colors.Red);
 						else SetPixelWorld(i, j, new Color(0.05f * point.plate.ID, 0.05f * point.plate.ID, 0.05f * point.plate.ID));
 					}
@@ -313,7 +318,7 @@ public partial class WorldMap : Node
 			{
 				SetPixelWorld(i, j, Colors.Black);
 
-				/*var cell = hashgrid.grid[i, j];
+				var cell = worldGrid.grid[i, j];
 				var h = 0f;
 				int count = 0;
 				foreach(var p in cell.points)
@@ -322,9 +327,23 @@ public partial class WorldMap : Node
 					count++;
 				}
 				h = h / count;
+				
 				var c = Colors.DarkSeaGreen;
+				if (h < 0f)
+					c = Colors.DeepSkyBlue;
 				c *= (h + 0.5f);
-				SetPixelWorld(i, j, c);*/
+
+				/*if (cell.ContainsBoundary)
+					c *= Colors.Red;
+				if (cell.ContainsCollision)
+					c += Colors.Cyan;*/
+
+				SetPixelWorld(i, j, c);
+				
+				//var cell = worldGrid.grid[i, j];
+				//if (cell.ContainsBoundary)
+				//	SetPixelWorld(i, j, Colors.Green);
+
 			}
 		}
 
@@ -338,11 +357,11 @@ public partial class WorldMap : Node
 
 				Color c;
 
-				if (p.isBoundary && p.isColliding)
+				if (p.IsBoundary && p.IsColliding)
 					c = Colors.Cyan;
-				else if (p.isBoundary && !p.isColliding)
+				else if (p.IsBoundary && !p.IsColliding)
 					c = Colors.Blue;
-				else if (!p.isBoundary && p.isColliding)
+				else if (!p.IsBoundary && p.IsColliding)
 					c = Colors.Red;
 				else
 					c = new Color(
@@ -352,19 +371,21 @@ public partial class WorldMap : Node
 
 				var gridcell = worldGrid.grid[p.gridIndex.X, p.gridIndex.Y];
 
-				//if (gridcell.containsCollision || gridcell.containsBoundary)
-				//	c = Colors.Green;
-				//else c = Colors.Red;
+				if (gridcell.IsEmptyOrInactive())
+				{
+					c = Colors.Red;
+				}
+				else c = Colors.Green;
 
-				if (p.height < 0f)
+				/*if (p.height < 0f)
 					c = Colors.DarkBlue;
 				else c = Colors.DarkSeaGreen;
-				c *= (p.height + 0.5f);
+				c *= (p.height + 0.5f);*/
 
 				int x = Mathf.FloorToInt(Mathf.PosMod(wp.X, worldWidth));
 				int y = Mathf.FloorToInt(Mathf.PosMod(wp.Y, worldHeight));
 
-				SetPixelWorld(x, y, c);
+				//SetPixelWorld(x, y, c);
 			}
 		}
 	}
@@ -409,7 +430,7 @@ public partial class WorldMap : Node
 		return Mathf.Min(dx, dimension - dx);
 	}
 
-	float WrappedDistance(Vector2 a, Vector2 b)
+	public float WrappedDistance(Vector2 a, Vector2 b)
 	{
 		float dx = WrappedDimension(a.X, b.X, worldWidth);
 		float dy = WrappedDimension(a.Y, b.Y, worldHeight);

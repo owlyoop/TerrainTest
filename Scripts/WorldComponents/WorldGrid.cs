@@ -20,7 +20,32 @@ public class GridCell
 		HasCollisionChecked = false;
 	}
 
-	public bool IsEmpty() => points.Count == 0;
+	public bool IsEmptyOrInactive()
+	{
+		if (points.Count == 0)
+			return true;
+
+		bool noneActive = true;
+		foreach(var p in points)
+		{
+			if (p.isActive)
+			{
+				noneActive = false;
+				break;
+			}
+		}
+
+		if (noneActive)
+			return true;
+		else return false;
+	}
+
+	public bool IsCompletelyEmpty()
+	{
+		if (points.Count == 0)
+			return true;
+		else return false;
+	}
 
 	public void AddPoint(PlatePoint point)
 	{
@@ -38,29 +63,44 @@ public class GridCell
 		this.ContainsBoundary = false;
 		foreach(var p in points)
 		{
-			p.isColliding = false;
-			p.isBoundary = false;
+			p.MarkPointAsColliding(false);
+			p.MarkPointAsBoundary(false);
 			p.isActive = false;
 		}
 	}
 
-	public void MarkAsColliding(bool choice)
+
+	public void MarkAllPointsAsColliding(bool choice)
 	{
 		this.ContainsCollision = choice;
 		foreach (var p in this.points)
 		{
-			p.isColliding = choice;
+			p.MarkPointAsColliding(choice);
+			if (choice)
+				p.isActive = choice;
 		}
-			
 	}
 
-	public void MarkAsBoundary(bool choice)
+	public void MarkAllPointsAsBoundary(bool choice)
 	{
 		this.ContainsBoundary = choice;
 		foreach (var p in this.points)
 		{
-			p.isBoundary = choice;
+			p.MarkPointAsBoundary(choice);
+			if (choice)
+				p.isActive = choice;
 		}
+	}
+
+	public int GetNumberOfSamePlate(PlatePoint point)
+	{
+		int result = 0;
+		foreach(var p in this.points)
+		{
+			if (p.plate == point.plate)
+				result++;
+		}
+		return result;
 	}
 }
 
@@ -90,6 +130,19 @@ public partial class WorldGrid
 		var idx = GetIndexFromPosition(point.WorldPos);
 		point.gridIndex = idx;
 		grid[point.gridIndex.X, point.gridIndex.Y].AddPoint(point);
+	}
+
+	public bool TryAddPoint(PlatePoint point, int threshhold)
+	{
+		var idx = GetIndexFromPosition(point.WorldPos);
+		point.gridIndex = idx;
+		if (grid[point.gridIndex.X, point.gridIndex.Y].GetNumberOfSamePlate(point) < threshhold)
+		{
+			grid[point.gridIndex.X, point.gridIndex.Y].AddPoint(point);
+			return true;
+		}
+		else return false;
+			
 	}
 
 	public void RemovePoint(PlatePoint point)
@@ -158,7 +211,6 @@ public partial class WorldGrid
 		int width = grid.GetLength(0);
 		int height = grid.GetLength(1);
 
-
 		for (int i = 0; i < width; i++)
 		{
 			for (int j = 0; j < height; j++)
@@ -166,46 +218,47 @@ public partial class WorldGrid
 				var cell = grid[i, j];
 				bool boundary = false;
 				bool collision = false;
-				if (cell.IsEmpty())
+				//Mark empty cells as not containing a boundary or collision, and then check its neighbours
+				if (cell.IsCompletelyEmpty())
 				{
-					cell.MarkAsColliding(false);
-					cell.MarkAsBoundary(false);
+					cell.MarkAllPointsAsColliding(false);
+					cell.MarkAllPointsAsBoundary(false);
+					foreach (var p in cell.points)
+						p.isActive = false;
 					for (int dx = -1; dx <= 1; dx++)
 					{
 						for (int dy = -1; dy <= 1; dy++)
 						{
-							if (dx == 0 && dy == 0) continue;
+							//if (dx == 0 && dy == 0) continue;
 							int di = i + dx;
 							int dj = j + dy;
 
 							if (CheckIfIndexInBounds(di, dj))
 							{
 								var otherCell = grid[di, dj];
-								if (!otherCell.IsEmpty())
+								if (!otherCell.IsEmptyOrInactive())
 								{
-									otherCell.MarkAsBoundary(true);
+									otherCell.MarkAllPointsAsBoundary(true);
+								}
+								else
+								{
+									foreach (var p in otherCell.points)
+										p.isActive = false;
 								}
 									
 							}
 						}
 					}
 				}
-				
-				foreach(var p in cell.points)
-				{
-					if (p.height > 0.9f)
-						p.height -= 0.001f;
-				}
 
 				//if (cell.isActive == false) continue;
-				//if (cell.containsBoundary == false && cell.containsCollision == false) continue;
+				//if (cell.ContainsBoundary == false && cell.ContainsCollision == false) continue;
 
-				if (!cell.IsEmpty())
+				if (!cell.IsEmptyOrInactive())
 				{
-					cell.MarkAsEmpty();
+					//cell.MarkAsEmpty();
 
-					//check if cell contains points from different plates
-					
+					//check if cell contains points from different plates, if so then it's a collision
 					var plate = cell.points[0].plate.ID;
 					for (int p = 0; p < cell.points.Count; p++)
 					{
@@ -217,20 +270,13 @@ public partial class WorldGrid
 					}
 					if (collision)
 					{
-						cell.MarkAsColliding(true);
+						cell.MarkAllPointsAsColliding(true);
 					}
 					else
 					{
-						//cell.ContainsCollision = false;
-						//cell.containsBoundary = false;
-						cell.MarkAsColliding(false);
+						cell.MarkAllPointsAsColliding(false);
 					}
-				}
-				
 
-				//check bordering cells
-				if (!cell.IsEmpty())
-				{
 					//Check in the 8 directions around the gridpoint
 					for (int dx = -1; dx <= 1; dx++)
 					{
@@ -239,17 +285,18 @@ public partial class WorldGrid
 							if (dx == 0 && dy == 0) continue;
 							int di = i + dx;
 							int dj = j + dy;
-
+							
 							if (CheckIfIndexInBounds(di, dj))
 							{
 								var otherCell = grid[di, dj];
-								if (otherCell.IsEmpty())
+								if (otherCell.IsCompletelyEmpty())
 								{
-									cell.MarkAsBoundary(true);
-									continue;
+									cell.MarkAllPointsAsBoundary(true);
+									//continue;
+									boundary = true;
 								}
 
-								if (!collision)
+								/*if (!collision)
 								{
 									bool otherplate = false;
 									foreach (var op in otherCell.points)
@@ -268,51 +315,16 @@ public partial class WorldGrid
 
 									if (otherplate)
 									{
-										cell.MarkAsBoundary(true);
-										otherCell.MarkAsBoundary(true);
+										cell.MarkAllPointsAsBoundary(true);
+										otherCell.MarkAllPointsAsBoundary(true);
 									}
-								}
+								}*/
 							}
+							if (!boundary)
+								cell.MarkAllPointsAsBoundary(false);
 						}
 					}
 				}
-
-				//final point categorization
-				/*if (cell.ContainsBoundary)
-				{
-					foreach (var p in cell.points)
-					{
-						p.isBoundary = true;
-						p.isActive = true;
-					}
-				}
-				else
-				{
-					foreach (var p in cell.points)
-						p.isBoundary = false;
-				}
-
-				if (cell.ContainsCollision)
-				{
-					foreach (var p in cell.points)
-					{
-						p.isColliding = true;
-						p.isActive = true;
-					}
-				}
-				else
-				{
-					foreach (var p in cell.points)
-						p.isColliding = false;
-				}
-
-				if (!cell.ContainsCollision && !cell.ContainsBoundary)
-				{
-					foreach (var p in cell.points)
-					{
-						p.isActive = false;
-					}
-				}*/
 			}
 		}
 	}
@@ -332,7 +344,7 @@ public partial class WorldGrid
 
 				var point = grid[i, j].points[0];
 				point.isActive = false;
-				point.isBoundary = false;
+				point.MarkPointAsBoundary(false);
 
 				for (int dx = -1; dx <= 1; dx++)
 				{
@@ -348,8 +360,8 @@ public partial class WorldGrid
 							{
 								if (grid[di, dj].points[0].plate != point.plate)
 								{
-									grid[i, j].MarkAsBoundary(true);
-									grid[di, dj].MarkAsBoundary(true);
+									grid[i, j].MarkAllPointsAsBoundary(true);
+									grid[di, dj].MarkAllPointsAsBoundary(true);
 								}
 							}
 						}
@@ -369,26 +381,6 @@ public partial class WorldGrid
 			{
 				var cell = grid[i, j];
 
-				//consolidate. doesnt work good at all :(
-				/*if (cell.points.Count >= 7)
-				{
-					var plate = cell.points[0].plate;
-					int iter = 0;
-					float avgH = 0;
-					foreach (var p in cell.points)
-					{
-						avgH += p.height;
-						iter++;
-						p.plate.points.Remove(p);
-						
-					}
-					cell.points.Clear();
-
-					var newp = plate.AddPointToPlate(new Vector2(i,j), avgH / iter);
-					var newp2 = plate.AddPointToPlate(new Vector2(i - 0.2f, j - 0.2f), avgH / iter);
-					AddPoint(newp); AddPoint(newp2);
-				}*/
-
 				if (!cell.ContainsCollision || cell.points.Count < 1)
 					continue;
 
@@ -405,35 +397,18 @@ public partial class WorldGrid
 					var p = cell.points[k];
 					if (p.plate.ID != bestPlate.ID)
 					{
-						//Vector2 w0 = p.WorldPos;
-						p.height -= 0.01f;
-						h += p.height * 0.01f;
-						if (p.height < -0.5f)
+						p.height = p.height - 0.05f;
+						h += 0.001f;
+						if (p.height < -1f)
 						{
 							p.plate.points.Remove(p);
 							RemovePoint(p);
-							h += 0.1f;
 						}
-
-						//p.plate.points.Remove(p);
-						//RemovePoint(p);
-						//if (p.height > 0f)
-							//h += p.height * 0.01f;
-						//else h += p.height * 0.005f;
-
-						//AddPoint(p);
-						//bestPlate.points.Add(p);
-						//bestPlate.AddExistingPointToPlate(p);
-
-
-						//bestPlate.AddExistingPointToPlate(p);
-						//Vector2 w1 = p.WorldPos;
-						//if ((w0.DistanceSquaredTo(w1) < 0.0001f))
-						//	GD.PrintErr("Point broke");
+						
 					}
 					else
 					{
-						p.height += 0.004f;
+						p.height += 0.001f;
 					}
 				}
 
@@ -446,7 +421,8 @@ public partial class WorldGrid
 					}
 				}
 
-				for (int dx = -1; dx <= 1; dx++)
+				//mark bordering cells of collision as new boundaries
+				/*for (int dx = -1; dx <= 1; dx++)
 				{
 					for (int dy = -1; dy <= 1; dy++)
 					{
@@ -459,14 +435,14 @@ public partial class WorldGrid
 						if (CheckIfIndexInBounds(di, dj))
 						{
 							var othercell = grid[di, dj];
-							othercell.MarkAsBoundary(true);
+							othercell.MarkAllPointsAsBoundary(true);
 							for (int p = othercell.points.Count - 1; p >= 0; p--)
 							{
 								othercell.points[p].plate.UpdatePointInHashGrid(othercell.points[p]);
 							}
 						}
 					}
-				}
+				}*/
 			}
 		}
 	}
