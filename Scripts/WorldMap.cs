@@ -29,6 +29,9 @@ public partial class WorldMap : Node
     List<Plate2D> plates;
     Image img;
 
+	float[,] avgHeights;
+	int[,] counts;
+
 	[ExportCategory("World Simulation")]
 	[Export] public float Timescale = 0.1f; // how much is added to age per timestep;
 
@@ -50,7 +53,9 @@ public partial class WorldMap : Node
             ID++;
         }
         worldGrid = new WorldGrid(worldWidth, worldHeight);
-        GenerateCells(worldWidth, worldHeight);
+		avgHeights = new float[worldWidth, worldHeight];
+		counts = new int[worldWidth, worldHeight];
+		GenerateCells(worldWidth, worldHeight);
 		
 		//Processing
 		CreateMesh();
@@ -110,7 +115,6 @@ public partial class WorldMap : Node
 		}
 
 		DisplayPlates();
-		//DisplayHashgridCounts();
 
 		//update platepoint heights?
 		//todo: rebuild heightmap
@@ -312,84 +316,81 @@ public partial class WorldMap : Node
 
 	void DisplayPlates()
 	{
-		for (int i = 0; i < worldGrid.grid.GetLength(0); i++)
+		
+		for (int i = 0; i < counts.GetLength(0); i++)
 		{
-			for (int j = 0; j < worldGrid.grid.GetLength(1); j++)
+			for (int j = 0; j < counts.GetLength(1); j++)
 			{
 				SetPixelWorld(i, j, Colors.Black);
+				counts[i, j] = 0;
+				avgHeights[i, j] = 0f;
+			}
+		}
+		foreach (var plate in plates)
+		{
+			foreach (var p in plate.points)
+			{
+				var x = p.gridIndex.X;
+				var y = p.gridIndex.Y;
 
-				var cell = worldGrid.grid[i, j];
-				var h = 0f;
-				int count = 0;
-				foreach(var p in cell.points)
-				{
-					h += p.height;
-					count++;
-				}
-				h = h / count;
-				
+				counts[x, y]++;
+				avgHeights[x, y] += (p.height / (float)counts[x, y]);
+			}
+		}
+
+		for (int i = 0; i < avgHeights.GetLength(0); i++)
+		{
+			for (int j = 0; j < avgHeights.GetLength(1); j++)
+			{
+				var h = avgHeights[i, j];
 				var c = Colors.DarkSeaGreen;
 				if (h < 0f)
 					c = Colors.DeepSkyBlue;
 				c *= (h + 0.5f);
 
-				/*if (cell.ContainsBoundary)
-					c *= Colors.Red;
-				if (cell.ContainsCollision)
-					c += Colors.Cyan;*/
-
 				SetPixelWorld(i, j, c);
-				
-				//var cell = worldGrid.grid[i, j];
-				//if (cell.ContainsBoundary)
-				//	SetPixelWorld(i, j, Colors.Green);
-
 			}
 		}
-
-
-		foreach (var plate in plates)
+		for (int i = 0; i < avgHeights.GetLength(0); i++)
 		{
-			foreach(var p in plate.points)
+			for (int j = 0; j < avgHeights.GetLength(1); j++)
 			{
-				Vector2 wp = p.WorldPos;
-				//Vector2I pix = WorldToPixel(wp);
-
-				Color c;
-
-				if (p.IsBoundary && p.IsColliding)
-					c = Colors.Cyan;
-				else if (p.IsBoundary && !p.IsColliding)
-					c = Colors.Blue;
-				else if (!p.IsBoundary && p.IsColliding)
-					c = Colors.Red;
-				else
-					c = new Color(
-						0.8f - (0.02f * plate.density), 
-						0.02f * plate.density,
-						0.8f - (0.02f * plate.density));
-
-				var gridcell = worldGrid.grid[p.gridIndex.X, p.gridIndex.Y];
-
-				if (gridcell.IsEmptyOrInactive())
+				if (counts[i, j] == 0)
 				{
-					c = Colors.Red;
+					var b = 0;
+					var h = 0f;
+					for (int dx = -1; dx <= 1; dx++)
+					{
+						for (int dy = -1; dy <= 1; dy++)
+						{
+							if (dx == 0 & dy == 0) continue;
+							int di = i + dx;
+							int dj = j + dy;
+
+							if (di >= 0 && di < counts.GetLength(0)
+								&& dj >= 0 && dj < counts.GetLength(1))
+							{
+								if (counts[di, dj] > 0)
+								{
+									b++;
+									h += avgHeights[di, dj];
+								}
+							}
+						}
+					}
+
+					h = h / b;
+					var c = Colors.DarkSeaGreen;
+					if (h < 0f)
+						c = Colors.DeepSkyBlue;
+					c *= (h + 0.5f);
+					SetPixelWorld(i, j, c);
 				}
-				else c = Colors.Green;
-
-				/*if (p.height < 0f)
-					c = Colors.DarkBlue;
-				else c = Colors.DarkSeaGreen;
-				c *= (p.height + 0.5f);*/
-
-				int x = Mathf.FloorToInt(Mathf.PosMod(wp.X, worldWidth));
-				int y = Mathf.FloorToInt(Mathf.PosMod(wp.Y, worldHeight));
-
-				//SetPixelWorld(x, y, c);
 			}
 		}
 	}
 
+	
 	void AssignSiteIDs()
 	{
 		int width = worldWidth;

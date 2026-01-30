@@ -3,99 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-
-
-public class PlatePoint
-{
-	public Vector2 localPos;
-	public Vector2 WorldPos => plate.LocalToWorld(localPos);    //The world position
-
-	public Vector2 cachedWorldPos;
-
-	public float height;
-	public Plate2D plate;
-	public Vector2I gridIndex; //Index for the hashgrid
-
-	//public List<PlatePoint> neighbours;
-
-	public bool isActive = false;
-
-	public bool IsColliding { get; private set; }   //If the point is 'colliding' with another point on a different plate
-	public bool IsBoundary { get; private set; }    //if egde of plate. if moves enough without colliding, spawn a new platepoint behind it.
-
-	float distTravelAsBoundary = 0f;
-	float distTravelNoCollision = 0f;
-	Vector2 lastBoundaryPos; //The last position this point became a boundary.
-							 //When the plate moves a certain dist away, a new platepoint is created
-
-	public PlatePoint(Vector2 localPos, float height, Plate2D plate)
-	{
-		this.localPos = localPos;
-		this.height = height;
-		this.plate = plate;
-		this.isActive = false;
-		this.IsBoundary = false;
-		this.IsColliding = false;
-		//neighbours = new List<PlatePoint>();
-	}
-
-	public void OnEndTimestep()
-	{
-
-	}
-
-	public void MarkPointAsBoundary(bool choice)
-	{
-		IsBoundary = choice;
-		if (choice)
-		{
-			IsColliding = false;
-			isActive = true;
-		}
-
-			
-	}
-
-	public void MarkPointAsColliding(bool choice)
-	{
-		IsColliding = choice;
-		if (choice)
-		{
-			distTravelNoCollision = 0f;
-			distTravelAsBoundary = 0f;
-			IsBoundary = false;
-			isActive = true;
-		}
-	}
-
-	public void UpdateTravelStats()
-	{
-		float dist = plate.map.WrappedDistance(WorldPos, cachedWorldPos - (plate.MovementDirection.Normalized() * plate.MovementSpeed));
-		if (IsBoundary)
-			distTravelAsBoundary += dist;
-		else distTravelAsBoundary = 0f;
-		if (!IsColliding)
-			distTravelNoCollision += dist;
-
-		//spawn new platepoints
-		//todo: sim eventually slows down to a halt. i think cause too many points spawn.
-		//need to consolidate points if theres more than 2 of the same plate in a cell
-		if (distTravelAsBoundary > 0.9f)
-		{
-			var newpt = WorldPos - (plate.MovementDirection.Normalized() * 0.9f);
-			var p = plate.TryAddPointToPlate(newpt, (height *= 0.95f) - 0.01f, 4);
-			if (p != null)
-			{
-				p.MarkPointAsBoundary(true);
-				MarkPointAsBoundary(false);
-				distTravelAsBoundary = 0f;
-				plate.map.worldGrid.grid[gridIndex.X, gridIndex.Y].MarkAllPointsAsBoundary(false);
-			}
-		}
-		
-	}
-}
-
 public partial class Plate2D
 {
 	public WorldMap map;
@@ -128,7 +35,7 @@ public partial class Plate2D
         this.ID = ID;
     }
 
-	Vector2 WorldToLocal(Vector2 worldPos)
+	public Vector2 WorldToLocal(Vector2 worldPos)
 	{
 		float dx = worldPos.X - origin.X - offset.X;
 		
@@ -228,20 +135,11 @@ public partial class Plate2D
 		offset.X = offset.X % map.worldWidth;
 		offset.Y = offset.Y % map.worldHeight;
 		rotation += MovementSpeed * 0.1f;
+		
 		foreach (var p in points)
 		{
+			//p.gridIndex = map.worldGrid.GetIndexFromPosition(p.cachedWorldPos);
 			UpdatePointInHashGrid(p);
-
-			var x = p.gridIndex.X;
-			var y = p.gridIndex.Y;
-			var cell = map.worldGrid.grid[x, y];
-
-			//moving every platepoint is a bottleneck, esp if i want 1.71 platepoint density.
-			//this isnt improving performance like i thought it would. oh well.
-			//if (!cell.IsEmpty())
-			//{
-			//	UpdatePointInHashGrid(p);
-			//}
 		}
 	}
 }

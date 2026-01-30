@@ -10,7 +10,7 @@
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_w74eu"]
 noise_type = 0
 seed = 190
-fractal_weighted_strength = 0.2
+frequency = 0.0017
 cellular_return_type = 0
 domain_warp_type = 2
 domain_warp_amplitude = 32.0
@@ -172,6 +172,11 @@ offset_right = 375.0
 offset_bottom = 125.0
 text = "4"
 
+[node name="Panel" type="Panel" parent="CanvasLayer"]
+offset_left = 1024.0
+offset_right = 1064.0
+offset_bottom = 40.0
+
 [node name="CameraController" type="Node2D" parent="."]
 
 [node name="Camera2D" type="Camera2D" parent="CameraController"]
@@ -202,7 +207,7 @@ noiseTex = SubResource("NoiseTexture2D_1w0k7")
 mapDisplay = NodePath("../MeshInstance2D")
 voronoi = NodePath("../VoronoiMap")
 timer = NodePath("Timer")
-PlatePointDensity = 1.5
+PlatePointDensity = 1.0
 
 [node name="Timer" type="Timer" parent="WorldMap"]
 wait_time = 0.02
