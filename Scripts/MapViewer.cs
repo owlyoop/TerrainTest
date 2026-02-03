@@ -23,8 +23,10 @@ public partial class MapViewer : Node
 
 	Cell2D selectedCell;
 
-	MultiMeshInstance2D plateOverlay;
-	MultiMesh mm;
+	MultiMeshInstance2D mmiPlatePts;
+	MultiMesh mmPlatePts;
+	MultiMeshInstance2D mmiPlateVels;
+	MultiMesh mmPlateVels;
 
 	int plateIndex = 0;
 
@@ -131,41 +133,54 @@ public partial class MapViewer : Node
 
 	void HighlightSelectedPlate()
 	{
-		
-		if (mm != null)
-			mm.InstanceCount = 0;
 		var plate = map.GetPlateByIndex(plateIndex);
-		if (mm == null || mm.InstanceCount != plate.points.Count())
-		{
-			CreatePlateOverlay();
-		}
+		
+		if (mmPlatePts != null)
+			mmPlatePts.InstanceCount = 0;
+		if (mmPlatePts == null || mmPlatePts.InstanceCount != plate.points.Count())
+			CreatePlatePtsOverlay();
+
+		if (mmPlateVels != null)
+			mmPlateVels.InstanceCount = 0;
+		if (mmPlateVels == null || mmPlateVels.InstanceCount != plate.points.Count())
+			CreatePlateVelsOverlay();
 
 
 		for (int i = 0; i < plate.points.Count(); i++)
 		{
 			var p = plate.points[i];
 
-			mm.SetInstanceTransform2D(i, new Transform2D(Mathf.DegToRad(plate.rotation), p.WorldPos + new Vector2(0.0f, 0.0f)));
+			var ptsTransform = new Transform2D(Mathf.DegToRad(plate.rotation), p.WorldPos + new Vector2(0.0f, 0.0f));
+			mmPlatePts.SetInstanceTransform2D(i, ptsTransform);
+
+			//if (!p.isActive) continue;
+			//if (!p.IsColliding && !p.IsBorderingOtherPlate) continue;
+
+			var velTransform = new Transform2D(p.Velocity.Angle() - (MathF.PI/2), 
+				new Vector2(1f, Mathf.Clamp(p.Velocity.Length() * 10f, 1f, 5f)),
+				0f, 
+				p.WorldPos + new Vector2(0.0f, 0.0f));
+			mmPlateVels.SetInstanceTransform2D(i, velTransform);
 		}
 	}
 
-	void CreatePlateOverlay()
+	void CreatePlatePtsOverlay()
 	{
 		var plate = map.GetPlateByIndex(plateIndex);
-		mm = new MultiMesh();
-		mm.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
-		mm.InstanceCount = plate.points.Count();
+		mmPlatePts = new MultiMesh();
+		mmPlatePts.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
+		mmPlatePts.InstanceCount = plate.points.Count();
 
 		var mesh = CreateWireBox();
-		mm.Mesh = mesh;
+		mmPlatePts.Mesh = mesh;
 
-		plateOverlay = new MultiMeshInstance2D();
-		plateOverlay.Multimesh = mm;
-		plateOverlay.Modulate = Colors.Yellow;
+		mmiPlatePts = new MultiMeshInstance2D();
+		mmiPlatePts.Multimesh = mmPlatePts;
+		mmiPlatePts.Modulate = Colors.Yellow;
 
-		AddChild(plateOverlay);
-
+		AddChild(mmiPlatePts);
 	}
+
 	ArrayMesh CreateWireBox()
 	{
 		var vertices = new Vector2[]
@@ -175,6 +190,42 @@ public partial class MapViewer : Node
 			new(0.1f, 0.1f), new(-0.1f, 0.1f),
 			new(-0.1f, 0.1f), new(-0.1f, -0.1f)
 		};
+		var mesh = new ArrayMesh();
+
+		var arrays = new Godot.Collections.Array();
+		arrays.Resize((int)Mesh.ArrayType.Max);
+		arrays[(int)Mesh.ArrayType.Vertex] = vertices;
+		mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Lines, arrays);
+
+		return mesh;
+	}
+
+	void CreatePlateVelsOverlay()
+	{
+		var plate = map.GetPlateByIndex(plateIndex);
+		mmPlateVels = new MultiMesh();
+		mmPlateVels.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
+		mmPlateVels.InstanceCount = plate.points.Count();
+
+		var mesh = CreateVelocityArrow();
+		mmPlateVels.Mesh = mesh;
+
+		mmiPlateVels = new MultiMeshInstance2D();
+		mmiPlateVels.Multimesh = mmPlateVels;
+		mmiPlateVels.Modulate = Colors.White;
+
+		AddChild(mmiPlateVels);
+	}
+
+	ArrayMesh CreateVelocityArrow()
+	{
+		var vertices = new Vector2[]
+		{
+			new(0f, 0f), new(0, 0.7f),
+			new(0, 0.7f), new(0.1f, 0.2f),
+			new(0, 0.7f), new(-0.1f, 0.2f),
+		};
+
 		var mesh = new ArrayMesh();
 
 		var arrays = new Godot.Collections.Array();

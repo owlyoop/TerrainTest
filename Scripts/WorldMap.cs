@@ -68,8 +68,7 @@ public partial class WorldMap : Node
 			float ry = (float)GD.RandRange(-1f, 1f);
 			float speed = (float)GD.RandRange(0f, 1f);
 			int d = GD.RandRange(1, 32);
-			p.MovementDirection = new Vector2(rx,ry);
-			p.MovementSpeed = 0.24f * speed;
+			p.InitializePlateVelocity(new Vector2(rx, ry) * (speed * 0.2f));
 			p.density = d;
 		}
 		worldGrid.InitializeBoundaries();
@@ -104,14 +103,18 @@ public partial class WorldMap : Node
 
 		//check for collisions
 		start = Time.GetTicksUsec();
+		worldGrid.CollideWithForces();
 		worldGrid.Collide();
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for collide: ", workertime);
 
+
+
 		for (int i = 0; i < plates.Count; i++)
 		{
 			plates[i].CheckForNewPoints();
+			plates[i].UpdateVelocity();
 		}
 
 		DisplayPlates();
@@ -240,80 +243,6 @@ public partial class WorldMap : Node
         }
     }
 
-    void DisplayHashgridCounts()
-    {
-        for (int i = 0; i < worldGrid.grid.GetLength(0); i++)
-        {
-            for (int j = 0; j < worldGrid.grid.GetLength(1); j++)
-            {
-                int num = worldGrid.grid[i, j].points.Count();
-
-				int d = 0;
-				float h = 0;
-				if (num >= 1)
-                {
-                    foreach(var n in worldGrid.grid[i,j].points)
-                    {
-						h++;
-                        /*if (n.plate.density > d)
-                        {
-                            d = n.plate.density;
-							h = n.height;
-						}*/
-                            
-                    }
-                }
-				h = h / 4f;
-				
-                Color color = new Color(0.1f * h, 0.2f * h, 0.3f * h, 1f);
-				if (h == 0)
-				{
-					color = Colors.DarkRed;
-				}
-				SetPixelWorld(i, j, color);
-            }
-        }
-    }
-
-	//TODO: right now it only looks at the first point in the list
-	void DisplayHashgridPoints()
-	{
-		Color empty = new Color(0f, 0f, 0f);
-		Color collision = new Color(1f, 1f, 0f);
-		Color boundary = new Color(1f, 0f, 1f);
-		Color both = new Color(1f, 1f, 1f);
-		Color error = new Color(0f, 0f, 1f);
-
-		for (int i = 0; i < worldGrid.grid.GetLength(0); i++)
-		{
-			for (int j = 0; j < worldGrid.grid.GetLength(1); j++)
-			{
-				if (worldGrid.grid[i, j].points.Count == 0)
-					SetPixelWorld(i, j, empty);
-
-				for (int p = 0; p < worldGrid.grid[i, j].points.Count; p++)
-				{
-					var point = worldGrid.grid[i, j].points[p];
-					if (!worldGrid.grid[i, j].points[p].isActive)
-					{ 
-						//SetPixelWorld(i, j, new Color(0.05f * point.plate.ID, 0.05f * point.plate.ID, 0.05f * point.plate.ID)); 
-					}
-					else
-					{
-						
-						if (point.IsBoundary && point.IsColliding)
-							SetPixelWorld(i, j, Colors.Cyan);
-						else if (point.IsBoundary)
-							SetPixelWorld(i, j, Colors.DarkSlateBlue);
-						else if (point.IsColliding)
-							SetPixelWorld(i, j, Colors.Red);
-						else SetPixelWorld(i, j, new Color(0.05f * point.plate.ID, 0.05f * point.plate.ID, 0.05f * point.plate.ID));
-					}
-				}
-			}
-		}
-	}
-
 	void DisplayPlates()
 	{
 		
@@ -326,6 +255,7 @@ public partial class WorldMap : Node
 				avgHeights[i, j] = 0f;
 			}
 		}
+
 		foreach (var plate in plates)
 		{
 			foreach (var p in plate.points)
@@ -344,13 +274,19 @@ public partial class WorldMap : Node
 			{
 				var h = avgHeights[i, j];
 				var c = Colors.DarkSeaGreen;
-				if (h < 0f)
+				if (h < 0.5f)
 					c = Colors.DeepSkyBlue;
 				c *= (h + 0.5f);
 
+				if (worldGrid.grid[i, j].ContainsCollision || worldGrid.grid[i, j].ContainsBorderingOtherPlate)
+					c += Colors.Red;
+				if (counts[i, j] == 0)
+					c = Colors.Black;
 				SetPixelWorld(i, j, c);
 			}
 		}
+
+		//for empty points, get average of surrounding points
 		for (int i = 0; i < avgHeights.GetLength(0); i++)
 		{
 			for (int j = 0; j < avgHeights.GetLength(1); j++)
@@ -384,7 +320,7 @@ public partial class WorldMap : Node
 					if (h < 0f)
 						c = Colors.DeepSkyBlue;
 					c *= (h + 0.5f);
-					SetPixelWorld(i, j, c);
+					//SetPixelWorld(i, j, c);
 				}
 			}
 		}

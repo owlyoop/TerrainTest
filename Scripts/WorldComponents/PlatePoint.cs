@@ -1,6 +1,9 @@
 using Godot;
 using System;
 
+/// <summary>
+/// Represents a point of the earth's crust on a tectonic plate.
+/// </summary>
 public class PlatePoint
 {
 	public enum CrustType
@@ -33,11 +36,13 @@ public class PlatePoint
 	public Plate2D plate;
 	public Vector2I gridIndex; //Index for the worldgrid
 
+	public Vector2 Velocity;
 
 	public bool isActive = false;
 	public bool IsColliding { get; private set; }   //If the point is 'colliding' with another point on a different plate
 	public bool IsBoundary { get; private set; }    //if egde of plate. if moves enough without colliding, spawn a new platepoint behind it.
 	public bool IsEdgeBoundary { get; private set; }    //if edge of plate next to empty space (used for determining where point creation should happen
+	public bool IsBorderingOtherPlate { get; private set; }
 
 	public float distTravelAsBoundary = 0f;
 	public float distTravelNoCollision = 0f; //not used, dunno if i will need to track this in the future
@@ -60,19 +65,21 @@ public class PlatePoint
 		this.localPos = localPos;
 		this.height = height;
 		this.plate = plate;
+
 		this.isActive = false;
 		this.IsBoundary = false;
 		this.IsColliding = false;
-		//neighbours = new List<PlatePoint>();
-
+		this.IsBorderingOtherPlate = false;
 
 		materialAmounts = new float[Enum.GetNames(typeof(CrustMaterial)).Length];
+		for (int i = 0; i < materialAmounts.Length; i++)
+		{
+			materialAmounts[i] = 0f;
+		}
+		age = 0f;
 	}
 
-	public void OnEndTimestep()
-	{
 
-	}
 
 	public void MarkPointAsBoundary(bool choice)
 	{
@@ -101,21 +108,22 @@ public class PlatePoint
 	{
 		IsEdgeBoundary = choice;
 		if (choice)
-		{
 			isActive = true;
-		}
-		else
-		{
-			//distTravelAsBoundary = 0f;
-		}
 	}
+
+	public void MarkPointAsBorderingOtherPlate(bool choice)
+	{
+		IsBorderingOtherPlate = choice;
+		if (choice)
+			isActive = true;
+	}
+
 
 	public void UpdateTravelStats()
 	{
-		float dist = plate.map.WrappedDistance(cachedWorldPos, cachedWorldPos - (plate.MovementDirection.Normalized() * plate.MovementSpeed));
+		float dist = plate.map.WrappedDistance(cachedWorldPos, cachedWorldPos - (plate.Velocity));
 		if (IsBoundary)
 			distTravelAsBoundary += dist;
-		//else distTravelAsBoundary = 0f;
 		if (!IsColliding)
 			distTravelNoCollision += dist;
 
@@ -124,16 +132,15 @@ public class PlatePoint
 		//need to consolidate points if theres more than 2 of the same plate in a cell
 		if (distTravelAsBoundary > 0.1f && IsEdgeBoundary)
 		{
-			var newpt = cachedWorldPos - (plate.MovementDirection.Normalized() * 1f);
+			var newpt = cachedWorldPos - (plate.Velocity.Normalized());
 			var p = plate.TryAddPointToPlate(newpt, height - 0.01f, 3);
 			if (p != null)
 			{
 				p.MarkPointAsBoundary(true);
 				p.MarkPointAsEdgeBoundary(true);
-				//MarkPointAsBoundary(false);
+				p.Velocity = plate.Velocity;
 				distTravelAsBoundary = 0f;
-				plate.map.worldGrid.grid[gridIndex.X, gridIndex.Y].MarkAllPointsAsBoundary(false);
-				plate.map.worldGrid.grid[gridIndex.X, gridIndex.Y].MarkAllPointsAsEdgeBoundary(false);
+				plate.map.worldGrid.grid[gridIndex.X, gridIndex.Y].MarkAllAsBoundary(false);
 			}
 		}
 

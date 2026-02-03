@@ -14,10 +14,9 @@ public partial class Plate2D
 	public List<PlatePoint> points; //the points that make up this plate, initially created from points on a grid that were inside the voronoi polygon
     public int density = 5; //crust density
 
-    public Vector2 MovementDirection;
-    public float MovementSpeed;
+    public Vector2 Velocity { get; private set; }  //derived from all points
 
-    public float angularVelocity;
+	public float angularVelocity;
 
     public int ID;
 
@@ -37,6 +36,7 @@ public partial class Plate2D
 
 	public Vector2 WorldToLocal(Vector2 worldPos)
 	{
+		//todo: this is ugly. shameful.
 		float dx = worldPos.X - origin.X - offset.X;
 		
 		float halfW = map.worldWidth * 0.5f;
@@ -131,15 +131,49 @@ public partial class Plate2D
 		{
 			p.cachedWorldPos = new Vector2(p.WorldPos.X, p.WorldPos.Y);
 		}
-		offset += (MovementDirection * MovementSpeed);
+		offset += (Velocity);
 		offset.X = offset.X % map.worldWidth;
 		offset.Y = offset.Y % map.worldHeight;
-		rotation += MovementSpeed * 0.1f;
+		rotation += 0.0f;	//TODO: angular velocity
 		
 		foreach (var p in points)
 		{
-			//p.gridIndex = map.worldGrid.GetIndexFromPosition(p.cachedWorldPos);
 			UpdatePointInHashGrid(p);
 		}
+	}
+
+	//Initializes all of the platepoints velocity
+	public void InitializePlateVelocity(Vector2 velocity)
+	{
+		foreach(var p in points)
+		{
+			p.Velocity = velocity;
+		}
+		Velocity = new Vector2(0, 0);
+		float count = 0f;
+		foreach (var p in points)
+		{
+			Velocity += p.Velocity;
+			count = count + 1f;
+		}
+		Velocity /= count;
+	}
+
+	/// <summary>
+	/// Updates the velocity of this plate, which is an average of all the platepoint's velocities
+	/// </summary>
+	public void UpdateVelocity()
+	{
+		Velocity = new Vector2(0, 0);
+		float count = 0f;
+		foreach (var p in points)
+		{
+			if (p.isActive)
+			{
+				Velocity += p.Velocity;
+				count = count + 1f;
+			}
+		}
+		Velocity /= count;
 	}
 }
