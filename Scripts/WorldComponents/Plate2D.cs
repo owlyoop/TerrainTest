@@ -34,6 +34,7 @@ public partial class Plate2D
         this.ID = ID;
     }
 
+
 	public Vector2 WorldToLocal(Vector2 worldPos)
 	{
 		//todo: this is ugly. shameful.
@@ -70,11 +71,11 @@ public partial class Plate2D
 		p.cachedWorldPos = oldWorld;
 	}
 
-	public PlatePoint AddPointToPlate(Vector2 worldPos, float height)
+	public PlatePoint AddPointToPlate(Vector2 worldPos, float felsic, float mafic)
 	{
 		Vector2 local = WorldToLocal(worldPos);
 		Vector2 oldWorld = new Vector2(worldPos.X, worldPos.Y);
-		var p = new PlatePoint(local, height, this);
+		var p = new PlatePoint(local, felsic, mafic, this);
 		map.worldGrid.AddPoint(p);
 		points.Add(p);
 		p.cachedWorldPos = oldWorld;
@@ -88,14 +89,14 @@ public partial class Plate2D
 	/// <param name="height"></param>
 	/// <param name="threshold"></param>
 	/// <returns></returns>
-	public PlatePoint TryAddPointToPlate(Vector2 worldPos, float height, int threshold)
+	public PlatePoint TryAddPointToPlate(Vector2 worldPos, float felsic, float mafic, int threshold)
 	{
 		Vector2 local = WorldToLocal(worldPos);
 		Vector2 oldWorld = new Vector2(worldPos.X, worldPos.Y);
 
 		//TODO: dont add point to plate if >2 points already exist in the same cell
 
-		var p = new PlatePoint(local, height, this);
+		var p = new PlatePoint(local, felsic, mafic, this);
 		if (map.worldGrid.TryAddPoint(p, threshold))
 		{
 			points.Add(p);

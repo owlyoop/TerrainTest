@@ -29,8 +29,7 @@ public partial class WorldMap : Node
     List<Plate2D> plates;
     Image img;
 
-	float[,] avgHeights;
-	int[,] counts;
+	
 
 	[ExportCategory("World Simulation")]
 	[Export] public float Timescale = 0.1f; // how much is added to age per timestep;
@@ -218,34 +217,11 @@ public partial class WorldMap : Node
         return img;
     }
 
-    //this is slow. whatever.
-    void FillVoronoiCells()
-    {
-        for (int i = 0; i < cells.GetLength(0); i++)
-        {
-            for (int j = 0; j < cells.GetLength(1); j++)
-            {
-                int iter = 0;
-                
-                float min = float.MaxValue;
-                foreach (var c in voronoi.polygons)
-                {
-                    Color col = new Color((float)iter / voronoi.polygons.Count, (float)iter / voronoi.polygons.Count, (float)iter / voronoi.polygons.Count);
-                    float dist = c.Value.center.DistanceTo(new Vector2(i + 0.5f,j + 0.5f));
-                    if (dist < min)
-                    {
-                        min = dist;
-                        SetPixelWorld(i, j, col);
-                    }
-                    iter++;
-                }
-            }
-        }
-    }
 
+	float[,] avgHeights;
+	int[,] counts;
 	void DisplayPlates()
 	{
-		
 		for (int i = 0; i < counts.GetLength(0); i++)
 		{
 			for (int j = 0; j < counts.GetLength(1); j++)
@@ -274,14 +250,15 @@ public partial class WorldMap : Node
 			{
 				var h = avgHeights[i, j];
 				var c = Colors.DarkSeaGreen;
-				if (h < 0.5f)
+				if (h <= 0.5f)
 					c = Colors.DeepSkyBlue;
 				c *= (h + 0.5f);
 
-				if (worldGrid.grid[i, j].ContainsCollision || worldGrid.grid[i, j].ContainsBorderingOtherPlate)
-					c += Colors.Red;
-				if (counts[i, j] == 0)
-					c = Colors.Black;
+
+				//if (worldGrid.grid[i, j].ContainsCollision || worldGrid.grid[i, j].ContainsBorderingOtherPlate)
+				//	c += Colors.Red;
+				//if (counts[i, j] == 0)
+					//c = Colors.DeepSkyBlue;
 				SetPixelWorld(i, j, c);
 			}
 		}
@@ -317,7 +294,7 @@ public partial class WorldMap : Node
 
 					h = h / b;
 					var c = Colors.DarkSeaGreen;
-					if (h < 0f)
+					if (h < 0.5f)
 						c = Colors.DeepSkyBlue;
 					c *= (h + 0.5f);
 					//SetPixelWorld(i, j, c);
@@ -355,8 +332,12 @@ public partial class WorldMap : Node
 					}
 				}
 
-				//cells[(int)x, (int)y].plate = closestPlate;
-				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), noiseGen.GetNoise2D(cellPos.X, cellPos.Y));
+				float a = noiseGen.GetNoise2D(cellPos.X, cellPos.Y);
+				float felsic = Mathf.Clamp(a, 0.0001f, 1f);
+				float mafic = Mathf.Abs(Mathf.Clamp(a, -1f, 0.0001f));
+				felsic *= 50000f;
+				mafic *= 50000f;
+				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), felsic, mafic);
 			}
 		}
 	}

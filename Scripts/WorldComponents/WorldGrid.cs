@@ -10,7 +10,10 @@ public class GridCell
 	//TODO: might be better to have a 2D array, one row for each plate (plate.ID = index)
 	public List<PlatePoint> points;
 
+	public HashSet<int> uniquePlateIDs;
+
 	public Dictionary<int, Vector2> OpposingForceSums = new Dictionary<int, Vector2>();
+
 
 	public bool ContainsBoundary { get; private set; }	//If any point in this gridcell is a plate boundary
 	public bool ContainsCollision { get; private set; }  //If any point in this gridcell is a plate collision
@@ -22,6 +25,7 @@ public class GridCell
 	public GridCell()
 	{
 		points = new List<PlatePoint>();
+		uniquePlateIDs = new HashSet<int>();
 		ContainsBoundary = false;
 		ContainsCollision = false;
 		ContainsEdgeBoundary = false;
@@ -70,11 +74,23 @@ public class GridCell
 	public void AddPoint(PlatePoint point)
 	{
 		points.Add(point);
+		uniquePlateIDs.Add(point.plate.ID);
 	}
 
 	public void RemovePoint(PlatePoint point)
 	{
 		points.Remove(point);
+		bool stillHasPlate = false;
+		foreach (var p in points)
+		{
+			if (p.plate.ID == point.plate.ID)
+			{
+				stillHasPlate = true;
+				break;
+			}
+		}
+		if (!stillHasPlate)
+			uniquePlateIDs.Remove(point.plate.ID);
 	}
 
 	public void MarkAsEmpty()
@@ -154,22 +170,25 @@ public class GridCell
 		var plate = point.plate;
 		var newpos = Vector2.Zero;
 		int count = 0;
-		float h = 0;
+		float f = 0;
+		float m = 0;
 		for (int i = points.Count - 1; i >= 0; i--)
 		{
 			if (points[i].plate == plate)
 			{
 				newpos += points[i].WorldPos;
 				count++;
-				h += points[i].height;
+				f = points[i].Felsic;
+				m = points[i].Mafic;
 				plate.points.Remove(points[i]);
 				points.Remove(points[i]);
 			}
 		}
 		newpos /= count;
-		h /= count;
+		f /= count;
+		m /= count;
 
-		var p = new PlatePoint(plate.WorldToLocal(newpos), h, plate);
+		var p = new PlatePoint(plate.WorldToLocal(newpos), f, m, plate);
 		p.gridIndex = point.gridIndex;
 		points.Add(p);
 	}
@@ -436,25 +455,32 @@ public partial class WorldGrid
 						bestPlate = p.plate;
 				}
 
-				var h = 0f;
+				//TODO: collisions instead of this placeholder stuff
+				/* ideas
+				 * get relative velocity between plates?
+				 * dif collision types? continental vs continental: no subduction, build mountain
+				 * continental vs oceanic: oceanic subducts
+				 * oceanic vs oceanic: denser oceanic plate subducts
+				 * 
+				 * platepoints can have both continental&oceanic material on them.
+				 */
+
+
 				for (int k = 0; k < cell.points.Count; k++)
 				{
 					var p = cell.points[k];
 					if (p.plate.ID != bestPlate.ID)
 					{
-						/*p.height = p.height - 0.01f;
-						h += 0.001f;
+						p.RemoveMaterial(10f, 10f);
 						if (p.height < -1f)
 						{
 							p.plate.points.Remove(p);
 							RemovePoint(p);
-						}*/
-						p.plate.points.Remove(p);
-						RemovePoint(p);
+						}
 					}
 					else
 					{
-						p.height += 0.001f;
+						//p.height += 0.001f;
 					}
 				}
 			}
@@ -488,40 +514,40 @@ public partial class WorldGrid
 				//	continue;
 
 				//calculate forces being applied to this from bordering gridcells
-				foreach (var p in cell.points)
+				Vector2 totalForce = Vector2.Zero;
+				float count = 0.001f;
+				for (int dx = -1; dx <= 1; dx++)
 				{
-					Vector2 totalForce = Vector2.Zero;
-					int count = 0;
-					for (int dx = -1; dx <= 1; dx++)
+					for (int dy = -1; dy <= 1; dy++)
 					{
-						for (int dy = -1; dy <= 1; dy++)
+						int di = i + dx;
+						int dj = j + dy;
+						if (CheckIfIndexInBounds(di, dj))
 						{
-							int di = i + dx;
-							int dj = j + dy;
-							if (CheckIfIndexInBounds(di, dj))
+							var othercell = grid[di, dj];
+							//if (!othercell.ContainsCollision && othercell.ContainsBorderingOtherPlate) continue;
+							foreach (var o in othercell.OpposingForceSums)
 							{
-								var othercell = grid[di, dj];
-								//if (!othercell.ContainsCollision && othercell.ContainsBorderingOtherPlate) continue;
-								foreach(var o in othercell.OpposingForceSums)
-								{
-									if (o.Key != p.plate.ID)
-									{
-										totalForce += o.Value;
-										count++;
-									}
-								}
+								totalForce += o.Value;
+								count = count + 1;
 							}
 						}
 					}
+				}
+				totalForce =  totalForce / count;
 
+				foreach (var p in cell.points)
+				{
+					p.Velocity = p.Velocity * 0.98f;
 					//TODO: apply force properly. this is arbituary for testing
 					float speed = p.Velocity.Length();
 					float ospeed = totalForce.Length();
-					p.Velocity = p.Velocity.Normalized().Lerp(totalForce.Normalized(), 0.9f);
+					p.Velocity = p.Velocity.Normalized().Lerp(totalForce.Normalized(), 0.2f);
 					if (ospeed <= 0f)
 						p.Velocity *= speed;
 					else
 						p.Velocity *= Mathf.Clamp(ospeed / (float)count, 0.01f, 10f);
+					//p.Velocity *= speed;
 				}
 			}
 		}
