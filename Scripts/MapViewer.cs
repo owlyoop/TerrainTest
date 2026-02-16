@@ -10,7 +10,9 @@ public partial class MapViewer : Node
     [Export] public float camSpeed;
     [Export] public float zoomSpeed;
 
-    [ExportCategory("UI")]
+	[Export] public MeshInstance2D mapDisplay;
+
+	[ExportCategory("UI")]
     [Export] public Control PlateInfoGroup;
     [Export] public Control CellInfoGroup;
     [Export] public SpinBox PlateSpinBox;
@@ -30,6 +32,14 @@ public partial class MapViewer : Node
 
 	int plateIndex = 0;
 
+
+	Cell2D[,] cells;
+
+	Image img;
+	float[,] avgHeights;
+	int[,] counts;
+
+
 	public override void _Ready()
 	{
         cam1.Position = new Vector2(map.worldWidth / 2f, map.worldHeight / 2f);
@@ -37,9 +47,57 @@ public partial class MapViewer : Node
         OnCameraZoom();
 		map.OnTimestepCompleted += HighlightSelectedPlate;
 
+		avgHeights = new float[map.worldWidth, map.worldHeight];
+		counts = new int[map.worldWidth, map.worldHeight];
 	}
 
-    public void GetInput()
+	public void Initialize(int width, int height)
+	{
+		GenerateCells(width, height);
+		CreateMesh();
+	}
+
+	public void DisplayMap()
+	{
+		DisplayPlates();
+		RedrawMap();
+	}
+
+	#region Input
+	public override void _Input(InputEvent @event)
+	{
+		if (@event.IsActionPressed("Select"))
+		{
+			if (PlateCheckButton.ButtonPressed)
+			{
+				PlateInfoGroup.Visible = false;
+				CellInfoGroup.Visible = true;
+				//GD.Print(GetViewport().GetMousePosition());
+				var viewToWorld = cam1.GetCanvasTransform().AffineInverse();
+				var worldPos = viewToWorld * GetViewport().GetMousePosition();
+				//GD.Print(worldPos);
+				OnCellSelected(GetCellFromPosition(worldPos));
+			}
+			else
+			{
+				PlateInfoGroup.Visible = true;
+				CellInfoGroup.Visible = false;
+			}
+
+		}
+		if (@event.IsActionPressed("Cam_Zoom_In"))
+		{
+			cam1.Zoom *= zoomSpeed;
+			OnCameraZoom();
+		}
+		if (@event.IsActionPressed("Cam_Zoom_Out"))
+		{
+			cam1.Zoom *= (1.0f / zoomSpeed);
+			OnCameraZoom();
+		}
+	}
+
+	public void GetInput()
     {
         Vector2 inputDirection = Input.GetVector("Cam_Move_Left", "Cam_Move_Right", "Cam_Move_Up", "Cam_Move_Down");
         cam1.Translate(inputDirection * camSpeed * (1f / (cam1.Zoom.Y + cam1.Zoom.X)));
@@ -56,7 +114,12 @@ public partial class MapViewer : Node
         cam1.Scale = new Vector2(1 / cam1.Zoom.X, 1 / cam1.Zoom.Y);
     }
 
-    void DisplayPlateInfo()
+	#endregion
+
+	#region UI
+	
+
+	void DisplayPlateInfo()
     {
 		var plate = map.GetPlateByIndex(plateIndex);
 		SelectedPlatePosition.Text = plate.origin.ToString();
@@ -76,7 +139,6 @@ public partial class MapViewer : Node
 		
 		HighlightSelectedPlate();
 		DisplayPlateInfo();
-
 	}
 
     void OnCellSelected(Cell2D cell)
@@ -129,8 +191,6 @@ public partial class MapViewer : Node
 
     }
 
-	
-
 	void HighlightSelectedPlate()
 	{
 		var plate = map.GetPlateByIndex(plateIndex);
@@ -164,6 +224,9 @@ public partial class MapViewer : Node
 		}
 	}
 
+	#endregion
+
+	#region Overlay Rendering
 	void CreatePlatePtsOverlay()
 	{
 		var plate = map.GetPlateByIndex(plateIndex);
@@ -235,38 +298,181 @@ public partial class MapViewer : Node
 
 		return mesh;
 	}
+	#endregion
 
-    public override void _Input(InputEvent @event)
-    {
-        if (@event.IsActionPressed("Select"))
-        {
-			if (PlateCheckButton.ButtonPressed)
-            {
-                PlateInfoGroup.Visible = false;
-                CellInfoGroup.Visible = true;
-			    //GD.Print(GetViewport().GetMousePosition());
-                var viewToWorld = cam1.GetCanvasTransform().AffineInverse();
-                var worldPos = viewToWorld * GetViewport().GetMousePosition();
-                //GD.Print(worldPos);
-                OnCellSelected(map.GetCellFromPosition(worldPos));
+
+	#region Map Rendering
+	Image InitializeImage()
+	{
+		var img = Image.CreateEmpty(map.worldWidth, map.worldHeight, false, Image.Format.Rgb8);
+		return img;
+	}
+
+	//Image uses 0,0 as the topleft but 2d arrays use 0,0 as bottomleff
+	void SetPixelWorld(int x, int y, Color color)
+	{
+		img.SetPixel(x, img.GetHeight() - 1 - y, color);
+	}
+
+	void GenerateCells(int width, int height)
+	{
+		cells = new Cell2D[width, height];
+		for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < height; j++)
+			{
+				cells[i, j] = new Cell2D(i, j);
+				cells[i, j].SetHeight(map.noiseGen.GetNoise2D(i, j));
 			}
-            else
-            {
-                PlateInfoGroup.Visible = true;
-                CellInfoGroup.Visible = false;
-            }
-
 		}
-        if (@event.IsActionPressed("Cam_Zoom_In"))
-        {
-            cam1.Zoom *= zoomSpeed;
-            OnCameraZoom();
-        }
-        if (@event.IsActionPressed("Cam_Zoom_Out"))
-        {
-            cam1.Zoom *= (1.0f / zoomSpeed);
-            OnCameraZoom();
-        }
-    }
+	}
+
+	public Cell2D GetCellFromPosition(Vector2 pos)
+	{
+		if ((int)pos.X >= 0 && (int)pos.X < map.worldWidth &&
+			(int)pos.Y >= 0 && (int)pos.Y < map.worldHeight)
+		{
+			return cells[(int)pos.X, (int)pos.Y];
+		}
+		else return null;
+	}
+
+	void CreateMesh()
+	{
+		mapDisplay.Scale = new Vector2(map.worldWidth, map.worldHeight);
+		mapDisplay.Position = new Vector2(map.worldWidth / 2f, map.worldHeight / 2f);
+
+		img = CreateImageFromCells();
+		
+		var texture = ImageTexture.CreateFromImage(img);
+		mapDisplay.Texture = texture;
+	}
+
+	void RedrawMap()
+	{
+		var texture = ImageTexture.CreateFromImage(img);
+		mapDisplay.Texture = texture;
+	}
+
+
+	Image CreateImageFromCells()
+	{
+		int width = cells.GetLength(0);
+		int height = cells.GetLength(1);
+
+		img = Image.CreateEmpty(width, height, false, Image.Format.Rgb8);
+
+		for (int i = 0; i < cells.GetLength(0); i++)
+		{
+			for (int j = 0; j < cells.GetLength(1); j++)
+			{
+				Color color;
+
+				var h = Math.Abs(cells[i, j].height);
+				var c = 1 - h;
+				if (cells[i, j].height >= 0f)
+					color = new Color(Mathf.Lerp(0f, 0.4f, h),
+											Mathf.Lerp(0.25f, 1f, h),
+											Mathf.Lerp(0f, 0.4f, h));  //land
+
+				else color = new Color(Mathf.Lerp(0f, 0.25f, c),
+											Mathf.Lerp(0f, 0.25f, c),
+											Mathf.Lerp(0.1f, 1f, c));  //water
+
+				//The image is created flipped because the Image uses 0,0 at the topleft but 2d arrays use 0,0 as bottomleft
+				SetPixelWorld(i, j, color);
+			}
+		}
+
+		return img;
+	}
+
+	void DisplayPlates()
+	{
+		for (int i = 0; i < counts.GetLength(0); i++)
+		{
+			for (int j = 0; j < counts.GetLength(1); j++)
+			{
+				SetPixelWorld(i, j, Colors.Black);
+				counts[i, j] = 0;
+				avgHeights[i, j] = 0f;
+			}
+		}
+
+		foreach (var plate in map.plates)
+		{
+			foreach (var p in plate.points)
+			{
+				var x = p.gridIndex.X;
+				var y = p.gridIndex.Y;
+
+				counts[x, y]++;
+				avgHeights[x, y] += (p.height / (float)counts[x, y]);
+			}
+		}
+
+		for (int i = 0; i < avgHeights.GetLength(0); i++)
+		{
+			for (int j = 0; j < avgHeights.GetLength(1); j++)
+			{
+				var h = avgHeights[i, j];
+				var c = Colors.DarkSeaGreen;
+				if (h <= 0.5f)
+					c = Colors.DeepSkyBlue;
+				c *= (h + 0.5f);
+
+
+				//if (worldGrid.grid[i, j].ContainsCollision || worldGrid.grid[i, j].ContainsBorderingOtherPlate)
+				//	c += Colors.Red;
+				//if (counts[i, j] == 0)
+				//c = Colors.DeepSkyBlue;
+				SetPixelWorld(i, j, c);
+			}
+		}
+
+		//for empty points, get average of surrounding points
+		for (int i = 0; i < avgHeights.GetLength(0); i++)
+		{
+			for (int j = 0; j < avgHeights.GetLength(1); j++)
+			{
+				if (counts[i, j] == 0)
+				{
+					var b = 0;
+					var h = 0f;
+					for (int dx = -1; dx <= 1; dx++)
+					{
+						for (int dy = -1; dy <= 1; dy++)
+						{
+							if (dx == 0 & dy == 0) continue;
+							int di = i + dx;
+							int dj = j + dy;
+
+							if (di >= 0 && di < counts.GetLength(0)
+								&& dj >= 0 && dj < counts.GetLength(1))
+							{
+								if (counts[di, dj] > 0)
+								{
+									b++;
+									h += avgHeights[di, dj];
+								}
+							}
+						}
+					}
+
+					h = h / b;
+					var c = Colors.DarkSeaGreen;
+					if (h < 0.5f)
+						c = Colors.DeepSkyBlue;
+					c *= (h + 0.5f);
+					//SetPixelWorld(i, j, c);
+				}
+			}
+		}
+	}
+
+
+
+	#endregion
+
 
 }

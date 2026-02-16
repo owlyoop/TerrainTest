@@ -27,13 +27,14 @@ seamless_blend_skirt = 0.5
 
 [node name="main2D" type="Node2D"]
 
-[node name="MapViewer" type="Node2D" parent="." node_paths=PackedStringArray("cam1", "map", "LineOverlay", "PlateInfoGroup", "CellInfoGroup", "PlateSpinBox", "PlateCheckButton", "SelectedPlatePosition", "SelectedPlateRotation", "SelectedPlateDensity", "SelectedCellInfo", "NumPlatePointsInCell")]
+[node name="MapViewer" type="Node2D" parent="." node_paths=PackedStringArray("cam1", "map", "LineOverlay", "mapDisplay", "PlateInfoGroup", "CellInfoGroup", "PlateSpinBox", "PlateCheckButton", "SelectedPlatePosition", "SelectedPlateRotation", "SelectedPlateDensity", "SelectedCellInfo", "NumPlatePointsInCell")]
 script = ExtResource("1_c47n3")
 cam1 = NodePath("../CameraController/Camera2D")
 map = NodePath("../WorldMap")
 LineOverlay = NodePath("../Overlay")
 camSpeed = 20.0
 zoomSpeed = 1.5
+mapDisplay = NodePath("../MeshInstance2D")
 PlateInfoGroup = NodePath("../CanvasLayer/Plate Info UI")
 CellInfoGroup = NodePath("../CanvasLayer/Cell Info UI")
 PlateSpinBox = NodePath("../CanvasLayer/Plate Info UI/SpinBox")
@@ -199,15 +200,15 @@ dimensions = 5
 numSites = 12
 lineWidth = 0.16
 
-[node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("mapDisplay", "voronoi", "timer")]
+[node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("voronoi", "timer", "mapViewer")]
 script = ExtResource("3_r2hvk")
 worldHeight = 140
 noiseGen = SubResource("FastNoiseLite_w74eu")
 noiseTex = SubResource("NoiseTexture2D_1w0k7")
-mapDisplay = NodePath("../MeshInstance2D")
 voronoi = NodePath("../VoronoiMap")
 timer = NodePath("Timer")
 PlatePointDensity = 1.0
+mapViewer = NodePath("../MapViewer")
 
 [node name="Timer" type="Timer" parent="WorldMap"]
 wait_time = 0.02
