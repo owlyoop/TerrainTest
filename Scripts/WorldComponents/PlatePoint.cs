@@ -165,6 +165,9 @@ public class PlatePoint
 		float[] material = new float[2];
 		material[0] = f;
 		material[1] = m;
+		CalculateElevation();
+		Felsic = f;
+		Mafic = m;
 		return material;
 	}
 

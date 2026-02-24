@@ -63,6 +63,7 @@ public partial class MapViewer : Node
 		RedrawMap();
 	}
 
+
 	#region Input
 	public override void _Input(InputEvent @event)
 	{
@@ -115,6 +116,7 @@ public partial class MapViewer : Node
     }
 
 	#endregion
+
 
 	#region UI
 	
@@ -226,6 +228,7 @@ public partial class MapViewer : Node
 
 	#endregion
 
+
 	#region Overlay Rendering
 	void CreatePlatePtsOverlay()
 	{
@@ -275,7 +278,7 @@ public partial class MapViewer : Node
 
 		mmiPlateVels = new MultiMeshInstance2D();
 		mmiPlateVels.Multimesh = mmPlateVels;
-		mmiPlateVels.Modulate = Colors.White;
+		mmiPlateVels.Modulate = Colors.Red;
 
 		AddChild(mmiPlateVels);
 	}
@@ -422,8 +425,8 @@ public partial class MapViewer : Node
 				c *= (h + 0.5f);
 
 
-				//if (worldGrid.grid[i, j].ContainsCollision || worldGrid.grid[i, j].ContainsBorderingOtherPlate)
-				//	c += Colors.Red;
+				if (map.worldGrid.grid[i, j].ContainsCollision || map.worldGrid.grid[i, j].ContainsBorderingOtherPlate)
+					c += Colors.Red;
 				//if (counts[i, j] == 0)
 				//c = Colors.DeepSkyBlue;
 				SetPixelWorld(i, j, c);

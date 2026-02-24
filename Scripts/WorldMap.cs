@@ -18,8 +18,8 @@ public partial class WorldMap : Node
 
     [Export] public FastNoiseLite noiseGen;
     [Export] public NoiseTexture2D noiseTex;
-    
-    [Export] public VoronoiWorld voronoi;
+	[Export] public MapViewer mapViewer;
+	[Export] public VoronoiWorld voronoi;
 
 	[Export] public Timer timer;
 
@@ -35,8 +35,6 @@ public partial class WorldMap : Node
 	public event Action OnTimestepCompleted;
     //X and Y are image dimensions. Used for collision detecting between platepoints of differing plates
     public WorldGrid worldGrid;
-	[Export]
-	public MapViewer mapViewer;
 
 	public override void _Ready()
     {
