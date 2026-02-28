@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 public enum PlateCollisionType
 {
+	None,
 	Orogenic,       //continental vs continental. mountain building
 	Subduction,     //oceanic vs continental OR oceanic vs oceanic.
 					//	oceanic subducts under continental or less dense oceanic plate
@@ -32,7 +33,7 @@ public static class PlateCollision
 
 		if (plates.Count < 2)
 			return;
-
+		
 
 		foreach (var p in cell.points)
 		{
@@ -42,16 +43,9 @@ public static class PlateCollision
 				if (p.plate.ID != pi)
 				{
 					var collisionInfo = GetLocalCollisionType(p, otherplate, cell, grid);
+					cell.collisionType = collisionInfo.Type;
+					p.collisionType = collisionInfo.Type;
 					HandleCollision(p, otherplate, collisionInfo);
-
-					if (p.plate.VelocityDots.ContainsKey(otherplate))
-					{
-
-					}
-					else
-					{
-						GD.PrintErr("Plate doesn't contain collision info");
-					}
 				}
 			}
 		}
@@ -132,15 +126,16 @@ public static class PlateCollision
 		switch(info.Type)
 		{
 			case PlateCollisionType.Divergent:
-				//point.AddMaterial(0.0f, 0.05f);
+				point.RemoveMaterial(40f, 40f);
 				break;
 			case PlateCollisionType.Orogenic:
-				point.AddMaterial(50f, 0.0f);
+				point.RemoveMaterial(50f, 10.0f);
 				break;
 			case PlateCollisionType.Subduction:
-				point.RemoveMaterial(400f, 400f);
+				point.RemoveMaterial(40f, 40f);
 				break;
 			case PlateCollisionType.Transform:
+				point.RemoveMaterial(40f, 40f);
 				break;
 		}
 	}

@@ -21,6 +21,8 @@ public class GridCell
 	public bool ContainsBorderingOtherPlate { get; private set; }
 	public bool HasCollisionChecked { get; private set; }   //Used for the update functions that check for collisions/boundaries to avoid repeated checks.
 
+
+	public PlateCollisionType collisionType;
 	public GridCell(int x, int y)
 	{
 		points = new List<PlatePoint>();
@@ -29,7 +31,7 @@ public class GridCell
 		ContainsCollision = false;
 		ContainsEdgeBoundary = false;
 		ContainsBorderingOtherPlate = false;
-
+		collisionType = PlateCollisionType.None;
 		HasCollisionChecked = false;
 		this.x = x;
 		this.y = y;
@@ -87,6 +89,8 @@ public class GridCell
 		{
 			PlateIDs.Add(p.plate.ID);
 		}
+		if (points.Count == 0)
+			MarkAsEmpty();
 	}
 
 	public void MarkAsEmpty()
@@ -95,6 +99,7 @@ public class GridCell
 		this.ContainsBoundary = false;
 		this.ContainsEdgeBoundary = false;
 		this.ContainsBorderingOtherPlate = false;
+		this.collisionType = PlateCollisionType.None;
 		foreach (var p in points)
 		{
 			p.MarkPointAsColliding(false);

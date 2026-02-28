@@ -145,23 +145,23 @@ public partial class MapViewer : Node
 
     void OnCellSelected(Cell2D cell)
     {
-        selectedCell = cell;
+		var grid = map.worldGrid.grid;
+
+		selectedCell = cell;
         if (cell != null)
         {
             HighlightSelectedCell(cell);
             SelectedCellInfo.Text = cell.x.ToString() + ", " + cell.y.ToString();
-            NumPlatePointsInCell.Text = map.worldGrid.grid[cell.x, cell.y].points.Count().ToString();
+            NumPlatePointsInCell.Text = grid[cell.x, cell.y].points.Count().ToString();
 
-			GD.Print("----------");
-			//GD.Print(cell.x.ToString() + ", " + cell.y.ToString());
-			
-			//GD.Print(map.hashgrid.GetIndexFromPosition(new Vector2(cell.x, cell.y)));
-			GD.Print(map.worldGrid.grid[cell.x, cell.y].points.Count().ToString());
-			foreach(var p in map.worldGrid.grid[cell.x, cell.y].points)
+			GD.Print("\n" + NumPlatePointsInCell.Text);
+			foreach(var p in grid[cell.x, cell.y].points)
 			{
+				GD.Print(p.isActive);
 				GD.Print(p.plate.ID, " , grid idx: ", p.gridIndex.X, " ", p.gridIndex.Y);
+				GD.Print(p.collisionType);
+				GD.Print("----");
 			}
-			GD.Print("----------");
 		}
     }
 
@@ -414,21 +414,39 @@ public partial class MapViewer : Node
 			}
 		}
 
-		for (int i = 0; i < avgHeights.GetLength(0); i++)
+		for (int i = 0; i < map.worldGrid.grid.GetLength(0); i++)
 		{
-			for (int j = 0; j < avgHeights.GetLength(1); j++)
+			for (int j = 0; j < map.worldGrid.grid.GetLength(1); j++)
 			{
-				var h = avgHeights[i, j];
-				var c = Colors.DarkSeaGreen;
-				if (h <= 0.5f)
-					c = Colors.DeepSkyBlue;
-				c *= (h + 0.5f);
+				var cell = map.worldGrid.grid[i, j];
+				var c = new Color(0.3f, 0.4f, 0.5f);
+				if (cell.points.Count > 0)
+				{
+					if (cell.points[0].GetCrustType() == PlatePoint.CrustType.Oceanic)
+						c = new Color(0.5f, 0.6f, 0.75f);
+					else c = new Color(0.5f, 0.8f, 0.5f);
+				}
 
-
-				//if (map.worldGrid.grid[i, j].ContainsCollision || map.worldGrid.grid[i, j].ContainsBorderingOtherPlate)
-					//c += Colors.Red;
-				//if (counts[i, j] == 0)
-				//c = Colors.DeepSkyBlue;
+				if (!cell.IsCompletelyEmpty())
+				{
+					if (cell.collisionType == PlateCollisionType.Transform)
+					{
+						c = Colors.Green;
+					}
+					else if (cell.collisionType == PlateCollisionType.Subduction)
+					{
+						c = Colors.Red;
+					}
+					else if (cell.collisionType == PlateCollisionType.Orogenic)
+					{
+						c = Colors.Cyan;
+					}
+					else if (cell.collisionType == PlateCollisionType.Divergent)
+					{
+						c = Colors.Yellow;
+					}
+					
+				}
 				SetPixelWorld(i, j, c);
 			}
 		}

@@ -19,10 +19,6 @@ public partial class Plate2D
 	public float angularVelocity;
 
     public int ID;
-
-
-	//public Dictionary<Plate2D, PlateCollisionType> collidingPlates; //used for determining type of collision, cleared every timestep
-	public Dictionary<Plate2D, float> VelocityDots; //velocity vectors are normalized
 	
 
 	public Plate2D(WorldMap map, Vector2 origin, int ID)
@@ -33,8 +29,6 @@ public partial class Plate2D
 		this.Center = origin;
 		points = new List<PlatePoint>();
         this.ID = ID;
-		VelocityDots = new Dictionary<Plate2D, float>();
-		//collidingPlates = new Dictionary<Plate2D, PlateCollisionType>();
     }
 
 

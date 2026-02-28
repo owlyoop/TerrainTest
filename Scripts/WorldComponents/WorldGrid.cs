@@ -160,8 +160,21 @@ public partial class WorldGrid
 			{
 				var cell = grid[i, j];
 
-				if (cell.ContainsCollision || cell.ContainsBorderingOtherPlate)
-					PlateCollision.RegisterCollisions(cell, this, map);
+				for (int p = 0; p < cell.points.Count; p++)
+				{
+					if (cell.points[p].Felsic < 0.01f && cell.points[p].Mafic < 0.01f)
+					{
+						cell.points.Remove(cell.points[p]);
+					}
+				}
+					
+
+				cell.collisionType = PlateCollisionType.None;
+				if (!cell.IsEmptyOrInactive())
+				{
+					if (cell.ContainsCollision || cell.ContainsBorderingOtherPlate)
+						PlateCollision.RegisterCollisions(cell, this, map);
+				}
 
 				cell.MarkAllAsColliding(false);
 				cell.MarkAllAsBoundary(false);
@@ -237,56 +250,8 @@ public partial class WorldGrid
 					cell.MarkAllAsEdgeBoundary(boundary);
 					cell.MarkAllAsBorderingOtherPlate(otherplate);
 				}
-			}
-		}
-	}
 
-	public void Collide()
-	{
-		int width = grid.GetLength(0);
-		int height = grid.GetLength(1);
-		for (int i = 0; i < width; i++)
-		{
-			for (int j = 0; j < height; j++)
-			{
-				var cell = grid[i, j];
-
-				if (cell.points.Count <= 1)
-					continue;
-				if (!cell.ContainsCollision && !cell.ContainsBorderingOtherPlate)
-					continue;
-
-				var bestPlate = cell.points[0].plate;
-				foreach (var p in cell.points)
-				{
-					if (p.plate.density > bestPlate.density)
-						bestPlate = p.plate;
-				}
-
-				//TODO: collisions instead of this placeholder stuff
-				/* ideas
-				 * get relative velocity between plates?
-				 * dif collision types? continental vs continental: no subduction, build mountain
-				 * continental vs oceanic: oceanic subducts
-				 * oceanic vs oceanic: denser oceanic plate subducts
-				 * 
-				 * platepoints can have both continental&oceanic material on them.
-				 */
-
-
-				for (int k = 0; k < cell.points.Count; k++)
-				{
-					var p = cell.points[k];
-					if (p.plate.ID != bestPlate.ID)
-					{
-						//p.RemoveMaterial(10f, 10f);
-						if (p.Felsic < 0.01f && p.Mafic < 0.01f)
-						{
-							p.plate.points.Remove(p);
-							RemovePoint(p);
-						}
-					}
-				}
+				
 			}
 		}
 	}

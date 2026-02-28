@@ -79,32 +79,29 @@ public partial class WorldMap : Node
 	//Main Tectonic Plate Loop
 	public void Timestep()
     {
-		var start = Time.GetTicksUsec();
+		//var start = Time.GetTicksUsec();
 		//move all tect plates
 		for (int i = 0; i < Plates.Count; i++)
 		{
 			Plates[i].MovePlate();
 		}
-		var end = Time.GetTicksUsec();
+		/*var end = Time.GetTicksUsec();
 		var workertime = (end - start) / 1000f;
-		GD.Print("Work time for moveplate: ", workertime);
+		GD.Print("Work time for moveplate: ", workertime); */
 
-		UpdatePlateVelocityDots();
-
-		start = Time.GetTicksUsec();
+		//start = Time.GetTicksUsec();
 		worldGrid.UpdatePointCategories();
-		end = Time.GetTicksUsec();
-		workertime = (end - start) / 1000f;
-		GD.Print("Work time for updatepoints: ", workertime);
+		//end = Time.GetTicksUsec();
+		//workertime = (end - start) / 1000f;
+		//GD.Print("Work time for updatepoints: ", workertime);
 
 
 		//check for collisions
-		start = Time.GetTicksUsec();
+		//start = Time.GetTicksUsec();
 		worldGrid.CollideWithForces();
-		//worldGrid.Collide();
-		end = Time.GetTicksUsec();
-		workertime = (end - start) / 1000f;
-		GD.Print("Work time for collide: ", workertime);
+		//end = Time.GetTicksUsec();
+		//workertime = (end - start) / 1000f;
+		//GD.Print("Work time for collide: ", workertime);
 
 
 
@@ -117,7 +114,7 @@ public partial class WorldMap : Node
 
 		mapViewer.DisplayMap();
 
-		GD.Print("-----------");
+		//GD.Print("-----------");
 		OnTimestepCompleted.Invoke();
 	}
 
@@ -166,7 +163,7 @@ public partial class WorldMap : Node
 		}
 	}
 
-	void UpdatePlateVelocityDots()
+	/*void UpdatePlateVelocityDots()
 	{
 		for (int i = 0; i < Plates.Count; i++)
 		{
@@ -183,7 +180,7 @@ public partial class WorldMap : Node
 				pb.VelocityDots.Add(pa, pb.Velocity.Normalized().Dot(pa.Velocity.Normalized()));
 			}
 		}
-	}
+	}*/
 
 	float WrappedDimension(float a, float b, float dimension)
 	{

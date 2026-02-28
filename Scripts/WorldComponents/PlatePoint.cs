@@ -12,6 +12,7 @@ public class PlatePoint
 		Continental	//does not subduct
 	}
 	public CrustType Crust = CrustType.Oceanic;
+	public PlateCollisionType collisionType;
 
 	//kg/m^3
 	public const float DENSITY_FELSIC = 2600f;	//2300-2800 i think
@@ -167,9 +168,14 @@ public class PlatePoint
 		float[] material = new float[2];
 		material[0] = f;
 		material[1] = m;
-		CalculateElevation();
 		Felsic = f;
 		Mafic = m;
+		CalculateElevation();
+		if (Felsic < 0.01f && Mafic < 0.01f)
+		{
+			this.plate.points.Remove(this);
+
+		}
 		return material;
 	}
 
