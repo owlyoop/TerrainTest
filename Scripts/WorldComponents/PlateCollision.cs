@@ -15,24 +15,13 @@ public enum PlateCollisionType
 public struct CollisionInfo
 {
 	public Vector2 BoundaryNormal;
-	public float ConvergenceSpeed;
-	public float ShearSpeed;
+	public float BoundaryDot;
 	public PlateCollisionType Type;
 }
 public static class PlateCollision
 {
 	public static void RegisterCollisions(GridCell cell, WorldGrid grid, WorldMap map)
 	{
-		//TODO: collisions instead of this placeholder stuff
-		/* ideas
-		 * get relative velocity between plates?
-		 * dif collision types? continental vs continental: no subduction, build mountain
-		 * continental vs oceanic: oceanic subducts
-		 * oceanic vs oceanic: denser oceanic plate subducts
-		 * 
-		 * platepoints can have both continental&oceanic material on them.
-		 */
-
 		var plates = new HashSet<int>(cell.PlateIDs);
 
 		grid.ForEachNeighbor(cell.x, cell.y, (di, dj, otherCell) =>
@@ -77,20 +66,19 @@ public static class PlateCollision
 	/// <returns></returns>
 	static CollisionInfo GetLocalCollisionType(PlatePoint point, Plate2D otherplate, GridCell cell, WorldGrid grid)
 	{
+		//Collision type is local because if a square plate collides into an L-shaped plate, then one side of the square plate would collide
+		//	more similarily to a transform fault vs another side being mountain building
 		var boundary = ComputeGradient(point, otherplate, cell, grid);
-		var relativeVel = otherplate.Velocity - point.plate.Velocity;
+		var vel = point.plate.Velocity.Normalized();
+		//close to 0 = plate is shearing other plate. negative = plate is colliding headon
+		float boundaryDot = vel.Dot(boundary);
 
-		float convergence = relativeVel.Dot(boundary);
-		var parallel = relativeVel - (boundary * convergence);
-		float shear = parallel.Length();
-
-		var type = ClassifyCollision(convergence, shear, point);
+		var type = ClassifyCollision(boundaryDot, point);
 
 		return new CollisionInfo
 		{
 			BoundaryNormal = boundary,
-			ConvergenceSpeed = convergence,
-			ShearSpeed = shear,
+			BoundaryDot = boundaryDot,
 			Type = type
 		};
 	}
@@ -101,7 +89,7 @@ public static class PlateCollision
 	/// <param name="point"></param>
 	/// <param name="otherplate"></param>
 	/// <param name="cell"></param>
-	/// <returns></returns>
+	/// <returns>A normalized Vector2 pointing in the average direction of other plates</returns>
 	static Vector2 ComputeGradient(PlatePoint point, Plate2D otherplate, GridCell cell, WorldGrid grid)
 	{
 		Vector2 gradient = Vector2.Zero;
@@ -122,19 +110,18 @@ public static class PlateCollision
 
 		if (count > 0)
 			return (gradient / count).Normalized();
-		else
+		else //shouldnt be possible to reach this function with a count of 0, but just incase
 			return (otherplate.Velocity - point.plate.Velocity).Normalized();
 	}
 
-	static PlateCollisionType ClassifyCollision(float convergenceSpeed, float shearSpeed, PlatePoint point)
+	static PlateCollisionType ClassifyCollision(float boundaryDot, PlatePoint point)
 	{
-		const float convergenceThreshold = 0.05f;
-		const float shearThreshold = 0.05f;
+		const float shearThreshold = 0.2f;
 
-		if (convergenceSpeed < -convergenceThreshold)
-			return PlateCollisionType.Divergent;
-		if (convergenceSpeed < convergenceThreshold && shearSpeed > shearThreshold)
+		if (boundaryDot < shearThreshold && boundaryDot > -shearThreshold)
 			return PlateCollisionType.Transform;
+		if (boundaryDot > shearThreshold)
+			return PlateCollisionType.Divergent;
 		if (point.GetCrustType() == PlatePoint.CrustType.Oceanic)
 			return PlateCollisionType.Subduction;
 		else return PlateCollisionType.Orogenic;
@@ -145,12 +132,13 @@ public static class PlateCollision
 		switch(info.Type)
 		{
 			case PlateCollisionType.Divergent:
-				point.AddMaterial(0.0f, 0.05f);
+				//point.AddMaterial(0.0f, 0.05f);
 				break;
 			case PlateCollisionType.Orogenic:
-				point.AddMaterial(0.05f, 0.0f);
+				point.AddMaterial(50f, 0.0f);
 				break;
 			case PlateCollisionType.Subduction:
+				point.RemoveMaterial(400f, 400f);
 				break;
 			case PlateCollisionType.Transform:
 				break;

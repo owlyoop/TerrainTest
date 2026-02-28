@@ -279,16 +279,12 @@ public partial class WorldGrid
 					var p = cell.points[k];
 					if (p.plate.ID != bestPlate.ID)
 					{
-						p.RemoveMaterial(10f, 10f);
+						//p.RemoveMaterial(10f, 10f);
 						if (p.Felsic < 0.01f && p.Mafic < 0.01f)
 						{
 							p.plate.points.Remove(p);
 							RemovePoint(p);
 						}
-					}
-					else
-					{
-						//p.height += 0.001f;
 					}
 				}
 			}

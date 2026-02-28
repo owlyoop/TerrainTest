@@ -101,7 +101,7 @@ public partial class WorldMap : Node
 		//check for collisions
 		start = Time.GetTicksUsec();
 		worldGrid.CollideWithForces();
-		worldGrid.Collide();
+		//worldGrid.Collide();
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for collide: ", workertime);
