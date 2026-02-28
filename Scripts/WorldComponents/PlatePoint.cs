@@ -17,7 +17,9 @@ public class PlatePoint
 	public const float DENSITY_FELSIC = 2600f;	//2300-2800 i think
 	public const float DENSITY_MAFIC_YOUNG = 2800f;
 	public const float DENSITY_MAFIC_OLD = 3500f;
-	public const float MAFIC_MAX_AGE = 100f;	//age where the mafic reaches max density
+	public const float MAFIC_MAX_AGE = 100f;    //age where the mafic reaches max density
+
+	
 
 	private float _felsic;	//Continental, less dense.
 	private float _mafic;	//Oceanic, about 10-15% denser than felsic?
@@ -180,7 +182,7 @@ public class PlatePoint
 	public CrustType GetCrustType()
 	{
 		var total = Felsic + Mafic;
-		if (Mafic / total >= 0.7f)
+		if (Mafic / total >= 0.5f)
 			Crust = CrustType.Oceanic;
 		else Crust = CrustType.Continental;
 		return Crust;

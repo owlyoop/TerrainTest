@@ -8,7 +8,7 @@ public partial class Plate2D
 	public WorldMap map;
     public Vector2 origin; //The origin of the plate created from voronoi polygons. not the actual center
 	public Vector2 offset;
-	public Vector2 center;
+	public Vector2 Center;
 	public float rotation; //in degrees
 
 	public List<PlatePoint> points; //the points that make up this plate, initially created from points on a grid that were inside the voronoi polygon
@@ -20,18 +20,21 @@ public partial class Plate2D
 
     public int ID;
 
-	public Plate2D PlateClone;  //the duplicated plate for the tiling world
 
-	List<Plate2D> collidingPlates;	//other plates that are colliding with this one.
+	//public Dictionary<Plate2D, PlateCollisionType> collidingPlates; //used for determining type of collision, cleared every timestep
+	public Dictionary<Plate2D, float> VelocityDots; //velocity vectors are normalized
+	
 
-    public Plate2D(WorldMap map, Vector2 origin, int ID)
+	public Plate2D(WorldMap map, Vector2 origin, int ID)
     {
 		this.map = map;
         this.origin = origin;
 		this.offset = Vector2.Zero;
-		this.center = origin;
+		this.Center = origin;
 		points = new List<PlatePoint>();
         this.ID = ID;
+		VelocityDots = new Dictionary<Plate2D, float>();
+		//collidingPlates = new Dictionary<Plate2D, PlateCollisionType>();
     }
 
 
@@ -135,7 +138,9 @@ public partial class Plate2D
 		offset += (Velocity);
 		offset.X = offset.X % map.worldWidth;
 		offset.Y = offset.Y % map.worldHeight;
-		rotation += 0.0f;	//TODO: angular velocity
+		rotation += 0.0f;   //TODO: angular velocity
+
+		//collidingPlates.Clear();
 		
 		foreach (var p in points)
 		{
@@ -177,4 +182,13 @@ public partial class Plate2D
 		}
 		Velocity /= count;
 	}
+
+	/*public void TryCheckCollision(Plate2D otherPlate)
+	{
+		if (collidingPlates.TryGetValue(otherPlate, out var val) == false)
+		{
+			var dot = Velocity.Dot(otherPlate.Velocity);
+
+		}
+	}*/
 }

@@ -5,8 +5,10 @@ using System.Drawing;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using static Godot.Projection;
 using Color = Godot.Color;
 using Vector2 = Godot.Vector2;
+
 
 public partial class WorldMap : Node
 {
@@ -25,8 +27,7 @@ public partial class WorldMap : Node
 
 	[Export] public float PlatePointDensity = 1.75f;
 
-    public List<Plate2D> plates;
-
+    public List<Plate2D> Plates;
 
 	[ExportCategory("World Simulation")]
 	[Export] public float Timescale = 0.1f; // how much is added to age per timestep;
@@ -39,16 +40,16 @@ public partial class WorldMap : Node
 	public override void _Ready()
     {
 		//Init
-        plates = new List<Plate2D>();
-        int ID = plates.Count;
+        Plates = new List<Plate2D>();
+        int ID = Plates.Count;
         foreach (var s in voronoi.basePolygons)
         {
             
             Plate2D plate = new Plate2D(this, s.Key, ID);
-            plates.Add(plate);
+            Plates.Add(plate);
             ID++;
         }
-        worldGrid = new WorldGrid(worldWidth, worldHeight);
+        worldGrid = new WorldGrid(worldWidth, worldHeight, this);
 		
 
 		mapViewer.Initialize(worldWidth, worldHeight);
@@ -56,7 +57,7 @@ public partial class WorldMap : Node
 		
 		
 		GD.Randomize();
-		foreach(var p in plates)
+		foreach(var p in Plates)
 		{
 			float rx = (float)GD.RandRange(-1f, 1f);
 			float ry = (float)GD.RandRange(-1f, 1f);
@@ -80,16 +81,18 @@ public partial class WorldMap : Node
     {
 		var start = Time.GetTicksUsec();
 		//move all tect plates
-		for (int i = 0; i < plates.Count; i++)
+		for (int i = 0; i < Plates.Count; i++)
 		{
-			plates[i].MovePlate();
+			Plates[i].MovePlate();
 		}
 		var end = Time.GetTicksUsec();
 		var workertime = (end - start) / 1000f;
 		GD.Print("Work time for moveplate: ", workertime);
 
+		UpdatePlateVelocityDots();
+
 		start = Time.GetTicksUsec();
-		worldGrid.UpdatePoints();
+		worldGrid.UpdatePointCategories();
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for updatepoints: ", workertime);
@@ -105,10 +108,10 @@ public partial class WorldMap : Node
 
 
 
-		for (int i = 0; i < plates.Count; i++)
+		for (int i = 0; i < Plates.Count; i++)
 		{
-			plates[i].CheckForNewPoints();
-			plates[i].UpdateVelocity();
+			Plates[i].CheckForNewPoints();
+			Plates[i].UpdateVelocity();
 		}
 
 
@@ -121,8 +124,8 @@ public partial class WorldMap : Node
 
     public Plate2D GetPlateByIndex(int index)
     {
-		index = index % plates.Count;
-        return plates[index];
+		index = index % Plates.Count;
+        return Plates[index];
     }
 
 	void AssignSiteIDs()
@@ -139,7 +142,7 @@ public partial class WorldMap : Node
 				Plate2D closestPlate = null;
 				Vector2 cellPos = new Vector2(x, y);
 
-				foreach (var p in plates)
+				foreach (var p in Plates)
 				{
 					//float px = p.origin.X % worldWidth;
 					//float py = p.origin.Y % worldHeight;
@@ -159,6 +162,25 @@ public partial class WorldMap : Node
 				felsic *= 50000f;
 				mafic *= 50000f;
 				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), felsic, mafic);
+			}
+		}
+	}
+
+	void UpdatePlateVelocityDots()
+	{
+		for (int i = 0; i < Plates.Count; i++)
+		{
+			Plates[i].VelocityDots.Clear();
+		}
+		for (int i = 0; i < Plates.Count; i++)
+		{
+			for (int j = i + 1; j < Plates.Count; j++)
+			{
+				var pa = Plates[i];
+				var pb = Plates[j];
+
+				pa.VelocityDots.Add(pb, pa.Velocity.Normalized().Dot(pb.Velocity.Normalized()));
+				pb.VelocityDots.Add(pa, pb.Velocity.Normalized().Dot(pa.Velocity.Normalized()));
 			}
 		}
 	}

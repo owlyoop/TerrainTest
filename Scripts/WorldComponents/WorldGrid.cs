@@ -2,15 +2,8 @@ using Godot;
 using Microsoft.VisualBasic.FileIO;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 
-public enum CollisionType
-{
-	Orogenic,       //continental vs continental. mountain building
-	Subduction,     //oceanic vs continental OR oceanic vs oceanic.
-					//	oceanic subducts under continental or less dense oceanic plate
-	Divergent,      //oceanic vs oceanic. moving away from eachother.
-	Transform       //any 2 plates moving past eachother
-}
 
 //Class used for spatially tracking platepoints for collision detecting
 public partial class WorldGrid
@@ -18,11 +11,13 @@ public partial class WorldGrid
 	public GridCell[,] grid;
 	int Width;
 	int Height;
+	WorldMap map;
 
-	public WorldGrid(int Width, int Height)
+	public WorldGrid(int Width, int Height, WorldMap map)
 	{
 		this.Width = Width;
 		this.Height = Height;
+		this.map = map;
 		grid = new GridCell[Width, Height];
 		for (int x = 0; x < Width; x++)
 		{
@@ -122,7 +117,7 @@ public partial class WorldGrid
 		{
 		});
 	 */
-	void ForEachNeighbor(int i, int j, Action<int, int, GridCell> action, bool checkSelf = false)
+	public void ForEachNeighbor(int i, int j, Action<int, int, GridCell> action, bool checkSelf = false)
 	{
 		for (int dx = -1; dx <= 1; dx++)
 		{
@@ -149,11 +144,12 @@ public partial class WorldGrid
 		else return true;
 	}
 
+
 	//boundary = if on edge of plate; if any of the bordering grid points are empty or belong to dif plates.
 	//	or if any of the bordering gridpoints dont contain the center gridpoint's plate
 	//		(should this be done in plate init?)
 	//is colliding = if the gridpoint or one of the bordering gridpoints belongs to a dif plate
-	public void UpdatePoints()
+	public void UpdatePointCategories()
 	{
 		int width = grid.GetLength(0);
 		int height = grid.GetLength(1);
@@ -165,7 +161,7 @@ public partial class WorldGrid
 				var cell = grid[i, j];
 
 				if (cell.ContainsCollision || cell.ContainsBorderingOtherPlate)
-					GetCollisionType(cell);
+					PlateCollision.RegisterCollisions(cell, this, map);
 
 				cell.MarkAllAsColliding(false);
 				cell.MarkAllAsBoundary(false);
@@ -245,42 +241,6 @@ public partial class WorldGrid
 		}
 	}
 
-
-	void GetCollisionType(GridCell cell)
-	{
-		//TODO: collisions instead of this placeholder stuff
-		/* ideas
-		 * get relative velocity between plates?
-		 * dif collision types? continental vs continental: no subduction, build mountain
-		 * continental vs oceanic: oceanic subducts
-		 * oceanic vs oceanic: denser oceanic plate subducts
-		 * 
-		 * platepoints can have both continental&oceanic material on them.
-		 */
-		var plates = new HashSet<int>(cell.PlateIDs);
-
-		//future optimization, maybe dont use this func and just quit out once we find a unique plate.
-		//since i dont know what to do for the points that have 3 or more unique plates
-		//this will only happen a few times so it should be fine to just use the first new plate found
-		ForEachNeighbor(cell.x, cell.y, (di, dj, otherCell) =>
-		{
-			plates.UnionWith(grid[di, dj].PlateIDs);
-		});
-
-		if (cell.ContainsCollision)
-		{
-
-		}
-		else
-		{
-
-		}
-		
-
-		//get velocities of unique plates
-
-	}
-
 	public void Collide()
 	{
 		int width = grid.GetLength(0);
@@ -335,6 +295,7 @@ public partial class WorldGrid
 		}
 	}
 
+	//test function
 	public void CollideWithForces()
 	{
 		int width = grid.GetLength(0);

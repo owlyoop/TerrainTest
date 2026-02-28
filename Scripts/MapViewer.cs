@@ -402,7 +402,7 @@ public partial class MapViewer : Node
 			}
 		}
 
-		foreach (var plate in map.plates)
+		foreach (var plate in map.Plates)
 		{
 			foreach (var p in plate.points)
 			{
@@ -425,8 +425,8 @@ public partial class MapViewer : Node
 				c *= (h + 0.5f);
 
 
-				if (map.worldGrid.grid[i, j].ContainsCollision || map.worldGrid.grid[i, j].ContainsBorderingOtherPlate)
-					c += Colors.Red;
+				//if (map.worldGrid.grid[i, j].ContainsCollision || map.worldGrid.grid[i, j].ContainsBorderingOtherPlate)
+					//c += Colors.Red;
 				//if (counts[i, j] == 0)
 				//c = Colors.DeepSkyBlue;
 				SetPixelWorld(i, j, c);
