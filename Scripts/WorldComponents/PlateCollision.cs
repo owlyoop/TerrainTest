@@ -123,6 +123,7 @@ public static class PlateCollision
 
 	static void HandleCollision(PlatePoint point, Plate2D otherplate, CollisionInfo info)
 	{
+		//todo: transfer material to other platepoints
 		switch(info.Type)
 		{
 			case PlateCollisionType.Divergent:

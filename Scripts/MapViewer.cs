@@ -160,6 +160,8 @@ public partial class MapViewer : Node
 				GD.Print(p.isActive);
 				GD.Print(p.plate.ID, " , grid idx: ", p.gridIndex.X, " ", p.gridIndex.Y);
 				GD.Print(p.collisionType);
+				GD.Print("Felsic: " + p.Felsic + " , Mafic: " + p.Mafic);
+				GD.Print("Height: " + p.height + " , density: " + p.density + " , thickness: " + p.crustThickness);
 				GD.Print("----");
 			}
 		}
@@ -447,6 +449,11 @@ public partial class MapViewer : Node
 					}
 					
 				}
+				
+				//if (cell.IsEmptyOrInactive() && !cell.IsCompletelyEmpty())
+				//	c = Colors.HotPink;
+				//if (cell.ContainsEdgeBoundary)
+					//c *= (Colors.Black * 0.5f);
 				SetPixelWorld(i, j, c);
 			}
 		}

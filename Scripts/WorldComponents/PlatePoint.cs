@@ -48,18 +48,19 @@ public class PlatePoint
 	//width of crust in meters
 	//calculated from mass / density
 	//malic gets denser with age and also thicker
-	float crustThickness;
+	public float crustThickness;
 
 	// mass / thickness
-	float density;      
+	public float density;      
 
 	//same as height. in meters.
-	//derived from thickness and density.
-	//thicker = higher elevation. denser = crust sinks so lower elevation
-	float elevation;    
+	
 
 	float age;  //1f = 1mil years?
-	public float height { get; private set; } //derive this from other factors instead of explicitly setting
+
+	//derived from thickness and density.
+	//thicker = higher elevation. denser = crust sinks so lower elevation
+	public float height { get; private set; }
 
 	public Vector2 localPos;
 	public Vector2 WorldPos => plate.LocalToWorld(localPos);    //The world position
@@ -113,14 +114,14 @@ public class PlatePoint
 
 		CalculateDensity();
 		CalculateThickness();
-		CalculateElevation();
+		CalculateHeight();
 	}
 
 	public float CalculateDensity()
 	{
 		float totalMass = Felsic + Mafic;
 
-		float ageRatio = Mathf.Clamp(age / MAFIC_MAX_AGE, 0f, 100f);
+		float ageRatio = Mathf.Clamp(age / MAFIC_MAX_AGE, 0f, 1f);
 		float maficDensity = Mathf.Lerp(DENSITY_MAFIC_YOUNG, DENSITY_MAFIC_OLD, ageRatio);
 		float maficVolume = Mafic / maficDensity;
 
@@ -131,7 +132,7 @@ public class PlatePoint
 	}
 	public void CalculateThickness()
 	{
-		float ageRatio = Mathf.Clamp(age / MAFIC_MAX_AGE, 0f, 100f);
+		float ageRatio = Mathf.Clamp(age / MAFIC_MAX_AGE, 0f, 1f);
 		float maficDensity = Mathf.Lerp(DENSITY_MAFIC_YOUNG, DENSITY_MAFIC_OLD, ageRatio);
 
 		//assuming the length&width are 1km
@@ -139,7 +140,7 @@ public class PlatePoint
 
 	}
 
-	public void CalculateElevation()
+	public void CalculateHeight()
 	{
 		float buoyancy = (3500f - density) / 3500f;	//todo: 
 		float baseElevation = crustThickness * buoyancy;
@@ -170,7 +171,7 @@ public class PlatePoint
 		material[1] = m;
 		Felsic = f;
 		Mafic = m;
-		CalculateElevation();
+		CalculateHeight();
 		if (Felsic < 0.01f && Mafic < 0.01f)
 		{
 			this.plate.points.Remove(this);
@@ -194,28 +195,32 @@ public class PlatePoint
 		return Crust;
 	}
 
-	public void UpdateTravelStats()
+	public void OnTimestep()
 	{
+		age = age + 1f;
 		CalculateDensity();
 		CalculateThickness();
-		CalculateElevation();
-		age += 1f;
+		CalculateHeight();
+	}
+
+	public void UpdateTravelStats()
+	{
+		
+		
 
 		//GD.Print(density + " " +crustThickness + " " + height);
 
 		float dist = plate.map.WrappedDistance(cachedWorldPos, cachedWorldPos - (plate.Velocity));
-		if (IsBoundary)
+		if (IsEdgeBoundary && !IsColliding)
 			distTravelAsBoundary += dist;
-		if (!IsColliding)
-			distTravelNoCollision += dist;
-
 		//spawn new platepoints
 		//todo: sim eventually slows down to a halt. i think cause too many points spawn.
 		//need to consolidate points if theres more than 2 of the same plate in a cell
-		if (distTravelAsBoundary > 0.1f && IsEdgeBoundary)
+		if (distTravelAsBoundary >= 0.02f && IsEdgeBoundary)
 		{
+			
 			var newpt = cachedWorldPos - (plate.Velocity.Normalized());
-			var p = plate.TryAddPointToPlate(newpt, 0f, 0.5f, 3);
+			var p = plate.TryAddPointToPlate(newpt, 10f, 10f, 1);
 			if (p != null)
 			{
 				p.MarkPointAsBoundary(true);

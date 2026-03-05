@@ -107,6 +107,7 @@ public partial class Plate2D
 	{
 		for (int i = 0; i < points.Count; i++)
 		{
+			points[i].OnTimestep();
 			if (points[i].IsBoundary)
 				points[i].UpdateTravelStats();
 		}

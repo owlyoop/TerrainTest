@@ -40,7 +40,7 @@ public partial class WorldGrid
 		var idx = GetIndexFromPosition(point.WorldPos);
 		point.gridIndex = idx;
 
-		if (CheckIfHasNeighbours(idx, point.plate, 2))
+		if (CheckIfHasNeighbours(idx, point.plate, 1))
 		{
 			if (grid[idx.X, idx.Y].GetNumberOfSamePlate(point) < threshhold && grid[idx.X, idx.Y].IsEmptyOrInactive())
 			{
@@ -160,11 +160,21 @@ public partial class WorldGrid
 			{
 				var cell = grid[i, j];
 
+				//remove if point runs out of material
 				for (int p = 0; p < cell.points.Count; p++)
 				{
 					if (cell.points[p].Felsic < 0.01f && cell.points[p].Mafic < 0.01f)
 					{
 						cell.points.Remove(cell.points[p]);
+						if (cell.points.Count == 0)
+						{
+							ForEachNeighbor(i, j, (di, dj, otherCell) =>
+							{
+								otherCell.MarkAllAsEdgeBoundary(true);
+								otherCell.MarkAllAsBoundary(true);
+							});
+						}
+						
 					}
 				}
 					
@@ -206,14 +216,7 @@ public partial class WorldGrid
 							break;
 						}
 					}
-					if (collision)
-					{
-						cell.MarkAllAsColliding(true);
-					}
-					else
-					{
-						cell.MarkAllAsColliding(false);
-					}
+					cell.MarkAllAsColliding(collision);
 
 					bool boundary = false;
 					bool otherplate = false;
@@ -250,8 +253,6 @@ public partial class WorldGrid
 					cell.MarkAllAsEdgeBoundary(boundary);
 					cell.MarkAllAsBorderingOtherPlate(otherplate);
 				}
-
-				
 			}
 		}
 	}
