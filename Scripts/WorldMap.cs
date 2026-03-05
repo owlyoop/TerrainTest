@@ -63,7 +63,7 @@ public partial class WorldMap : Node
 			float ry = (float)GD.RandRange(-1f, 1f);
 			float speed = (float)GD.RandRange(0f, 1f);
 			int d = GD.RandRange(1, 32);
-			p.InitializePlateVelocity(new Vector2(rx, ry) * (speed * 0.2f));
+			p.InitializePlateVelocity(new Vector2(rx, ry) * (speed * 0.05f));
 			p.density = d;
 		}
 		worldGrid.InitializeBoundaries();
@@ -79,29 +79,29 @@ public partial class WorldMap : Node
 	//Main Tectonic Plate Loop
 	public void Timestep()
     {
-		//var start = Time.GetTicksUsec();
+		var start = Time.GetTicksUsec();
 		//move all tect plates
 		for (int i = 0; i < Plates.Count; i++)
 		{
 			Plates[i].MovePlate();
 		}
-		/*var end = Time.GetTicksUsec();
+		var end = Time.GetTicksUsec();
 		var workertime = (end - start) / 1000f;
-		GD.Print("Work time for moveplate: ", workertime); */
+		GD.Print("Work time for moveplate: ", workertime); 
 
-		//start = Time.GetTicksUsec();
+		start = Time.GetTicksUsec();
 		worldGrid.UpdatePointCategories();
-		//end = Time.GetTicksUsec();
-		//workertime = (end - start) / 1000f;
-		//GD.Print("Work time for updatepoints: ", workertime);
+		end = Time.GetTicksUsec();
+		workertime = (end - start) / 1000f;
+		GD.Print("Work time for updatepoints: ", workertime);
 
 
 		//check for collisions
-		//start = Time.GetTicksUsec();
+		start = Time.GetTicksUsec();
 		worldGrid.CollideWithForces();
-		//end = Time.GetTicksUsec();
-		//workertime = (end - start) / 1000f;
-		//GD.Print("Work time for collide: ", workertime);
+		end = Time.GetTicksUsec();
+		workertime = (end - start) / 1000f;
+		GD.Print("Work time for collide: ", workertime);
 
 
 
@@ -114,7 +114,7 @@ public partial class WorldMap : Node
 
 		mapViewer.DisplayMap();
 
-		//GD.Print("-----------");
+		GD.Print("-----------");
 		OnTimestepCompleted.Invoke();
 	}
 

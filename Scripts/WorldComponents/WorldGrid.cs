@@ -103,12 +103,6 @@ public partial class WorldGrid
 
 	public Vector2I GetIndexFromPosition(Vector2 pos)
 	{
-		//int x = Mathf.FloorToInt(Mathf.PosMod(pos.X, Width));
-		//int y = Mathf.FloorToInt(Mathf.PosMod(pos.Y, Height));
-
-		//int x = (int)Mathf.PosMod(pos.X, Width);
-		//int y = (int)Mathf.PosMod(pos.Y, Height);
-		//return new Vector2I(x, y);
 		return new Vector2I((int)pos.X % Width, (int)pos.Y % Height);
 	}
 
@@ -177,7 +171,6 @@ public partial class WorldGrid
 						
 					}
 				}
-					
 
 				cell.collisionType = PlateCollisionType.None;
 				if (!cell.IsEmptyOrInactive())
@@ -227,9 +220,10 @@ public partial class WorldGrid
 					//Check in the 8 directions around the gridpoint
 					ForEachNeighbor(i, j, (di, dj, otherCell) =>
 					{
-						if (otherCell.IsCompletelyEmpty() && !boundary)
+						if (!boundary)
 						{
-							boundary = true;
+							if (otherCell.IsCompletelyEmpty())
+								boundary = true;
 						}
 
 						if (!otherplate)
@@ -257,6 +251,11 @@ public partial class WorldGrid
 		}
 	}
 
+	void ErodeMaterial(GridCell cell)
+	{
+
+	}
+
 	//test function
 	public void CollideWithForces()
 	{
@@ -268,21 +267,10 @@ public partial class WorldGrid
 			for (int j = 0; j < height; j++)
 			{
 				var cell = grid[i, j];
-				//if (!cell.ContainsCollision && !cell.ContainsBorderingOtherPlate)
-				//	continue;
-
 				cell.UpdateOpposingForceSums();
-			}
-		}
-
-		for (int i = 0; i < width; i++)
-		{
-			for (int j = 0; j < height; j++)
-			{
-				var cell = grid[i, j];
-				//if (!cell.ContainsCollision && !cell.ContainsBorderingOtherPlate)
-				//	continue;
-
+				if (!cell.ContainsCollision && !cell.ContainsBorderingOtherPlate)
+					continue;
+				
 				//calculate forces being applied to this from bordering gridcells
 				Vector2 totalForce = Vector2.Zero;
 				float count = 0.001f;

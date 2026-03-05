@@ -4,6 +4,18 @@ using System.Linq;
 
 public partial class MapViewer : Node
 {
+	[ExportCategory("Overlay")]
+	public Color PlateptColor;
+	public Color PlateVelocityColor;
+	public Color PlateptVelColor;
+	public Color DebugCollisionTransformColor;
+	public Color DebugCollisionDivergentColor;
+	public Color DebugCollisionSubductionColor;
+	public Color DebugCollisionOrogenicColor;
+	public Color ContinentalColor;
+	public Color OceanicColor;
+
+	[ExportCategory("References")]
 	[Export] public Camera2D cam1;
     [Export] public WorldMap map;
     [Export] public Node2D LineOverlay;
@@ -27,6 +39,9 @@ public partial class MapViewer : Node
 
 	MultiMeshInstance2D mmiPlatePts;
 	MultiMesh mmPlatePts;
+	MultiMeshInstance2D mmiPlatePtVels;
+	MultiMesh mmPlatePtVels;
+
 	MultiMeshInstance2D mmiPlateVels;
 	MultiMesh mmPlateVels;
 
@@ -204,11 +219,22 @@ public partial class MapViewer : Node
 		if (mmPlatePts == null || mmPlatePts.InstanceCount != plate.points.Count())
 			CreatePlatePtsOverlay();
 
+		if (mmPlatePtVels != null)
+			mmPlatePtVels.InstanceCount = 0;
+		if (mmPlatePtVels == null || mmPlatePtVels.InstanceCount != plate.points.Count())
+			CreatePlatePtsVelsOverlay();
+
 		if (mmPlateVels != null)
 			mmPlateVels.InstanceCount = 0;
-		if (mmPlateVels == null || mmPlateVels.InstanceCount != plate.points.Count())
+		if (mmPlateVels == null || mmPlateVels.InstanceCount != map.Plates.Count())
 			CreatePlateVelsOverlay();
 
+		for (int i = 0; i < map.Plates.Count; i++)
+		{
+			var transform = new Transform2D(map.Plates[i].Velocity.Angle() - (MathF.PI / 2), 
+				map.Plates[i].origin + map.Plates[i].offset );
+			mmPlateVels.SetInstanceTransform2D(i, transform);
+		}
 
 		for (int i = 0; i < plate.points.Count(); i++)
 		{
@@ -224,7 +250,7 @@ public partial class MapViewer : Node
 				new Vector2(1f, Mathf.Clamp(p.Velocity.Length() * 10f, 1f, 5f)),
 				0f, 
 				p.WorldPos + new Vector2(0.0f, 0.0f));
-			mmPlateVels.SetInstanceTransform2D(i, velTransform);
+			mmPlatePtVels.SetInstanceTransform2D(i, velTransform);
 		}
 	}
 
@@ -268,30 +294,46 @@ public partial class MapViewer : Node
 		return mesh;
 	}
 
-	void CreatePlateVelsOverlay()
+	void CreatePlatePtsVelsOverlay()
 	{
 		var plate = map.GetPlateByIndex(plateIndex);
+		mmPlatePtVels = new MultiMesh();
+		mmPlatePtVels.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
+		mmPlatePtVels.InstanceCount = plate.points.Count();
+
+		var mesh = CreateVelocityArrow(1f);
+		mmPlatePtVels.Mesh = mesh;
+
+		mmiPlatePtVels = new MultiMeshInstance2D();
+		mmiPlatePtVels.Multimesh = mmPlatePtVels;
+		mmiPlatePtVels.Modulate = Colors.Red;
+
+		AddChild(mmiPlatePtVels);
+	}
+
+	void CreatePlateVelsOverlay()
+	{
 		mmPlateVels = new MultiMesh();
 		mmPlateVels.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
-		mmPlateVels.InstanceCount = plate.points.Count();
+		mmPlateVels.InstanceCount = map.Plates.Count;
 
-		var mesh = CreateVelocityArrow();
+		var mesh = CreateVelocityArrow(12f);
 		mmPlateVels.Mesh = mesh;
 
 		mmiPlateVels = new MultiMeshInstance2D();
 		mmiPlateVels.Multimesh = mmPlateVels;
-		mmiPlateVels.Modulate = Colors.Red;
+		mmiPlateVels.Modulate = Colors.LightCyan;
 
 		AddChild(mmiPlateVels);
 	}
 
-	ArrayMesh CreateVelocityArrow()
+	ArrayMesh CreateVelocityArrow(float scale)
 	{
 		var vertices = new Vector2[]
 		{
-			new(0f, 0f), new(0, 0.7f),
-			new(0, 0.7f), new(0.1f, 0.2f),
-			new(0, 0.7f), new(-0.1f, 0.2f),
+			new(0f, 0f), new(0, 0.7f * scale),
+			new(0, 0.7f* scale), new(0.1f* scale, 0.6f* scale),
+			new(0, 0.7f* scale), new(-0.1f* scale, 0.6f* scale),
 		};
 
 		var mesh = new ArrayMesh();
@@ -437,11 +479,11 @@ public partial class MapViewer : Node
 					}
 					else if (cell.collisionType == PlateCollisionType.Subduction)
 					{
-						c = Colors.Red;
+						c = Colors.DarkRed;
 					}
 					else if (cell.collisionType == PlateCollisionType.Orogenic)
 					{
-						c = Colors.Cyan;
+						c = Colors.DimGray;
 					}
 					else if (cell.collisionType == PlateCollisionType.Divergent)
 					{

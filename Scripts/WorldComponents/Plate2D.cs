@@ -178,12 +178,8 @@ public partial class Plate2D
 		Velocity /= count;
 	}
 
-	/*public void TryCheckCollision(Plate2D otherPlate)
+	public void RecalculateCenter()
 	{
-		if (collidingPlates.TryGetValue(otherPlate, out var val) == false)
-		{
-			var dot = Velocity.Dot(otherPlate.Velocity);
 
-		}
-	}*/
+	}
 }

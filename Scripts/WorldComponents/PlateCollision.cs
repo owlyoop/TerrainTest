@@ -62,7 +62,9 @@ public static class PlateCollision
 	{
 		//Collision type is local because if a square plate collides into an L-shaped plate, then one side of the square plate would collide
 		//	more similarily to a transform fault vs another side being mountain building
-		var boundary = ComputeGradient(point, otherplate, cell, grid);
+		//kinda slow
+		var boundary = -ComputeGradient(point, otherplate, cell, grid);
+
 		var vel = point.plate.Velocity.Normalized();
 		//close to 0 = plate is shearing other plate. negative = plate is colliding headon
 		float boundaryDot = vel.Dot(boundary);
@@ -95,28 +97,31 @@ public static class PlateCollision
 			{
 				foreach (var p in otherCell.points)
 				{
-					Vector2 dir = (p.WorldPos - point.WorldPos).Normalized();
-					gradient += dir;
-					count++;
+					if (p.plate != point.plate)
+					{
+						Vector2 dir = (p.WorldPos - point.WorldPos).Normalized();
+						gradient += dir;
+						count++;
+					}
 				}
 			}
 		});
-
+		gradient = gradient.Normalized();
 		if (count > 0)
 			return (gradient / count).Normalized();
-		else //shouldnt be possible to reach this function with a count of 0, but just incase
+		else //shouldnt be possible to reach this part, but just incase
 			return (otherplate.Velocity - point.plate.Velocity).Normalized();
 	}
 
 	static PlateCollisionType ClassifyCollision(float boundaryDot, PlatePoint point)
 	{
-		const float shearThreshold = 0.2f;
+		const float threshold = 0.1f;
 
-		if (boundaryDot < shearThreshold && boundaryDot > -shearThreshold)
+		if (boundaryDot < threshold && boundaryDot > -threshold)
 			return PlateCollisionType.Transform;
-		if (boundaryDot > shearThreshold)
+		else if (boundaryDot > 0.9f)
 			return PlateCollisionType.Divergent;
-		if (point.GetCrustType() == PlatePoint.CrustType.Oceanic)
+		else if (point.GetCrustType() == PlatePoint.CrustType.Oceanic)
 			return PlateCollisionType.Subduction;
 		else return PlateCollisionType.Orogenic;
 	}
@@ -127,16 +132,16 @@ public static class PlateCollision
 		switch(info.Type)
 		{
 			case PlateCollisionType.Divergent:
-				point.RemoveMaterial(40f, 40f);
+				point.RemoveMaterial(60f, 60f);
 				break;
 			case PlateCollisionType.Orogenic:
-				point.RemoveMaterial(50f, 10.0f);
+				point.AddMaterial(20f, 0.0f);
 				break;
 			case PlateCollisionType.Subduction:
-				point.RemoveMaterial(40f, 40f);
+				point.RemoveMaterial(5f, 200f);
 				break;
 			case PlateCollisionType.Transform:
-				point.RemoveMaterial(40f, 40f);
+				point.RemoveMaterial(10f, 10f);
 				break;
 		}
 	}

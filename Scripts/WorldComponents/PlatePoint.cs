@@ -18,7 +18,7 @@ public class PlatePoint
 	public const float DENSITY_FELSIC = 2600f;	//2300-2800 i think
 	public const float DENSITY_MAFIC_YOUNG = 2800f;
 	public const float DENSITY_MAFIC_OLD = 3500f;
-	public const float MAFIC_MAX_AGE = 100f;    //age where the mafic reaches max density
+	public const float MAFIC_MAX_AGE = 1000f;    //age where the mafic reaches max density
 
 	
 
@@ -205,9 +205,6 @@ public class PlatePoint
 
 	public void UpdateTravelStats()
 	{
-		
-		
-
 		//GD.Print(density + " " +crustThickness + " " + height);
 
 		float dist = plate.map.WrappedDistance(cachedWorldPos, cachedWorldPos - (plate.Velocity));
@@ -218,7 +215,6 @@ public class PlatePoint
 		//need to consolidate points if theres more than 2 of the same plate in a cell
 		if (distTravelAsBoundary >= 0.02f && IsEdgeBoundary)
 		{
-			
 			var newpt = cachedWorldPos - (plate.Velocity.Normalized());
 			var p = plate.TryAddPointToPlate(newpt, 10f, 10f, 1);
 			if (p != null)
