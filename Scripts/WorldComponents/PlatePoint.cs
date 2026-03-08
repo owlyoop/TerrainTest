@@ -64,7 +64,7 @@ public class PlatePoint
 
 	public Vector2 localPos;
 	public Vector2 WorldPos => plate.LocalToWorld(localPos);    //The world position
-	public Vector2 cachedWorldPos;
+	public Vector2 prevWorldPos;	//The world position of the previous timetick
 
 	public Vector2 boundaryNormal;	//For points that are currently colliding, represents 
 
@@ -205,13 +205,30 @@ public class PlatePoint
 
 	public void UpdateTravelStats()
 	{
-		//GD.Print(density + " " +crustThickness + " " + height);
-
-		//TODO: makle spawning new points based on the collisiontype divergent, not here. prolly dont need egdeboundary anymore
-
-		float dist = plate.map.WrappedDistance(cachedWorldPos, WorldPos);
+		float dist = plate.map.WrappedDistance(prevWorldPos, WorldPos);
 		if (IsEdgeBoundary && !IsColliding)
 			distTravelAsBoundary += dist;
+		if (distTravelAsBoundary >= 1f)
+		{
+			float w = plate.map.worldWidth;
+			float h = plate.map.worldHeight;
+			Vector2 behind = WorldPos - (plate.Velocity.Normalized() * 1f);
+			behind.X = Mathf.PosMod(behind.X, w);
+			behind.Y = Mathf.PosMod(behind.Y, w);
+			Vector2I n = plate.map.worldGrid.GetIndexFromPosition(behind);
+			var newpt = new Vector2(n.X + 0.5f, n.Y + 0.5f);
+
+			var p = plate.AddPointToPlate(newpt, 10f, 10f);
+			if (p != null)
+			{
+				p.MarkPointAsBoundary(true);
+				p.MarkPointAsEdgeBoundary(true);
+				p.Velocity = plate.Velocity;
+				distTravelAsBoundary = 0f;
+				//plate.map.worldGrid.grid[gridIndex.X, gridIndex.Y].MarkAllAsBoundary(false);
+				//plate.map.worldGrid.grid[gridIndex.X, gridIndex.Y].MarkAllAsEdgeBoundary(false);
+			}
+		}
 	}
 
 	#region state bookkeeping

@@ -73,7 +73,7 @@ public partial class WorldGrid
 
 	public void MovePoint(PlatePoint point)
 	{
-		var oldIdx = GetIndexFromPosition(point.cachedWorldPos);
+		var oldIdx = GetIndexFromPosition(point.prevWorldPos);
 		var newIdx = GetIndexFromPosition(point.WorldPos);
 
 		if (oldIdx != newIdx)
@@ -143,7 +143,6 @@ public partial class WorldGrid
 				//remove if point runs out of material
 				for (int p = cell.points.Count - 1; p >= 0; p--)
 				{
-					
 					if (cell.points[p].Felsic < 0.01f && cell.points[p].Mafic < 0.01f)
 					{
 						cell.points.RemoveAt(p);
@@ -167,16 +166,16 @@ public partial class WorldGrid
 						PlateCollision.RegisterCollisions(cell, map);
 				}
 
-				cell.MarkAllAsColliding(false);
-				cell.MarkAllAsBoundary(false);
-				cell.MarkAllAsEdgeBoundary(false);
-				cell.MarkAllAsBorderingOtherPlate(false);
+				//cell.MarkAllAsColliding(false);
+				//cell.MarkAllAsBoundary(false);
+				//cell.MarkAllAsEdgeBoundary(false);
+				//cell.MarkAllAsBorderingOtherPlate(false);
 				//Mark empty cells as not containing a boundary or collision, and then check its neighbours
 				if (cell.IsCompletelyEmpty())
 				{
 					ForEachNeighbor(i, j, (di, dj, otherCell) =>
 					{
-						if (!otherCell.IsEmptyOrInactive())
+						if (!otherCell.IsCompletelyEmpty())
 						{
 							otherCell.MarkAllAsBoundary(true);
 							otherCell.MarkAllAsEdgeBoundary(true);
@@ -196,9 +195,9 @@ public partial class WorldGrid
 
 					bool boundary = false;
 					bool otherplate = false;
-					cell.MarkAllAsBoundary(false);
-					cell.MarkAllAsEdgeBoundary(false);
-					cell.MarkAllAsBorderingOtherPlate(false);
+					//cell.MarkAllAsBoundary(false);
+					//cell.MarkAllAsEdgeBoundary(false);
+					//cell.MarkAllAsBorderingOtherPlate(false);
 
 					//Check in the 8 directions around the gridpoint
 					ForEachNeighbor(i, j, (di, dj, otherCell) =>

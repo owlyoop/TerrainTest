@@ -48,8 +48,10 @@ public static class PlateCollision
 		{
 			foreach (var pi in plates)
 			{
+				if (p.plate.ID == pi)
+					continue;
+
 				var cacheKey = (p.plate.ID, pi);
-				
 
 				if (!collisionCache.TryGetValue(cacheKey, out var collisionInfo))
 				{
@@ -83,7 +85,7 @@ public static class PlateCollision
 		//close to 0 = plate is shearing other plate. negative = plate is colliding headon
 		float boundaryDot = vel.Dot(point.boundaryNormal);
 
-		var type = ClassifyCollision(boundaryDot, point);
+		var type = ClassifyCollision(boundaryDot, point, otherplate);
 
 		return new CollisionInfo
 		{
@@ -102,6 +104,10 @@ public static class PlateCollision
 	/// <returns>A normalized Vector2 pointing towards average direction of other plates</returns>
 	static Vector2 ComputeGradient(PlatePoint point, Plate2D otherplate, GridCell cell)
 	{
+		//TODO: if a point is completely surrounded by the other plate (like if a collision was like the tibetan plateua),
+		//	then i shouldnt use the gradient
+		//		maybe fallback to using the 2 plate vels to compute boundary
+		//		or just assume its either subduction or orogenic? since itll never happen for divergent or transform
 		Vector2 gradient = Vector2.Zero;
 		int count = 0;
 
@@ -127,8 +133,9 @@ public static class PlateCollision
 			return -(otherplate.Velocity - point.plate.Velocity).Normalized();
 	}
 
-	static PlateCollisionType ClassifyCollision(float boundaryDot, PlatePoint point)
+	static PlateCollisionType ClassifyCollision(float boundaryDot, PlatePoint point, Plate2D otherPlate)
 	{
+		//TODO: consider other plate
 		const float threshold = 0.1f;
 
 		if (boundaryDot < threshold && boundaryDot > -threshold)
@@ -150,7 +157,7 @@ public static class PlateCollision
 				SpawnPointsAtDivergentBoundary(point, map);
 				break;
 			case PlateCollisionType.Orogenic:
-				point.AddMaterial(20f, 0.0f);
+				point.RemoveMaterial(20f, 0.0f);
 				break;
 			case PlateCollisionType.Subduction:
 				point.RemoveMaterial(5f, 200f);
@@ -166,13 +173,13 @@ public static class PlateCollision
 		//check if gridcell is empty
 		var cell = map.worldGrid.grid[point.gridIndex.X, point.gridIndex.Y];
 
-		Vector2 otherpos = point.gridIndex - point.plate.Velocity.Normalized();
+		Vector2 otherpos = point.gridIndex + point.Velocity;
 		var idx = map.worldGrid.GetIndexFromPosition(otherpos);
 		var otherCell = map.worldGrid.grid[idx.X, idx.Y];
 
 		if (otherCell.IsCompletelyEmpty())
 		{
-			point.plate.AddPointToPlate(otherpos, 1f, 1f);
+			//point.plate.AddPointToPlate(otherpos, 1f, 1f);
 		}
 	}
 }

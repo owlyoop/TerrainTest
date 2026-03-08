@@ -450,7 +450,7 @@ public partial class MapViewer : Node
 		{
 			for (int j = 0; j < counts.GetLength(1); j++)
 			{
-				SetPixelWorld(i, j, Colors.Black);
+				SetPixelWorld(i, j, DefaultColor);
 				counts[i, j] = 0;
 				avgHeights[i, j] = 0f;
 			}
@@ -499,7 +499,9 @@ public partial class MapViewer : Node
 					{
 						c = DebugCollisionDivergentColor;
 					}
-					
+
+					//if (cell.ContainsEdgeBoundary)
+					//	c = Colors.BlueViolet + (cell.points[0].distTravelAsBoundary* Colors.White);
 				}
 				if (counts[i,j] > 0)
 					SetPixelWorld(i, j, c);

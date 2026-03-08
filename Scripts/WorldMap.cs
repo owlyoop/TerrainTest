@@ -190,7 +190,8 @@ public partial class WorldMap : Node
 	{
 		float dx = WrappedDimension(a.X, b.X, worldWidth);
 		float dy = WrappedDimension(a.Y, b.Y, worldHeight);
-		return dx * dx + dy * dy;
+		//return dx * dx + dy * dy;
+		return Mathf.Sqrt(dx * dx + dy * dy);
 	}
 
 

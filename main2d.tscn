@@ -226,7 +226,7 @@ lineWidth = 0.16
 
 [node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("mapViewer", "voronoi", "timer")]
 script = ExtResource("3_r2hvk")
-worldHeight = 140
+worldWidth = 150
 noiseGen = SubResource("FastNoiseLite_w74eu")
 noiseTex = SubResource("NoiseTexture2D_1w0k7")
 mapViewer = NodePath("../MapViewer")

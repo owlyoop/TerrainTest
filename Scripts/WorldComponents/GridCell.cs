@@ -79,7 +79,7 @@ public class GridCell
 		points.Add(point);
 		PlateIDs.Add(point.plate.ID);
 		var num = GetNumberOfSamePlate(point);
-		if (num >= 2)
+		if (num >= 4)
 		{
 			Consolidate(point);
 		}
@@ -172,7 +172,7 @@ public class GridCell
 		int result = 0;
 		foreach (var p in this.points)
 		{
-			if (p.plate == point.plate && p.isActive)
+			if (p.plate == point.plate)
 				result++;
 		}
 		return result;
@@ -202,6 +202,7 @@ public class GridCell
 		m /= count;
 
 		var p = new PlatePoint(plate.WorldToLocal(newpos), f, m, plate);
+		plate.points.Add(p);
 		p.gridIndex = point.gridIndex;
 		points.Add(p);
 	}

@@ -63,9 +63,9 @@ public partial class Plate2D
 
 	public void UpdatePointInHashGrid(PlatePoint p)
 	{
-		Vector2 oldWorld = new Vector2(p.cachedWorldPos.X, p.cachedWorldPos.Y);
+		Vector2 oldWorld = new Vector2(p.prevWorldPos.X, p.prevWorldPos.Y);
 		map.worldGrid.MovePoint(p);
-		p.cachedWorldPos = oldWorld;
+		p.prevWorldPos = oldWorld;
 	}
 
 	public PlatePoint AddPointToPlate(Vector2 worldPos, float felsic, float mafic)
@@ -75,7 +75,7 @@ public partial class Plate2D
 		var p = new PlatePoint(local, felsic, mafic, this);
 		map.worldGrid.AddPoint(p);
 		points.Add(p);
-		p.cachedWorldPos = oldWorld;
+		p.prevWorldPos = oldWorld;
 		return p;
 	}
 
@@ -104,7 +104,7 @@ public partial class Plate2D
 	{
 		foreach (var p in points)
 		{
-			p.cachedWorldPos = new Vector2(p.WorldPos.X, p.WorldPos.Y);
+			p.prevWorldPos = new Vector2(p.WorldPos.X, p.WorldPos.Y);
 		}
 		offset += (Velocity);
 		offset.X = offset.X % map.worldWidth;
