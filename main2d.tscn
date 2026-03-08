@@ -29,6 +29,18 @@ seamless_blend_skirt = 0.5
 
 [node name="MapViewer" type="Node2D" parent="." node_paths=PackedStringArray("cam1", "map", "LineOverlay", "mapDisplay", "PlateInfoGroup", "CellInfoGroup", "PlateSpinBox", "PlateCheckButton", "SelectedPlatePosition", "SelectedPlateRotation", "SelectedPlateDensity", "SelectedCellInfo", "NumPlatePointsInCell")]
 script = ExtResource("1_c47n3")
+OverlayPlatePt = true
+OverlayPlateVelocity = true
+PlateptColor = Color(1, 1, 0, 1)
+PlateVelocityColor = Color(1, 1, 1, 1)
+PlateptVelColor = Color(1, 0, 1, 1)
+DebugCollisionTransformColor = Color(0.7, 0.7, 0.7, 1)
+DebugCollisionDivergentColor = Color(1, 0.89154553, 0, 1)
+DebugCollisionSubductionColor = Color(0.54, 0, 0.008999863, 1)
+DebugCollisionOrogenicColor = Color(0.329225, 0.32369998, 0.39, 1)
+ContinentalColor = Color(0.5352, 0.72, 0.40320003, 1)
+OceanicColor = Color(0.32900003, 0.5268667, 0.7, 1)
+DefaultColor = Color(0.17050001, 0.3476, 0.55, 1)
 cam1 = NodePath("../CameraController/Camera2D")
 map = NodePath("../WorldMap")
 LineOverlay = NodePath("../Overlay")

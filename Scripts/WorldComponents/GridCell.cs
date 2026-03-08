@@ -78,17 +78,29 @@ public class GridCell
 	{
 		points.Add(point);
 		PlateIDs.Add(point.plate.ID);
-		
+		var num = GetNumberOfSamePlate(point);
+		if (num >= 2)
+		{
+			Consolidate(point);
+		}
 	}
 
 	public void RemovePoint(PlatePoint point)
 	{
-		PlateIDs.Clear();
+		bool lastPoint = true;
 		points.Remove(point);
 		foreach (var p in points)
 		{
-			PlateIDs.Add(p.plate.ID);
+			if (p.plate.ID == point.plate.ID)
+			{
+				lastPoint = false;
+				break;
+			}
 		}
+
+		if (lastPoint)
+			PlateIDs.Remove(point.plate.ID);
+
 		if (points.Count == 0)
 			MarkAsEmpty();
 	}

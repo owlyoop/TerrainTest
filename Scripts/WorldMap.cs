@@ -141,8 +141,6 @@ public partial class WorldMap : Node
 
 				foreach (var p in Plates)
 				{
-					//float px = p.origin.X % worldWidth;
-					//float py = p.origin.Y % worldHeight;
 					var px = Mathf.PosMod(p.origin.X, worldWidth);
 					var py = Mathf.PosMod(p.origin.Y, worldHeight);
 					float dist = WrappedDistance(cellPos, p.origin);

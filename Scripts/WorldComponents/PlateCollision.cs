@@ -21,8 +21,16 @@ public struct CollisionInfo
 }
 public static class PlateCollision
 {
-	public static void RegisterCollisions(GridCell cell, WorldGrid grid, WorldMap map)
+	static WorldMap map;
+	static WorldGrid grid;
+	public static void RegisterCollisions(GridCell cell, WorldMap _map)
 	{
+		map = _map;
+		grid = map.worldGrid;
+
+		if (cell.PlateIDs.Count < 2)
+			return;
+
 		var plates = new HashSet<int>(cell.PlateIDs);
 
 		grid.ForEachNeighbor(cell.x, cell.y, (di, dj, otherCell) =>
@@ -33,20 +41,26 @@ public static class PlateCollision
 
 		if (plates.Count < 2)
 			return;
-		
+
+		var collisionCache = new Dictionary<(int plateID, int otherID), CollisionInfo>();
 
 		foreach (var p in cell.points)
 		{
 			foreach (var pi in plates)
 			{
-				var otherplate = map.Plates[pi];
-				if (p.plate.ID != pi)
+				var cacheKey = (p.plate.ID, pi);
+				
+
+				if (!collisionCache.TryGetValue(cacheKey, out var collisionInfo))
 				{
-					var collisionInfo = GetLocalCollisionType(p, otherplate, cell, grid);
-					cell.collisionType = collisionInfo.Type;
-					p.collisionType = collisionInfo.Type;
-					HandleCollision(p, otherplate, collisionInfo);
+					var otherplate = map.Plates[pi];
+					collisionInfo = GetLocalCollisionType(p, otherplate, cell, grid);
+					collisionCache[cacheKey] = collisionInfo;
 				}
+
+				cell.collisionType = collisionInfo.Type;
+				p.collisionType = collisionInfo.Type;
+				HandleCollision(p, map.Plates[pi], collisionInfo);
 			}
 		}
 	}
@@ -63,17 +77,17 @@ public static class PlateCollision
 		//Collision type is local because if a square plate collides into an L-shaped plate, then one side of the square plate would collide
 		//	more similarily to a transform fault vs another side being mountain building
 		//kinda slow
-		var boundary = -ComputeGradient(point, otherplate, cell, grid);
+		point.boundaryNormal = ComputeGradient(point, otherplate, cell);
 
 		var vel = point.plate.Velocity.Normalized();
 		//close to 0 = plate is shearing other plate. negative = plate is colliding headon
-		float boundaryDot = vel.Dot(boundary);
+		float boundaryDot = vel.Dot(point.boundaryNormal);
 
 		var type = ClassifyCollision(boundaryDot, point);
 
 		return new CollisionInfo
 		{
-			BoundaryNormal = boundary,
+			BoundaryNormal = point.boundaryNormal,
 			BoundaryDot = boundaryDot,
 			Type = type
 		};
@@ -85,8 +99,8 @@ public static class PlateCollision
 	/// <param name="point"></param>
 	/// <param name="otherplate"></param>
 	/// <param name="cell"></param>
-	/// <returns>A normalized Vector2 pointing in the average direction of other plates</returns>
-	static Vector2 ComputeGradient(PlatePoint point, Plate2D otherplate, GridCell cell, WorldGrid grid)
+	/// <returns>A normalized Vector2 pointing towards average direction of other plates</returns>
+	static Vector2 ComputeGradient(PlatePoint point, Plate2D otherplate, GridCell cell)
 	{
 		Vector2 gradient = Vector2.Zero;
 		int count = 0;
@@ -108,9 +122,9 @@ public static class PlateCollision
 		});
 		gradient = gradient.Normalized();
 		if (count > 0)
-			return (gradient / count).Normalized();
+			return -(gradient / count);
 		else //shouldnt be possible to reach this part, but just incase
-			return (otherplate.Velocity - point.plate.Velocity).Normalized();
+			return -(otherplate.Velocity - point.plate.Velocity).Normalized();
 	}
 
 	static PlateCollisionType ClassifyCollision(float boundaryDot, PlatePoint point)
@@ -128,11 +142,12 @@ public static class PlateCollision
 
 	static void HandleCollision(PlatePoint point, Plate2D otherplate, CollisionInfo info)
 	{
-		//todo: transfer material to other platepoints
+		//todo: transfer material to other platepoints & dont use these arbituary placeholder values
 		switch(info.Type)
 		{
 			case PlateCollisionType.Divergent:
-				point.RemoveMaterial(60f, 60f);
+				//Spawn new points
+				SpawnPointsAtDivergentBoundary(point, map);
 				break;
 			case PlateCollisionType.Orogenic:
 				point.AddMaterial(20f, 0.0f);
@@ -143,6 +158,21 @@ public static class PlateCollision
 			case PlateCollisionType.Transform:
 				point.RemoveMaterial(10f, 10f);
 				break;
+		}
+	}
+
+	static void SpawnPointsAtDivergentBoundary(PlatePoint point, WorldMap map)
+	{
+		//check if gridcell is empty
+		var cell = map.worldGrid.grid[point.gridIndex.X, point.gridIndex.Y];
+
+		Vector2 otherpos = point.gridIndex - point.plate.Velocity.Normalized();
+		var idx = map.worldGrid.GetIndexFromPosition(otherpos);
+		var otherCell = map.worldGrid.grid[idx.X, idx.Y];
+
+		if (otherCell.IsCompletelyEmpty())
+		{
+			point.plate.AddPointToPlate(otherpos, 1f, 1f);
 		}
 	}
 }

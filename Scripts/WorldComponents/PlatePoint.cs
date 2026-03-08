@@ -66,7 +66,7 @@ public class PlatePoint
 	public Vector2 WorldPos => plate.LocalToWorld(localPos);    //The world position
 	public Vector2 cachedWorldPos;
 
-	
+	public Vector2 boundaryNormal;	//For points that are currently colliding, represents 
 
 	public Plate2D plate;
 	public Vector2I gridIndex; //Index for the worldgrid
@@ -207,26 +207,11 @@ public class PlatePoint
 	{
 		//GD.Print(density + " " +crustThickness + " " + height);
 
-		float dist = plate.map.WrappedDistance(cachedWorldPos, cachedWorldPos - (plate.Velocity));
+		//TODO: makle spawning new points based on the collisiontype divergent, not here. prolly dont need egdeboundary anymore
+
+		float dist = plate.map.WrappedDistance(cachedWorldPos, WorldPos);
 		if (IsEdgeBoundary && !IsColliding)
 			distTravelAsBoundary += dist;
-		//spawn new platepoints
-		//todo: sim eventually slows down to a halt. i think cause too many points spawn.
-		//need to consolidate points if theres more than 2 of the same plate in a cell
-		if (distTravelAsBoundary >= 0.02f && IsEdgeBoundary)
-		{
-			var newpt = cachedWorldPos - (plate.Velocity.Normalized());
-			var p = plate.TryAddPointToPlate(newpt, 10f, 10f, 1);
-			if (p != null)
-			{
-				p.MarkPointAsBoundary(true);
-				p.MarkPointAsEdgeBoundary(true);
-				p.Velocity = plate.Velocity;
-				distTravelAsBoundary = 0f;
-				plate.map.worldGrid.grid[gridIndex.X, gridIndex.Y].MarkAllAsBoundary(false);
-			}
-		}
-
 	}
 
 	#region state bookkeeping

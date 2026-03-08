@@ -79,30 +79,6 @@ public partial class Plate2D
 		return p;
 	}
 
-	/// <summary>
-	/// Adds a platepoint to this plate if the number of platepoints in the worldgrid is under the threshold
-	/// </summary>
-	/// <param name="worldPos"></param>
-	/// <param name="height"></param>
-	/// <param name="threshold"></param>
-	/// <returns></returns>
-	public PlatePoint TryAddPointToPlate(Vector2 worldPos, float felsic, float mafic, int threshold)
-	{
-		Vector2 local = WorldToLocal(worldPos);
-		Vector2 oldWorld = new Vector2(worldPos.X, worldPos.Y);
-
-		//TODO: dont add point to plate if >2 points already exist in the same cell
-
-		var p = new PlatePoint(local, felsic, mafic, this);
-		if (map.worldGrid.TryAddPoint(p, threshold))
-		{
-			points.Add(p);
-			p.cachedWorldPos = oldWorld;
-			return p;
-		}
-		else return null;
-	}
-
 	public void CheckForNewPoints()
 	{
 		for (int i = 0; i < points.Count; i++)
@@ -135,11 +111,10 @@ public partial class Plate2D
 		offset.Y = offset.Y % map.worldHeight;
 		rotation += 0.0f;   //TODO: angular velocity
 
-		//collidingPlates.Clear();
-		
-		foreach (var p in points)
+		for (int p = points.Count - 1; p >= 0; p--)
 		{
-			UpdatePointInHashGrid(p);
+			if (p <= points.Count - 1)
+				UpdatePointInHashGrid(points[p]);
 		}
 	}
 
@@ -165,17 +140,27 @@ public partial class Plate2D
 	/// </summary>
 	public void UpdateVelocity()
 	{
+		var speed = Velocity.Length();
 		Velocity = new Vector2(0, 0);
 		float count = 0f;
 		foreach (var p in points)
 		{
 			if (p.isActive)
 			{
-				Velocity += p.Velocity;
+				float weight = 0.01f;
+				if (p.IsColliding)
+					weight = 4f;
+				else if (p.IsBoundary || p.IsEdgeBoundary || p.IsBorderingOtherPlate)
+					weight = 1.4f;
+				Velocity += (p.Velocity * weight);
+
 				count = count + 1f;
+				
 			}
 		}
 		Velocity /= count;
+		Velocity = Velocity.Normalized();
+		Velocity = Velocity * speed;
 	}
 
 	public void RecalculateCenter()

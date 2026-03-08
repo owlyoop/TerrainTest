@@ -13,6 +13,8 @@ public partial class WorldGrid
 	int Height;
 	WorldMap map;
 
+	public int GridcellConsolidateThreshold = 2;
+
 	public WorldGrid(int Width, int Height, WorldMap map)
 	{
 		this.Width = Width;
@@ -35,29 +37,13 @@ public partial class WorldGrid
 		grid[point.gridIndex.X, point.gridIndex.Y].AddPoint(point);
 	}
 
-	public bool TryAddPoint(PlatePoint point, int threshhold)
-	{
-		var idx = GetIndexFromPosition(point.WorldPos);
-		point.gridIndex = idx;
-
-		if (CheckIfHasNeighbours(idx, point.plate, 1))
-		{
-			if (grid[idx.X, idx.Y].GetNumberOfSamePlate(point) < threshhold && grid[idx.X, idx.Y].IsEmptyOrInactive())
-			{
-				grid[idx.X, idx.Y].AddPoint(point);
-				return true;
-			}
-			else
-			{
-				grid[idx.X, idx.Y].Consolidate(point);
-				return true;
-			}
-		}
-		else return false;
-			
-	}
-
-	//Returns true if theres atleast [num] neighbours of [plate] bordering gridcell idx
+	/// <summary>
+	/// Returns true if theres atleast [num] neighbours of [plate] bordering gridcell idx
+	/// </summary>
+	/// <param name="idx"></param>
+	/// <param name="plate"></param>
+	/// <param name="num"></param>
+	/// <returns></returns>
 	public bool CheckIfHasNeighbours(Vector2I idx, Plate2D plate, int num)
 	{
 		int count = 0;
@@ -65,7 +51,7 @@ public partial class WorldGrid
 		{
 			foreach (var p in grid[di, dj].points)
 			{
-				if (p.isActive && p.plate == plate)
+				if (p.plate == plate)
 				{
 					count++;
 					continue;
@@ -155,11 +141,12 @@ public partial class WorldGrid
 				var cell = grid[i, j];
 
 				//remove if point runs out of material
-				for (int p = 0; p < cell.points.Count; p++)
+				for (int p = cell.points.Count - 1; p >= 0; p--)
 				{
+					
 					if (cell.points[p].Felsic < 0.01f && cell.points[p].Mafic < 0.01f)
 					{
-						cell.points.Remove(cell.points[p]);
+						cell.points.RemoveAt(p);
 						if (cell.points.Count == 0)
 						{
 							ForEachNeighbor(i, j, (di, dj, otherCell) =>
@@ -171,12 +158,13 @@ public partial class WorldGrid
 						
 					}
 				}
+				
 
 				cell.collisionType = PlateCollisionType.None;
 				if (!cell.IsEmptyOrInactive())
 				{
 					if (cell.ContainsCollision || cell.ContainsBorderingOtherPlate)
-						PlateCollision.RegisterCollisions(cell, this, map);
+						PlateCollision.RegisterCollisions(cell, map);
 				}
 
 				cell.MarkAllAsColliding(false);
@@ -200,14 +188,9 @@ public partial class WorldGrid
 				{
 					bool collision = false;
 					//check if cell contains points from different plates, if so then it's a collision
-					var plate = cell.points[0].plate.ID;
-					for (int p = 0; p < cell.points.Count; p++)
+					if (cell.points.Count > 1 && cell.PlateIDs.Count > 1)
 					{
-						if (cell.points[p].plate.ID != plate)
-						{
-							collision = true;
-							break;
-						}
+						collision = true;
 					}
 					cell.MarkAllAsColliding(collision);
 

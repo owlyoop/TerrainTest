@@ -4,16 +4,22 @@ using System.Linq;
 
 public partial class MapViewer : Node
 {
-	[ExportCategory("Overlay")]
-	public Color PlateptColor;
-	public Color PlateVelocityColor;
-	public Color PlateptVelColor;
-	public Color DebugCollisionTransformColor;
-	public Color DebugCollisionDivergentColor;
-	public Color DebugCollisionSubductionColor;
-	public Color DebugCollisionOrogenicColor;
-	public Color ContinentalColor;
-	public Color OceanicColor;
+	[ExportCategory("Overlay Settings")]
+	[Export] public bool OverlayPlatePt;
+	[Export] public bool OverlayPlatePtVelocity;
+	[Export] public bool OverlayPlateVelocity;
+
+	[ExportCategory("Overlay Colors")]
+	[Export] public Color PlateptColor;
+	[Export] public Color PlateVelocityColor;
+	[Export] public Color PlateptVelColor;
+	[Export] public Color DebugCollisionTransformColor;
+	[Export] public Color DebugCollisionDivergentColor;
+	[Export] public Color DebugCollisionSubductionColor;
+	[Export] public Color DebugCollisionOrogenicColor;
+	[Export] public Color ContinentalColor;
+	[Export] public Color OceanicColor;
+	[Export] public Color DefaultColor;
 
 	[ExportCategory("References")]
 	[Export] public Camera2D cam1;
@@ -229,28 +235,36 @@ public partial class MapViewer : Node
 		if (mmPlateVels == null || mmPlateVels.InstanceCount != map.Plates.Count())
 			CreatePlateVelsOverlay();
 
-		for (int i = 0; i < map.Plates.Count; i++)
+		if (OverlayPlateVelocity)
 		{
-			var transform = new Transform2D(map.Plates[i].Velocity.Angle() - (MathF.PI / 2), 
-				map.Plates[i].origin + map.Plates[i].offset );
-			mmPlateVels.SetInstanceTransform2D(i, transform);
+			for (int i = 0; i < map.Plates.Count; i++)
+			{
+				var transform = new Transform2D(map.Plates[i].Velocity.Angle() - (MathF.PI / 2),
+					map.Plates[i].origin + map.Plates[i].offset);
+				mmPlateVels.SetInstanceTransform2D(i, transform);
+			}
 		}
 
 		for (int i = 0; i < plate.points.Count(); i++)
 		{
 			var p = plate.points[i];
 
-			var ptsTransform = new Transform2D(Mathf.DegToRad(plate.rotation), p.WorldPos + new Vector2(0.0f, 0.0f));
-			mmPlatePts.SetInstanceTransform2D(i, ptsTransform);
-
-			//if (!p.isActive) continue;
-			//if (!p.IsColliding && !p.IsBorderingOtherPlate) continue;
-
-			var velTransform = new Transform2D(p.Velocity.Angle() - (MathF.PI/2), 
+			if (OverlayPlatePt)
+			{
+				var ptsTransform = new Transform2D(Mathf.DegToRad(plate.rotation), p.WorldPos + new Vector2(0.0f, 0.0f));
+				mmPlatePts.SetInstanceTransform2D(i, ptsTransform);
+			}
+			
+			if (OverlayPlatePtVelocity)
+			{
+				var velTransform = new Transform2D(p.Velocity.Angle() - (MathF.PI / 2),
 				new Vector2(1f, Mathf.Clamp(p.Velocity.Length() * 10f, 1f, 5f)),
-				0f, 
+				0f,
 				p.WorldPos + new Vector2(0.0f, 0.0f));
-			mmPlatePtVels.SetInstanceTransform2D(i, velTransform);
+				mmPlatePtVels.SetInstanceTransform2D(i, velTransform);
+			}
+
+			
 		}
 	}
 
@@ -270,7 +284,7 @@ public partial class MapViewer : Node
 
 		mmiPlatePts = new MultiMeshInstance2D();
 		mmiPlatePts.Multimesh = mmPlatePts;
-		mmiPlatePts.Modulate = Colors.Yellow;
+		mmiPlatePts.Modulate = PlateptColor;
 
 		AddChild(mmiPlatePts);
 	}
@@ -306,7 +320,7 @@ public partial class MapViewer : Node
 
 		mmiPlatePtVels = new MultiMeshInstance2D();
 		mmiPlatePtVels.Multimesh = mmPlatePtVels;
-		mmiPlatePtVels.Modulate = Colors.Red;
+		mmiPlatePtVels.Modulate = PlateptVelColor;
 
 		AddChild(mmiPlatePtVels);
 	}
@@ -322,7 +336,7 @@ public partial class MapViewer : Node
 
 		mmiPlateVels = new MultiMeshInstance2D();
 		mmiPlateVels.Multimesh = mmPlateVels;
-		mmiPlateVels.Modulate = Colors.LightCyan;
+		mmiPlateVels.Modulate = PlateVelocityColor;
 
 		AddChild(mmiPlateVels);
 	}
@@ -418,13 +432,9 @@ public partial class MapViewer : Node
 				var h = Math.Abs(cells[i, j].height);
 				var c = 1 - h;
 				if (cells[i, j].height >= 0f)
-					color = new Color(Mathf.Lerp(0f, 0.4f, h),
-											Mathf.Lerp(0.25f, 1f, h),
-											Mathf.Lerp(0f, 0.4f, h));  //land
+					color = ContinentalColor;  //land
 
-				else color = new Color(Mathf.Lerp(0f, 0.25f, c),
-											Mathf.Lerp(0f, 0.25f, c),
-											Mathf.Lerp(0.1f, 1f, c));  //water
+				else color = OceanicColor;
 
 				//The image is created flipped because the Image uses 0,0 at the topleft but 2d arrays use 0,0 as bottomleft
 				SetPixelWorld(i, j, color);
@@ -463,40 +473,36 @@ public partial class MapViewer : Node
 			for (int j = 0; j < map.worldGrid.grid.GetLength(1); j++)
 			{
 				var cell = map.worldGrid.grid[i, j];
-				var c = new Color(0.3f, 0.4f, 0.5f);
+				var c = DefaultColor;
 				if (cell.points.Count > 0)
 				{
 					if (cell.points[0].GetCrustType() == PlatePoint.CrustType.Oceanic)
-						c = new Color(0.5f, 0.6f, 0.75f);
-					else c = new Color(0.5f, 0.8f, 0.5f);
+						c = OceanicColor;
+					else c = ContinentalColor;
 				}
 
 				if (!cell.IsCompletelyEmpty())
 				{
 					if (cell.collisionType == PlateCollisionType.Transform)
 					{
-						c = Colors.Green;
+						c = DebugCollisionTransformColor;
 					}
 					else if (cell.collisionType == PlateCollisionType.Subduction)
 					{
-						c = Colors.DarkRed;
+						c = DebugCollisionSubductionColor;
 					}
 					else if (cell.collisionType == PlateCollisionType.Orogenic)
 					{
-						c = Colors.DimGray;
+						c = DebugCollisionOrogenicColor;
 					}
 					else if (cell.collisionType == PlateCollisionType.Divergent)
 					{
-						c = Colors.Yellow;
+						c = DebugCollisionDivergentColor;
 					}
 					
 				}
-				
-				//if (cell.IsEmptyOrInactive() && !cell.IsCompletelyEmpty())
-				//	c = Colors.HotPink;
-				//if (cell.ContainsEdgeBoundary)
-					//c *= (Colors.Black * 0.5f);
-				SetPixelWorld(i, j, c);
+				if (counts[i,j] > 0)
+					SetPixelWorld(i, j, c);
 			}
 		}
 
