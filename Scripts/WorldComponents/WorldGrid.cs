@@ -71,16 +71,25 @@ public partial class WorldGrid
 			
 	}
 
+	public void MovePoint(PlatePoint point, Vector2 newWorldPos)
+	{
+		var newIdx = GetIndexFromPosition(newWorldPos);
+		if (point.gridIndex != newIdx)
+		{
+			grid[point.gridIndex.X, point.gridIndex.Y].RemovePoint(point);
+			point.gridIndex = newIdx;
+			grid[newIdx.X, newIdx.Y].points.Add(point);
+			grid[newIdx.X, newIdx.Y].PlateIDs.Add(point.plate.ID);
+		}
+	}
+
 	public void MovePoint(PlatePoint point)
 	{
-		var oldIdx = GetIndexFromPosition(point.prevWorldPos);
 		var newIdx = GetIndexFromPosition(point.WorldPos);
 
-		if (oldIdx != newIdx)
+		if (point.gridIndex != newIdx)
 		{
-			RemovePoint(point);
-			if (CheckIfIndexInBounds(oldIdx.X, oldIdx.Y))
-				grid[oldIdx.X, oldIdx.Y].RemovePoint(point);
+			grid[point.gridIndex.X, point.gridIndex.Y].RemovePoint(point);
 			point.gridIndex = newIdx;
 			AddPoint(point);
 		}

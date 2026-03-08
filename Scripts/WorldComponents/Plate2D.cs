@@ -61,13 +61,6 @@ public partial class Plate2D
 		return world;
 	}
 
-	public void UpdatePointInHashGrid(PlatePoint p)
-	{
-		Vector2 oldWorld = new Vector2(p.prevWorldPos.X, p.prevWorldPos.Y);
-		map.worldGrid.MovePoint(p);
-		p.prevWorldPos = oldWorld;
-	}
-
 	public PlatePoint AddPointToPlate(Vector2 worldPos, float felsic, float mafic)
 	{
 		Vector2 local = WorldToLocal(worldPos);
@@ -104,17 +97,25 @@ public partial class Plate2D
 	{
 		foreach (var p in points)
 		{
-			p.prevWorldPos = new Vector2(p.WorldPos.X, p.WorldPos.Y);
+			p.prevWorldPos = p.WorldPos;
+			p.SetWorldPosDirty();
 		}
+
 		offset += (Velocity);
 		offset.X = offset.X % map.worldWidth;
 		offset.Y = offset.Y % map.worldHeight;
 		rotation += 0.0f;   //TODO: angular velocity
 
-		for (int p = points.Count - 1; p >= 0; p--)
+		for (int i = points.Count - 1; i >= 0; i--)
 		{
-			if (p <= points.Count - 1)
-				UpdatePointInHashGrid(points[p]);
+			if (i <= points.Count - 1)
+			{
+				var p = points[i];
+
+				Vector2 newWorldPos = p.WorldPos;
+				map.worldGrid.MovePoint(p, newWorldPos);
+			}
+				
 		}
 	}
 

@@ -63,7 +63,23 @@ public class PlatePoint
 	public float height { get; private set; }
 
 	public Vector2 localPos;
-	public Vector2 WorldPos => plate.LocalToWorld(localPos);    //The world position
+
+	private Vector2 _cachedWorldPos;
+	private bool _worldPosDirty = true;
+	public Vector2 WorldPos
+	{
+		get
+		{
+			if (_worldPosDirty)
+			{
+				_cachedWorldPos = plate.LocalToWorld(localPos);
+				_worldPosDirty = false;
+			}
+			return _cachedWorldPos;
+		}
+	}
+
+
 	public Vector2 prevWorldPos;	//The world position of the previous timetick
 
 	public Vector2 boundaryNormal;	//For points that are currently colliding, represents 
@@ -267,6 +283,11 @@ public class PlatePoint
 		IsBorderingOtherPlate = choice;
 		if (choice)
 			isActive = true;
+	}
+
+	public void SetWorldPosDirty()
+	{
+		_worldPosDirty = true;
 	}
 	#endregion
 }
