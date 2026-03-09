@@ -8,6 +8,7 @@ using System.Drawing;
 //Class used for spatially tracking platepoints for collision detecting
 public partial class WorldGrid
 {
+	//todo: look into multi-threading. parallel.for and parallel.foreach
 	public GridCell[,] grid;
 	int Width;
 	int Height;
@@ -78,7 +79,7 @@ public partial class WorldGrid
 		{
 			grid[point.gridIndex.X, point.gridIndex.Y].RemovePoint(point);
 			point.gridIndex = newIdx;
-			grid[newIdx.X, newIdx.Y].points.Add(point);
+			grid[newIdx.X, newIdx.Y].AddPoint(point);
 			grid[newIdx.X, newIdx.Y].PlateIDs.Add(point.plate.ID);
 		}
 	}

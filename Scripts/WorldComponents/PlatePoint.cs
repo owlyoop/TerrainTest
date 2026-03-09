@@ -226,11 +226,9 @@ public class PlatePoint
 			distTravelAsBoundary += dist;
 		if (distTravelAsBoundary >= 1f)
 		{
-			float w = plate.map.worldWidth;
-			float h = plate.map.worldHeight;
-			Vector2 behind = WorldPos - (plate.Velocity.Normalized() * 1f);
-			behind.X = Mathf.PosMod(behind.X, w);
-			behind.Y = Mathf.PosMod(behind.Y, w);
+			Vector2 behind = WorldPos - (plate.Velocity.Normalized() * 1.2f);
+			behind.X = Mathf.PosMod(behind.X, plate.map.worldWidth);
+			behind.Y = Mathf.PosMod(behind.Y, plate.map.worldHeight);
 			Vector2I n = plate.map.worldGrid.GetIndexFromPosition(behind);
 			var newpt = new Vector2(n.X + 0.5f, n.Y + 0.5f);
 

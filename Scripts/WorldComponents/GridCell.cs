@@ -79,9 +79,9 @@ public class GridCell
 		points.Add(point);
 		PlateIDs.Add(point.plate.ID);
 		var num = GetNumberOfSamePlate(point);
-		if (num >= 4)
+		if (num >= 3)
 		{
-			Consolidate(point);
+			Consolidate(point, true);
 		}
 	}
 
@@ -178,8 +178,9 @@ public class GridCell
 		return result;
 	}
 
-	public void Consolidate(PlatePoint point)
+	public void Consolidate(PlatePoint point, bool useGridcellCenter)
 	{
+		//todo: check if world wrapping works correctly here
 		var plate = point.plate;
 		var newpos = Vector2.Zero;
 		int count = 0;
@@ -200,6 +201,12 @@ public class GridCell
 		newpos /= count;
 		f /= count;
 		m /= count;
+
+		if (useGridcellCenter)
+		{
+			newpos = new Vector2((int)newpos.X % plate.map.worldWidth + 0.5f, 
+				(int)newpos.Y % plate.map.worldHeight + 0.5f);
+		}
 
 		var p = new PlatePoint(plate.WorldToLocal(newpos), f, m, plate);
 		plate.points.Add(p);
