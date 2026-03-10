@@ -90,7 +90,8 @@ public partial class WorldMap : Node
 		GD.Print("Work time for moveplate: ", workertime); 
 
 		start = Time.GetTicksUsec();
-		worldGrid.UpdatePointCategories();
+		//worldGrid.UpdatePointCategories();
+		worldGrid.UpdatePointCategoriesParallel();
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for updatepoints: ", workertime);
@@ -160,25 +161,6 @@ public partial class WorldMap : Node
 			}
 		}
 	}
-
-	/*void UpdatePlateVelocityDots()
-	{
-		for (int i = 0; i < Plates.Count; i++)
-		{
-			Plates[i].VelocityDots.Clear();
-		}
-		for (int i = 0; i < Plates.Count; i++)
-		{
-			for (int j = i + 1; j < Plates.Count; j++)
-			{
-				var pa = Plates[i];
-				var pb = Plates[j];
-
-				pa.VelocityDots.Add(pb, pa.Velocity.Normalized().Dot(pb.Velocity.Normalized()));
-				pb.VelocityDots.Add(pa, pb.Velocity.Normalized().Dot(pa.Velocity.Normalized()));
-			}
-		}
-	}*/
 
 	float WrappedDimension(float a, float b, float dimension)
 	{

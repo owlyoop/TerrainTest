@@ -3,7 +3,21 @@ using Microsoft.VisualBasic.FileIO;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading.Tasks;
 
+/// <summary>
+/// Struct used to update Gridcell information for multi-threading
+/// </summary>
+public struct CellUpdateResult
+{
+	public bool IsBoundary;
+	public bool IsCollision;
+	public bool IsEdgeBoundary;
+	public bool IsBorderingOtherPlate;
+	public bool RegisterCollisions;
+	public List<int> DepletedPointIndices;
+
+}
 
 //Class used for spatially tracking platepoints for collision detecting
 public partial class WorldGrid
@@ -134,118 +148,143 @@ public partial class WorldGrid
 		else return true;
 	}
 
-
-	//boundary = if on edge of plate; if any of the bordering grid points are empty or belong to dif plates.
-	//	or if any of the bordering gridpoints dont contain the center gridpoint's plate
-	//		(should this be done in plate init?)
-	//is colliding = if the gridpoint or one of the bordering gridpoints belongs to a dif plate
-	public void UpdatePointCategories()
+	public void UpdatePointCategoriesParallel()
 	{
 		int width = grid.GetLength(0);
 		int height = grid.GetLength(1);
+		var results = new CellUpdateResult[width, height];
+
+		//todo: flatten the array instead of this(?) i dunno
+		Parallel.For(0, width, i =>
+		{
+			for (int j = 0; j < height; j++)
+			{
+				results[i, j] = ClassifyCellParallel(i, j);
+			}
+		});
 
 		for (int i = 0; i < width; i++)
 		{
 			for (int j = 0; j < height; j++)
 			{
-				var cell = grid[i, j];
-
-				//remove if point runs out of material
-				for (int p = cell.points.Count - 1; p >= 0; p--)
-				{
-					if (cell.points[p].Felsic < 0.01f && cell.points[p].Mafic < 0.01f)
-					{
-						cell.points.RemoveAt(p);
-						if (cell.points.Count == 0)
-						{
-							ForEachNeighbor(i, j, (di, dj, otherCell) =>
-							{
-								otherCell.MarkAllAsEdgeBoundary(true);
-								otherCell.MarkAllAsBoundary(true);
-							});
-						}
-						
-					}
-				}
-				
-
-				cell.collisionType = PlateCollisionType.None;
-				if (!cell.IsEmptyOrInactive())
-				{
-					if (cell.ContainsCollision || cell.ContainsBorderingOtherPlate)
-						PlateCollision.RegisterCollisions(cell, map);
-				}
-
-				//cell.MarkAllAsColliding(false);
-				//cell.MarkAllAsBoundary(false);
-				//cell.MarkAllAsEdgeBoundary(false);
-				//cell.MarkAllAsBorderingOtherPlate(false);
-				//Mark empty cells as not containing a boundary or collision, and then check its neighbours
-				if (cell.IsCompletelyEmpty())
-				{
-					ForEachNeighbor(i, j, (di, dj, otherCell) =>
-					{
-						if (!otherCell.IsCompletelyEmpty())
-						{
-							otherCell.MarkAllAsBoundary(true);
-							otherCell.MarkAllAsEdgeBoundary(true);
-						}
-					});
-				}
-
-				if (!cell.IsEmptyOrInactive())
-				{
-					bool collision = false;
-					//check if cell contains points from different plates, if so then it's a collision
-					if (cell.points.Count > 1 && cell.PlateIDs.Count > 1)
-					{
-						collision = true;
-					}
-					cell.MarkAllAsColliding(collision);
-
-					bool boundary = false;
-					bool otherplate = false;
-					//cell.MarkAllAsBoundary(false);
-					//cell.MarkAllAsEdgeBoundary(false);
-					//cell.MarkAllAsBorderingOtherPlate(false);
-
-					//Check in the 8 directions around the gridpoint
-					ForEachNeighbor(i, j, (di, dj, otherCell) =>
-					{
-						if (!boundary)
-						{
-							if (otherCell.IsCompletelyEmpty())
-								boundary = true;
-						}
-
-						if (!otherplate)
-						{
-							foreach (var op in otherCell.points)
-							{
-								if (otherplate) continue;
-								foreach (var p in cell.points)
-								{
-									if (otherplate) continue;
-									if (op.plate != p.plate && op.isActive)
-									{
-										otherplate = true;
-										continue;
-									}
-								}
-							}
-						}
-					});
-					cell.MarkAllAsBoundary(boundary);
-					cell.MarkAllAsEdgeBoundary(boundary);
-					cell.MarkAllAsBorderingOtherPlate(otherplate);
-				}
+				//todo: look over , see what i can move out of here to be done in parallel
+				ApplyCellResults(i,j, results[i,j]);
 			}
 		}
+		
 	}
 
-	void ErodeMaterial(GridCell cell)
+	CellUpdateResult ClassifyCellParallel(int i, int j)
 	{
+		var cell = grid[i,j];
+		var result = new CellUpdateResult();
 
+		//id depleted pts by index
+		for (int p = cell.points.Count - 1; p >= 0; p--)
+		{
+			if (cell.points[p].Felsic <= 0.01f && cell.points[p].Mafic <= 0.01f)
+			{
+				if (result.DepletedPointIndices == null)
+					result.DepletedPointIndices = new List<int>();
+				result.DepletedPointIndices.Add(p);
+			}
+		}
+
+		
+		if (!cell.IsEmptyOrInactive())
+		{
+			//flag whether to register collision
+			if (cell.ContainsCollision || cell.ContainsBorderingOtherPlate)
+				result.RegisterCollisions = true;
+
+			//flag colliding
+			if (cell.points.Count > 1 && cell.PlateIDs.Count > 1)
+				result.IsCollision = true;
+
+			//classify boundary/edgebound/borderingother
+			bool boundary = false;
+			bool otherplate = false;
+
+			ForEachNeighbor(i, j, (di, dj, otherCell) =>
+			{
+				if (!boundary)
+				{
+					if (otherCell.IsCompletelyEmpty())
+						boundary = true;
+				}
+
+				if (!otherplate)
+				{
+					foreach (var op in otherCell.points)
+					{
+						if (otherplate) continue;
+						foreach (var p in cell.points)
+						{
+							if (otherplate) continue;
+							if (op.plate != p.plate && op.isActive)
+							{
+								otherplate = true;
+								continue;
+							}
+						}
+					}
+				}
+			});
+
+			result.IsBoundary = boundary;
+			result.IsEdgeBoundary = boundary;
+			result.IsBorderingOtherPlate = otherplate;
+		}
+		return result;
+	}
+
+	void ApplyCellResults(int i, int j, CellUpdateResult result)
+	{
+		var cell = grid[i, j];
+
+		//Remove points based off of gathered indices from cellupdateresult
+		if (result.DepletedPointIndices != null)
+		{
+			//depletedindices already added in reverse order so we can traverse it normally
+			for (int p = 0; p < result.DepletedPointIndices.Count; p++)
+			{
+				cell.points.RemoveAt(result.DepletedPointIndices[p]);
+			}
+			if (cell.points.Count == 0)
+			{
+				ForEachNeighbor(i, j, (di, dj, otherCell) =>
+				{
+					otherCell.MarkAllAsBoundary(true);
+					otherCell.MarkAllAsEdgeBoundary(true);
+				});
+			}
+		}
+		
+
+		//collision register
+		cell.collisionType = PlateCollisionType.None;
+		if (!cell.IsEmptyOrInactive())
+		{
+			cell.MarkAllAsColliding(result.IsCollision);
+			cell.MarkAllAsBoundary(result.IsBoundary);
+			cell.MarkAllAsEdgeBoundary(result.IsEdgeBoundary);
+			cell.MarkAllAsBorderingOtherPlate(result.IsBorderingOtherPlate);
+			if (result.RegisterCollisions)
+				PlateCollision.RegisterCollisions(cell, map);
+		}
+
+		//mark empty cell neighbours as boundaries
+		if (cell.IsCompletelyEmpty())
+		{
+			ForEachNeighbor(i, j, (di, dj, otherCell) =>
+			{
+				if (!otherCell.IsCompletelyEmpty())
+				{
+					otherCell.MarkAllAsBoundary(true);
+					otherCell.MarkAllAsEdgeBoundary(true);
+				}
+			});
+		}
 	}
 
 	//test function

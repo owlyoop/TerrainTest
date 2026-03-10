@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 
 public enum PlateCollisionType
@@ -44,6 +45,28 @@ public static class PlateCollision
 
 		var collisionCache = new Dictionary<(int plateID, int otherID), CollisionInfo>();
 
+		/*Parallel.ForEach(cell.points, p =>
+		{
+			foreach (var pi in plates)
+			{
+				if (p.plate.ID == pi)
+					continue;
+
+				var cacheKey = (p.plate.ID, pi);
+
+				if (!collisionCache.TryGetValue(cacheKey, out var collisionInfo))
+				{
+					var otherplate = map.Plates[pi];
+					collisionInfo = GetLocalCollisionType(p, otherplate, cell, grid);
+					collisionCache[cacheKey] = collisionInfo;
+				}
+
+				cell.collisionType = collisionInfo.Type;
+				p.collisionType = collisionInfo.Type;
+				HandleCollision(p, map.Plates[pi], collisionInfo);
+			}
+		});*/
+
 		foreach (var p in cell.points)
 		{
 			foreach (var pi in plates)
@@ -82,9 +105,19 @@ public static class PlateCollision
 		point.boundaryNormal = ComputeGradient(point, otherplate, cell);
 
 		var vel = point.plate.Velocity.Normalized();
+
+		//set the collision type to subduction or orogenic if the boundary normal is 0 (gets returned when theres 7 or 8 neighbours
+		if (point.boundaryNormal == Vector2.Zero)
+		{
+			PlateCollisionType ptype = PlateCollisionType.None;
+		}
+		else
+		{
+
+		}
 		//close to 0 = plate is shearing other plate. negative = plate is colliding headon
 		float boundaryDot = vel.Dot(point.boundaryNormal);
-
+		
 		var type = ClassifyCollision(boundaryDot, point, otherplate);
 
 		return new CollisionInfo
@@ -127,10 +160,10 @@ public static class PlateCollision
 			}
 		});
 		gradient = gradient.Normalized();
-		if (count > 0)
+		if (count > 0 && count < 7)
 			return -(gradient / count);
-		else //shouldnt be possible to reach this part, but just incase
-			return -(otherplate.Velocity - point.plate.Velocity).Normalized();
+		else
+			return Vector2.Zero;
 	}
 
 	static PlateCollisionType ClassifyCollision(float boundaryDot, PlatePoint point, Plate2D otherPlate)
@@ -154,7 +187,7 @@ public static class PlateCollision
 		{
 			case PlateCollisionType.Divergent:
 				//Spawn new points
-				SpawnPointsAtDivergentBoundary(point, map);
+				//SpawnPointsAtDivergentBoundary(point, map);
 				break;
 			case PlateCollisionType.Orogenic:
 				point.RemoveMaterial(20f, 0.0f);
@@ -168,6 +201,7 @@ public static class PlateCollision
 		}
 	}
 
+	
 	static void SpawnPointsAtDivergentBoundary(PlatePoint point, WorldMap map)
 	{
 		//check if gridcell is empty

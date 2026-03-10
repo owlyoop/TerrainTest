@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 public partial class MapViewer : Node
 {
@@ -446,31 +447,33 @@ public partial class MapViewer : Node
 
 	void DisplayPlates()
 	{
-		for (int i = 0; i < counts.GetLength(0); i++)
+		int width = counts.GetLength(0);
+		int height = counts.GetLength(1);
+		Parallel.For(0, width, i =>
 		{
-			for (int j = 0; j < counts.GetLength(1); j++)
+			for (int j = 0; j < height; j++)
 			{
 				SetPixelWorld(i, j, DefaultColor);
 				counts[i, j] = 0;
 				avgHeights[i, j] = 0f;
 			}
-		}
+		});
 
-		foreach (var plate in map.Plates)
+		Parallel.ForEach(map.Plates, plate =>
 		{
 			foreach (var p in plate.points)
 			{
 				var x = p.gridIndex.X;
 				var y = p.gridIndex.Y;
 
-				counts[x, y]++;
-				avgHeights[x, y] += (p.height / (float)counts[x, y]);
+					counts[x, y]++;
+					avgHeights[x, y] += (p.height / (float)counts[x, y]);
 			}
-		}
+		});
 
-		for (int i = 0; i < map.worldGrid.grid.GetLength(0); i++)
+		Parallel.For(0, width, i =>
 		{
-			for (int j = 0; j < map.worldGrid.grid.GetLength(1); j++)
+			for (int j = 0; j < height; j++)
 			{
 				var cell = map.worldGrid.grid[i, j];
 				var c = DefaultColor;
@@ -503,13 +506,13 @@ public partial class MapViewer : Node
 					//if (cell.ContainsEdgeBoundary)
 					//	c = Colors.BlueViolet + (cell.points[0].distTravelAsBoundary* Colors.White);
 				}
-				if (counts[i,j] > 0)
+				if (counts[i, j] > 0)
 					SetPixelWorld(i, j, c);
 			}
-		}
+		});
 
 		//for empty points, get average of surrounding points
-		for (int i = 0; i < avgHeights.GetLength(0); i++)
+		/*for (int i = 0; i < avgHeights.GetLength(0); i++)
 		{
 			for (int j = 0; j < avgHeights.GetLength(1); j++)
 			{
@@ -545,7 +548,7 @@ public partial class MapViewer : Node
 					//SetPixelWorld(i, j, c);
 				}
 			}
-		}
+		}*/
 	}
 
 
