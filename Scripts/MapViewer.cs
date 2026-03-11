@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-public partial class MapViewer : Node
+public partial class MapViewer : Node2D
 {
 	[ExportCategory("Overlay Settings")]
 	[Export] public bool OverlayPlatePt;
@@ -11,9 +11,9 @@ public partial class MapViewer : Node
 	[Export] public bool OverlayPlateVelocity;
 
 	[ExportCategory("Overlay Colors")]
-	[Export] public Color PlateptColor;
+	[Export] public Color PlatePtColor;
 	[Export] public Color PlateVelocityColor;
-	[Export] public Color PlateptVelColor;
+	[Export] public Color PlatePtVelColor;
 	[Export] public Color DebugCollisionTransformColor;
 	[Export] public Color DebugCollisionDivergentColor;
 	[Export] public Color DebugCollisionSubductionColor;
@@ -24,23 +24,23 @@ public partial class MapViewer : Node
 
 	[ExportCategory("References")]
 	[Export] public Camera2D cam1;
-    [Export] public WorldMap map;
-    [Export] public Node2D LineOverlay;
-    [Export] public float camSpeed;
-    [Export] public float zoomSpeed;
+	[Export] public WorldMap map;
+	[Export] public Node2D LineOverlay;
+	[Export] public float camSpeed;
+	[Export] public float zoomSpeed;
 
 	[Export] public MeshInstance2D mapDisplay;
 
 	[ExportCategory("UI")]
-    [Export] public Control PlateInfoGroup;
-    [Export] public Control CellInfoGroup;
-    [Export] public SpinBox PlateSpinBox;
+	[Export] public Control PlateInfoGroup;
+	[Export] public Control CellInfoGroup;
+	[Export] public SpinBox PlateSpinBox;
 	[Export] public CheckButton PlateCheckButton;
-    [Export] public RichTextLabel SelectedPlatePosition;
+	[Export] public RichTextLabel SelectedPlatePosition;
 	[Export] public RichTextLabel SelectedPlateRotation;
 	[Export] public RichTextLabel SelectedPlateDensity;
 	[Export] public RichTextLabel SelectedCellInfo;
-    [Export] public RichTextLabel NumPlatePointsInCell;
+	[Export] public RichTextLabel NumPlatePointsInCell;
 
 	Cell2D selectedCell;
 
@@ -61,13 +61,29 @@ public partial class MapViewer : Node
 	float[,] avgHeights;
 	int[,] counts;
 
+	#region Wire Mesh Vertices
+	Vector2[] wmBox =
+		{
+			new(-0.1f, -0.1f), new(0.1f, -0.1f),
+			new(0.1f, -0.1f), new(0.1f, 0.1f),
+			new(0.1f, 0.1f), new(-0.1f, 0.1f),
+			new(-0.1f, 0.1f), new(-0.1f, -0.1f)
+		};
+
+	Vector2[] wmSimpleArrow =
+		{
+			new(0f, 0f), new(0, 0.7f),
+			new(0, 0.7f), new(0.1f, 0.6f),
+			new(0, 0.7f), new(-0.1f, 0.6f),
+		};
+	#endregion
 
 	public override void _Ready()
 	{
-        cam1.Position = new Vector2(map.worldWidth / 2f, map.worldHeight / 2f);
-        cam1.Zoom *= 2.5f;
-        OnCameraZoom();
-		map.OnTimestepCompleted += HighlightSelectedPlate;
+		cam1.Position = new Vector2(map.worldWidth / 2f, map.worldHeight / 2f);
+		cam1.Zoom *= 2.5f;
+		OnCameraZoom();
+		map.OnTimestepCompleted += DrawSelectedPlateOverlay;
 
 		avgHeights = new float[map.worldWidth, map.worldHeight];
 		counts = new int[map.worldWidth, map.worldHeight];
@@ -121,38 +137,38 @@ public partial class MapViewer : Node
 	}
 
 	public void GetInput()
-    {
-        Vector2 inputDirection = Input.GetVector("Cam_Move_Left", "Cam_Move_Right", "Cam_Move_Up", "Cam_Move_Down");
-        cam1.Translate(inputDirection * camSpeed * (1f / (cam1.Zoom.Y + cam1.Zoom.X)));
-    }
-
-    // Called every frame. 'delta' is the elapsed time since the previous frame.
-    public override void _Process(double delta)
 	{
-        GetInput();
+		Vector2 inputDirection = Input.GetVector("Cam_Move_Left", "Cam_Move_Right", "Cam_Move_Up", "Cam_Move_Down");
+		cam1.Translate(inputDirection * camSpeed * (1f / (cam1.Zoom.Y + cam1.Zoom.X)));
 	}
 
-    void OnCameraZoom()
-    {
-        cam1.Scale = new Vector2(1 / cam1.Zoom.X, 1 / cam1.Zoom.Y);
-    }
+	// Called every frame. 'delta' is the elapsed time since the previous frame.
+	public override void _Process(double delta)
+	{
+		GetInput();
+	}
+
+	void OnCameraZoom()
+	{
+		cam1.Scale = new Vector2(1 / cam1.Zoom.X, 1 / cam1.Zoom.Y);
+	}
 
 	#endregion
 
 
 	#region UI
-	
+
 
 	void DisplayPlateInfo()
-    {
+	{
 		var plate = map.GetPlateByIndex(plateIndex);
 		SelectedPlatePosition.Text = plate.origin.ToString();
 		SelectedPlateRotation.Text = plate.rotation.ToString();
-        SelectedPlateDensity.Text = plate.density.ToString();
-    }
+		SelectedPlateDensity.Text = plate.density.ToString();
+	}
 
-    public void OnSpinBoxValueChanged(float value)
-    {
+	public void OnSpinBoxValueChanged(float value)
+	{
 		foreach (var n in LineOverlay.GetChildren())
 		{
 			LineOverlay.RemoveChild(n);
@@ -160,24 +176,24 @@ public partial class MapViewer : Node
 		}
 
 		plateIndex = (int)value;
-		
-		HighlightSelectedPlate();
+
+		DrawSelectedPlateOverlay();
 		DisplayPlateInfo();
 	}
 
-    void OnCellSelected(Cell2D cell)
-    {
+	void OnCellSelected(Cell2D cell)
+	{
 		var grid = map.worldGrid.grid;
 
 		selectedCell = cell;
-        if (cell != null)
-        {
-            HighlightSelectedCell(cell);
-            SelectedCellInfo.Text = cell.x.ToString() + ", " + cell.y.ToString();
-            NumPlatePointsInCell.Text = grid[cell.x, cell.y].points.Count().ToString();
+		if (cell != null)
+		{
+			HighlightSelectedCell(cell);
+			SelectedCellInfo.Text = cell.x.ToString() + ", " + cell.y.ToString();
+			NumPlatePointsInCell.Text = grid[cell.x, cell.y].points.Count().ToString();
 
 			GD.Print("\n" + NumPlatePointsInCell.Text);
-			foreach(var p in grid[cell.x, cell.y].points)
+			foreach (var p in grid[cell.x, cell.y].points)
 			{
 				GD.Print(p.isActive);
 				GD.Print(p.plate.ID, " , grid idx: ", p.gridIndex.X, " ", p.gridIndex.Y);
@@ -187,54 +203,54 @@ public partial class MapViewer : Node
 				GD.Print("----");
 			}
 		}
-    }
+	}
 
-    void HighlightSelectedCell(Cell2D cell)
-    {
-        foreach (var n in LineOverlay.GetChildren())
-        {
-            LineOverlay.RemoveChild(n);
-            n.QueueFree();
-        }
-        if (cell != null)
-        {
-            var nw = new Vector2I(cell.x, cell.y); 
-            var ne = new Vector2I(cell.x + 1, cell.y);
-            var se = new Vector2I(cell.x + 1, cell.y + 1);
-            var sw = new Vector2I(cell.x, cell.y + 1);
-            var selectLine = new Line2D();
-            selectLine.Width = 0.2f;
-            selectLine.DefaultColor = new Color(1,1,1,0.5f);
-            var p = new Vector2[4];
-            p[0] = nw;
-            p[1] = ne;
-            p[2] = se;
-            p[3] = sw;
-            selectLine.Points = p;
-            selectLine.Closed = true;
-            LineOverlay.AddChild(selectLine);
-        }
+	void HighlightSelectedCell(Cell2D cell)
+	{
+		foreach (var n in LineOverlay.GetChildren())
+		{
+			LineOverlay.RemoveChild(n);
+			n.QueueFree();
+		}
+		if (cell != null)
+		{
+			var nw = new Vector2I(cell.x, cell.y);
+			var ne = new Vector2I(cell.x + 1, cell.y);
+			var se = new Vector2I(cell.x + 1, cell.y + 1);
+			var sw = new Vector2I(cell.x, cell.y + 1);
+			var selectLine = new Line2D();
+			selectLine.Width = 0.2f;
+			selectLine.DefaultColor = new Color(1, 1, 1, 0.5f);
+			var p = new Vector2[4];
+			p[0] = nw;
+			p[1] = ne;
+			p[2] = se;
+			p[3] = sw;
+			selectLine.Points = p;
+			selectLine.Closed = true;
+			LineOverlay.AddChild(selectLine);
+		}
 
-    }
+	}
 
-	void HighlightSelectedPlate()
+	void DrawSelectedPlateOverlay()
 	{
 		var plate = map.GetPlateByIndex(plateIndex);
-		
-		if (mmPlatePts != null)
-			mmPlatePts.InstanceCount = 0;
-		if (mmPlatePts == null || mmPlatePts.InstanceCount != plate.points.Count())
-			CreatePlatePtsOverlay();
 
-		if (mmPlatePtVels != null)
-			mmPlatePtVels.InstanceCount = 0;
-		if (mmPlatePtVels == null || mmPlatePtVels.InstanceCount != plate.points.Count())
-			CreatePlatePtsVelsOverlay();
+		CreateOverlay(ref mmPlatePts, ref mmiPlatePts,
+			CreateWireMesh(wmBox, 1f),
+			plate.points.Count(),
+			PlatePtColor);
 
-		if (mmPlateVels != null)
-			mmPlateVels.InstanceCount = 0;
-		if (mmPlateVels == null || mmPlateVels.InstanceCount != map.Plates.Count())
-			CreatePlateVelsOverlay();
+		CreateOverlay(ref mmPlateVels, ref mmiPlateVels,
+			CreateWireMesh(wmSimpleArrow, 12f),
+			map.Plates.Count(),
+			PlateVelocityColor);
+
+		CreateOverlay(ref mmPlatePtVels, ref mmiPlatePtVels,
+			CreateWireMesh(wmSimpleArrow, 1f),
+			plate.points.Count(),
+			PlatePtVelColor);
 
 		if (OverlayPlateVelocity)
 		{
@@ -255,7 +271,7 @@ public partial class MapViewer : Node
 				var ptsTransform = new Transform2D(Mathf.DegToRad(plate.rotation), p.WorldPos + new Vector2(0.0f, 0.0f));
 				mmPlatePts.SetInstanceTransform2D(i, ptsTransform);
 			}
-			
+
 			if (OverlayPlatePtVelocity)
 			{
 				var velTransform = new Transform2D(p.Velocity.Angle() - (MathF.PI / 2),
@@ -264,8 +280,6 @@ public partial class MapViewer : Node
 				p.WorldPos + new Vector2(0.0f, 0.0f));
 				mmPlatePtVels.SetInstanceTransform2D(i, velTransform);
 			}
-
-			
 		}
 	}
 
@@ -273,89 +287,39 @@ public partial class MapViewer : Node
 
 
 	#region Overlay Rendering
-	void CreatePlatePtsOverlay()
+
+	void CreateOverlay(ref MultiMesh mm, ref MultiMeshInstance2D mmi,  ArrayMesh mesh, int instanceCount, Color modulate)
 	{
-		var plate = map.GetPlateByIndex(plateIndex);
-		mmPlatePts = new MultiMesh();
-		mmPlatePts.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
-		mmPlatePts.InstanceCount = plate.points.Count();
-
-		var mesh = CreateWireBox();
-		mmPlatePts.Mesh = mesh;
-
-		mmiPlatePts = new MultiMeshInstance2D();
-		mmiPlatePts.Multimesh = mmPlatePts;
-		mmiPlatePts.Modulate = PlateptColor;
-
-		AddChild(mmiPlatePts);
-	}
-
-	ArrayMesh CreateWireBox()
-	{
-		var vertices = new Vector2[]
+		if (mmi != null && IsInstanceValid(mmi))
 		{
-			new(-0.1f, -0.1f), new(0.1f, -0.1f),
-			new(0.1f, -0.1f), new(0.1f, 0.1f),
-			new(0.1f, 0.1f), new(-0.1f, 0.1f),
-			new(-0.1f, 0.1f), new(-0.1f, -0.1f)
-		};
-		var mesh = new ArrayMesh();
+			RemoveChild(mmi);
+			mmi.QueueFree();
+		}
 
-		var arrays = new Godot.Collections.Array();
-		arrays.Resize((int)Mesh.ArrayType.Max);
-		arrays[(int)Mesh.ArrayType.Vertex] = vertices;
-		mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Lines, arrays);
+		mm = new MultiMesh();
+		mm.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
+		mm.InstanceCount = instanceCount;
 
-		return mesh;
+		mm.Mesh = mesh;
+
+		mmi = new MultiMeshInstance2D();
+		mmi.Multimesh = mm;
+		mmi.Modulate = modulate;
+
+		AddChild(mmi);
 	}
 
-	void CreatePlatePtsVelsOverlay()
+	ArrayMesh CreateWireMesh(Vector2[] vertices, float scale)
 	{
-		var plate = map.GetPlateByIndex(plateIndex);
-		mmPlatePtVels = new MultiMesh();
-		mmPlatePtVels.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
-		mmPlatePtVels.InstanceCount = plate.points.Count();
-
-		var mesh = CreateVelocityArrow(1f);
-		mmPlatePtVels.Mesh = mesh;
-
-		mmiPlatePtVels = new MultiMeshInstance2D();
-		mmiPlatePtVels.Multimesh = mmPlatePtVels;
-		mmiPlatePtVels.Modulate = PlateptVelColor;
-
-		AddChild(mmiPlatePtVels);
-	}
-
-	void CreatePlateVelsOverlay()
-	{
-		mmPlateVels = new MultiMesh();
-		mmPlateVels.TransformFormat = MultiMesh.TransformFormatEnum.Transform2D;
-		mmPlateVels.InstanceCount = map.Plates.Count;
-
-		var mesh = CreateVelocityArrow(12f);
-		mmPlateVels.Mesh = mesh;
-
-		mmiPlateVels = new MultiMeshInstance2D();
-		mmiPlateVels.Multimesh = mmPlateVels;
-		mmiPlateVels.Modulate = PlateVelocityColor;
-
-		AddChild(mmiPlateVels);
-	}
-
-	ArrayMesh CreateVelocityArrow(float scale)
-	{
-		var vertices = new Vector2[]
-		{
-			new(0f, 0f), new(0, 0.7f * scale),
-			new(0, 0.7f* scale), new(0.1f* scale, 0.6f* scale),
-			new(0, 0.7f* scale), new(-0.1f* scale, 0.6f* scale),
-		};
+		Vector2[] scaled = new Vector2[vertices.Count()];
+		for (int i = 0; i < vertices.Count(); i++)
+			scaled[i] = vertices[i] * scale;
 
 		var mesh = new ArrayMesh();
 
 		var arrays = new Godot.Collections.Array();
 		arrays.Resize((int)Mesh.ArrayType.Max);
-		arrays[(int)Mesh.ArrayType.Vertex] = vertices;
+		arrays[(int)Mesh.ArrayType.Vertex] = scaled;
 		mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Lines, arrays);
 
 		return mesh;
@@ -405,7 +369,7 @@ public partial class MapViewer : Node
 		mapDisplay.Position = new Vector2(map.worldWidth / 2f, map.worldHeight / 2f);
 
 		img = CreateImageFromCells();
-		
+
 		var texture = ImageTexture.CreateFromImage(img);
 		mapDisplay.Texture = texture;
 	}
@@ -466,8 +430,8 @@ public partial class MapViewer : Node
 				var x = p.gridIndex.X;
 				var y = p.gridIndex.Y;
 
-					counts[x, y]++;
-					avgHeights[x, y] += (p.height / (float)counts[x, y]);
+				counts[x, y]++;
+				avgHeights[x, y] += (p.height / (float)counts[x, y]);
 			}
 		});
 

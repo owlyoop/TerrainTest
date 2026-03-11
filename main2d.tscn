@@ -31,9 +31,9 @@ seamless_blend_skirt = 0.5
 script = ExtResource("1_c47n3")
 OverlayPlatePt = true
 OverlayPlateVelocity = true
-PlateptColor = Color(1, 1, 0, 1)
+PlatePtColor = Color(1, 0.8110698, 0, 1)
 PlateVelocityColor = Color(1, 1, 1, 1)
-PlateptVelColor = Color(1, 0, 1, 1)
+PlatePtVelColor = Color(1, 0, 0.49267244, 1)
 DebugCollisionTransformColor = Color(0.7, 0.7, 0.7, 1)
 DebugCollisionDivergentColor = Color(1, 0.89154553, 0, 1)
 DebugCollisionSubductionColor = Color(0.54, 0, 0.008999863, 1)
@@ -66,6 +66,7 @@ offset_right = 219.0
 offset_bottom = 28.0
 
 [node name="Cell Info UI" type="Control" parent="CanvasLayer"]
+visible = false
 layout_mode = 3
 anchors_preset = 0
 size_flags_horizontal = 3

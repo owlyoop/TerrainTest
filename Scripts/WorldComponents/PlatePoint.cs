@@ -224,9 +224,10 @@ public class PlatePoint
 		float dist = plate.map.WrappedDistance(prevWorldPos, WorldPos);
 		if (IsEdgeBoundary && !IsColliding)
 			distTravelAsBoundary += dist;
-		if (distTravelAsBoundary >= 1f)
+		if (distTravelAsBoundary >= 1f && plate.Velocity.LengthSquared() > 0f)
 		{
-			Vector2 behind = WorldPos - (plate.Velocity.Normalized() * 1.2f);
+			
+			Vector2 behind = WorldPos - (plate.Velocity.Normalized() * 1f);
 			behind.X = Mathf.PosMod(behind.X, plate.map.worldWidth);
 			behind.Y = Mathf.PosMod(behind.Y, plate.map.worldHeight);
 			Vector2I n = plate.map.worldGrid.GetIndexFromPosition(behind);

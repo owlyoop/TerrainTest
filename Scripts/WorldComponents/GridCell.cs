@@ -186,14 +186,17 @@ public class GridCell
 		int count = 0;
 		float f = 0;
 		float m = 0;
+		bool newPtShouldBeActive = false;
 		for (int i = points.Count - 1; i >= 0; i--)
 		{
 			if (points[i].plate == plate)
 			{
+				if (points[i].isActive)
+					newPtShouldBeActive = true;
 				newpos += points[i].WorldPos;
 				count++;
-				f = points[i].Felsic;
-				m = points[i].Mafic;
+				f += points[i].Felsic;
+				m += points[i].Mafic;
 				plate.points.Remove(points[i]);
 				points.Remove(points[i]);
 			}
@@ -204,11 +207,12 @@ public class GridCell
 
 		if (useGridcellCenter)
 		{
-			newpos = new Vector2((int)newpos.X % plate.map.worldWidth + 0.5f, 
-				(int)newpos.Y % plate.map.worldHeight + 0.5f);
+			newpos = new Vector2( this.x + 0.5f, 
+				this.y + 0.5f);
 		}
 
 		var p = new PlatePoint(plate.WorldToLocal(newpos), f, m, plate);
+		p.isActive = newPtShouldBeActive;
 		plate.points.Add(p);
 		p.gridIndex = point.gridIndex;
 		points.Add(p);

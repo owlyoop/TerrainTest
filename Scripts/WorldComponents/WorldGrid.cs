@@ -14,6 +14,7 @@ public struct CellUpdateResult
 	public bool IsCollision;
 	public bool IsEdgeBoundary;
 	public bool IsBorderingOtherPlate;
+	public bool IsActive;
 	public bool RegisterCollisions;
 	public List<int> DepletedPointIndices;
 
@@ -231,7 +232,11 @@ public partial class WorldGrid
 				}
 			});
 
-			result.IsBoundary = boundary;
+			if (!boundary && !otherplate && !result.IsCollision)
+				result.IsActive = false;
+			else result.IsActive = true;
+
+				result.IsBoundary = boundary;
 			result.IsEdgeBoundary = boundary;
 			result.IsBorderingOtherPlate = otherplate;
 		}
@@ -259,7 +264,10 @@ public partial class WorldGrid
 				});
 			}
 		}
-		
+
+
+		//if (!result.IsActive)
+			//cell.MarkAsEmpty();
 
 		//collision register
 		cell.collisionType = PlateCollisionType.None;
