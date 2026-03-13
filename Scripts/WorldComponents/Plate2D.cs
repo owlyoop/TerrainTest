@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Threading.Tasks;
 
 public partial class Plate2D
@@ -12,7 +13,7 @@ public partial class Plate2D
 	public float rotation; //in degrees
 
 	public List<PlatePoint> points; //the points that make up this plate, initially created from points on a grid that were inside the voronoi polygon
-    public int density = 5; //crust density
+    
 
     public Vector2 Velocity { get; private set; }  //derived from all points
 
@@ -69,16 +70,45 @@ public partial class Plate2D
 		map.worldGrid.AddPoint(p);
 		points.Add(p);
 		p.prevWorldPos = oldWorld;
+
+
+		Vector2 centerLocal = WorldToLocal(Center);
+		centerLocal = ((centerLocal * (points.Count - 1)) + p.localPos) / points.Count;
+		Center = LocalToWorld(centerLocal);
+
+
 		return p;
 	}
 
+	public void RemovePoint(PlatePoint point)
+	{
+		points.Remove(point);
+
+		Vector2 centerLocal = WorldToLocal(Center);
+		centerLocal = ((centerLocal * (points.Count + 1)) - point.localPos) / points.Count;
+		Center = LocalToWorld(centerLocal);
+	}
+
+	public void RemovePoint(int idx)
+	{
+		var point = points[idx];
+		points.RemoveAt(idx);
+
+		Vector2 centerLocal = WorldToLocal(Center);
+		centerLocal = ((centerLocal * (points.Count + 1)) - point.localPos) / points.Count;
+		Center = LocalToWorld(centerLocal);
+	}
+
+	
 	public void CheckForNewPoints()
 	{
-		for (int i = 0; i < points.Count; i++)
+		for (int i = points.Count - 1; i >= 0; i--)
 		{
-			points[i].OnTimestep();
-			if (points[i].IsBoundary)
-				points[i].UpdateTravelStats();
+			var point = points[i];
+			bool valid = point.OnTimestep();
+			//if (!valid) continue;
+			//if (point.IsEdgeBoundary || point.IsBoundary )
+				point.UpdateTravelStats(0.1f, "area");
 		}
 	}
 
@@ -87,10 +117,16 @@ public partial class Plate2D
 		//need to find new localpos
 		//var newpos = this.WorldToLocal(point.WorldPos);
 		Vector2 world = point.WorldPos;
-		point.plate.points.Remove(point);
+		point.plate.RemovePoint(point);
 		point.plate = this;
 		point.localPos = WorldToLocal(world);
+
+		Vector2 centerLocal = WorldToLocal(Center);
+		centerLocal = ((centerLocal * (points.Count - 1)) + point.localPos) / points.Count;
+		Center = LocalToWorld(centerLocal);
+
 		points.Add(point);
+
 	}
 
 	public void MovePlate()
@@ -101,9 +137,13 @@ public partial class Plate2D
 			p.SetWorldPosDirty();
 		}
 
-		offset += (Velocity);
+		offset += Velocity;
 		offset.X = offset.X % map.worldWidth;
 		offset.Y = offset.Y % map.worldHeight;
+
+		Center += Velocity;
+		Center.X = Center.X % map.worldWidth;
+		Center.Y = Center.Y % map.worldHeight;
 		rotation += 0.0f;   //TODO: angular velocity
 
 		for (int i = points.Count - 1; i >= 0; i--)
@@ -118,6 +158,8 @@ public partial class Plate2D
 				
 		}
 	}
+
+
 
 	//Initializes all of the platepoints velocity
 	public void InitializePlateVelocity(Vector2 velocity)
@@ -164,8 +206,16 @@ public partial class Plate2D
 		Velocity = Velocity * speed;
 	}
 
-	public void RecalculateCenter()
+	public void InitializeCenter()
 	{
-
+		Vector2 avg = Vector2.Zero;
+		int count = 0;
+		foreach(var p in points)
+		{
+			avg += p.localPos;
+			count++;
+		}
+		avg = avg / count;
+		Center = LocalToWorld(avg);
 	}
 }

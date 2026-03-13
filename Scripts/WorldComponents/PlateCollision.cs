@@ -45,30 +45,9 @@ public static class PlateCollision
 
 		var collisionCache = new Dictionary<(int plateID, int otherID), CollisionInfo>();
 
-		/*Parallel.ForEach(cell.points, p =>
+		for (int i = cell.points.Count - 1; i >= 0; i--)
 		{
-			foreach (var pi in plates)
-			{
-				if (p.plate.ID == pi)
-					continue;
-
-				var cacheKey = (p.plate.ID, pi);
-
-				if (!collisionCache.TryGetValue(cacheKey, out var collisionInfo))
-				{
-					var otherplate = map.Plates[pi];
-					collisionInfo = GetLocalCollisionType(p, otherplate, cell, grid);
-					collisionCache[cacheKey] = collisionInfo;
-				}
-
-				cell.collisionType = collisionInfo.Type;
-				p.collisionType = collisionInfo.Type;
-				HandleCollision(p, map.Plates[pi], collisionInfo);
-			}
-		});*/
-
-		foreach (var p in cell.points)
-		{
+			var p = cell.points[i];
 			foreach (var pi in plates)
 			{
 				if (p.plate.ID == pi)
@@ -88,6 +67,28 @@ public static class PlateCollision
 				HandleCollision(p, map.Plates[pi], collisionInfo);
 			}
 		}
+
+		/*foreach (var p in cell.points)
+		{
+			foreach (var pi in plates)
+			{
+				if (p.plate.ID == pi)
+					continue;
+
+				var cacheKey = (p.plate.ID, pi);
+
+				if (!collisionCache.TryGetValue(cacheKey, out var collisionInfo))
+				{
+					var otherplate = map.Plates[pi];
+					collisionInfo = GetLocalCollisionType(p, otherplate, cell, grid);
+					collisionCache[cacheKey] = collisionInfo;
+				}
+
+				cell.collisionType = collisionInfo.Type;
+				p.collisionType = collisionInfo.Type;
+				HandleCollision(p, map.Plates[pi], collisionInfo);
+			}
+		}*/
 	}
 
 	/// <summary>
@@ -106,19 +107,23 @@ public static class PlateCollision
 
 		var vel = point.plate.Velocity.Normalized();
 
-		//set the collision type to subduction or orogenic if the boundary normal is 0 (gets returned when theres 7 or 8 neighbours
-		if (point.boundaryNormal == Vector2.Zero)
+		PlateCollisionType type = PlateCollisionType.None;
+		float boundaryDot = vel.Dot(point.boundaryNormal);
+		
+		if (point.boundaryNormal.Length() > 0f)
 		{
-			PlateCollisionType ptype = PlateCollisionType.None;
+			//dot close to 0 = plate is shearing other plate. negative = plate is colliding headon
+			type = ClassifyCollision(boundaryDot, point, otherplate);
 		}
 		else
 		{
-
+			//set the collision type to subduction or orogenic if the boundary normal is 0 (gets returned when theres 7 or 8 neighbours
+			if (point.GetCrustType() == PlatePoint.CrustType.Oceanic)
+				type = PlateCollisionType.Subduction;
+			else type = PlateCollisionType.Orogenic;
 		}
-		//close to 0 = plate is shearing other plate. negative = plate is colliding headon
-		float boundaryDot = vel.Dot(point.boundaryNormal);
-		
-		var type = ClassifyCollision(boundaryDot, point, otherplate);
+
+
 
 		return new CollisionInfo
 		{
@@ -190,13 +195,13 @@ public static class PlateCollision
 				//SpawnPointsAtDivergentBoundary(point, map);
 				break;
 			case PlateCollisionType.Orogenic:
-				point.RemoveMaterial(20f, 0.0f);
+				point.RemoveMaterial(1f, 0.0f);
 				break;
 			case PlateCollisionType.Subduction:
-				point.RemoveMaterial(5f, 200f);
+				point.RemoveMaterial(3f, 12f);
 				break;
 			case PlateCollisionType.Transform:
-				point.RemoveMaterial(10f, 10f);
+				point.RemoveMaterial(1f, 1f);
 				break;
 		}
 	}

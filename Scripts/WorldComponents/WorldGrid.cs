@@ -261,13 +261,13 @@ public partial class WorldGrid
 				{
 					otherCell.MarkAllAsBoundary(true);
 					otherCell.MarkAllAsEdgeBoundary(true);
-				});
+				}, checkSelf: false);
 			}
 		}
 
 
-		//if (!result.IsActive)
-			//cell.MarkAsEmpty();
+		if (!result.IsActive)
+			cell.MarkAsEmpty();
 
 		//collision register
 		cell.collisionType = PlateCollisionType.None;

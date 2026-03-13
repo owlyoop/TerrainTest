@@ -10,7 +10,7 @@
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_w74eu"]
 noise_type = 0
 seed = 365
-frequency = 0.0079
+frequency = 0.0199
 cellular_return_type = 0
 domain_warp_type = 2
 domain_warp_amplitude = 32.0
@@ -27,17 +27,17 @@ seamless_blend_skirt = 0.5
 
 [node name="main2D" type="Node2D"]
 
-[node name="MapViewer" type="Node2D" parent="." node_paths=PackedStringArray("cam1", "map", "LineOverlay", "mapDisplay", "PlateInfoGroup", "CellInfoGroup", "PlateSpinBox", "PlateCheckButton", "SelectedPlatePosition", "SelectedPlateRotation", "SelectedPlateDensity", "SelectedCellInfo", "NumPlatePointsInCell")]
+[node name="MapViewer" type="Node2D" parent="." node_paths=PackedStringArray("cam1", "map", "LineOverlay", "mapDisplay", "PlateInfoGroup", "CellInfoGroup", "PlateSpinBox", "PlateCheckButton", "SelectedPlatePosition", "SelectedPlateRotation", "SelectedCellInfo", "NumPlatePointsInCell", "celldebug")]
 script = ExtResource("1_c47n3")
 OverlayPlatePt = true
 OverlayPlateVelocity = true
-PlatePtColor = Color(1, 0.8110698, 0, 1)
+PlatePtColor = Color(1, 0.9666667, 0, 0.7058824)
 PlateVelocityColor = Color(1, 1, 1, 1)
 PlatePtVelColor = Color(1, 0, 0.49267244, 1)
-DebugCollisionTransformColor = Color(0.7, 0.7, 0.7, 1)
+DebugCollisionTransformColor = Color(0, 0.88235295, 0.58683497, 1)
 DebugCollisionDivergentColor = Color(1, 0.89154553, 0, 1)
 DebugCollisionSubductionColor = Color(0.54, 0, 0.008999863, 1)
-DebugCollisionOrogenicColor = Color(0.329225, 0.32369998, 0.39, 1)
+DebugCollisionOrogenicColor = Color(0.30390003, 0.2988, 0.36, 1)
 ContinentalColor = Color(0.5352, 0.72, 0.40320003, 1)
 OceanicColor = Color(0.32900003, 0.5268667, 0.7, 1)
 DefaultColor = Color(0.17050001, 0.3476, 0.55, 1)
@@ -53,9 +53,9 @@ PlateSpinBox = NodePath("../CanvasLayer/Plate Info UI/SpinBox")
 PlateCheckButton = NodePath("../CanvasLayer/CheckButton")
 SelectedPlatePosition = NodePath("../CanvasLayer/Plate Info UI/Selected Plate Pos")
 SelectedPlateRotation = NodePath("../CanvasLayer/Plate Info UI/Selected Plate Rot")
-SelectedPlateDensity = NodePath("../CanvasLayer/Plate Info UI/Selected Plate Density")
 SelectedCellInfo = NodePath("../CanvasLayer/Cell Info UI/Selected Cell")
 NumPlatePointsInCell = NodePath("../CanvasLayer/Cell Info UI/NumPlatePoints")
+celldebug = NodePath("../CanvasLayer/Cell Info UI/Cell info label")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -66,7 +66,6 @@ offset_right = 219.0
 offset_bottom = 28.0
 
 [node name="Cell Info UI" type="Control" parent="CanvasLayer"]
-visible = false
 layout_mode = 3
 anchors_preset = 0
 size_flags_horizontal = 3
@@ -107,6 +106,15 @@ offset_top = 70.0
 offset_right = 490.0
 offset_bottom = 95.0
 text = "22"
+
+[node name="Cell info label" type="RichTextLabel" parent="CanvasLayer/Cell Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 5.0
+offset_top = 100.0
+offset_right = 576.0
+offset_bottom = 480.0
+text = "Cell info"
 
 [node name="Plate Info UI" type="Control" parent="CanvasLayer"]
 visible = false
@@ -167,24 +175,6 @@ offset_top = 70.0
 offset_right = 470.0
 offset_bottom = 95.0
 text = "333,333"
-
-[node name="Plate Density Label" type="RichTextLabel" parent="CanvasLayer/Plate Info UI"]
-z_index = 5
-layout_mode = 0
-offset_left = 5.0
-offset_top = 100.0
-offset_right = 305.0
-offset_bottom = 125.0
-text = "Density:"
-
-[node name="Selected Plate Density" type="RichTextLabel" parent="CanvasLayer/Plate Info UI"]
-z_index = 5
-layout_mode = 0
-offset_left = 75.0
-offset_top = 100.0
-offset_right = 375.0
-offset_bottom = 125.0
-text = "4"
 
 [node name="CheckBox" type="CheckBox" parent="CanvasLayer"]
 anchors_preset = 1

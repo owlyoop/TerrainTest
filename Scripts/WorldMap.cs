@@ -62,9 +62,8 @@ public partial class WorldMap : Node
 			float rx = (float)GD.RandRange(-1f, 1f);
 			float ry = (float)GD.RandRange(-1f, 1f);
 			float speed = (float)GD.RandRange(0f, 1f);
-			int d = GD.RandRange(1, 32);
 			p.InitializePlateVelocity(new Vector2(rx, ry) * (speed * 0.05f));
-			p.density = d;
+			p.InitializeCenter();
 		}
 		worldGrid.InitializeBoundaries();
 		timer.Timeout += Timestep;
@@ -153,11 +152,23 @@ public partial class WorldMap : Node
 				}
 
 				float a = noiseGen.GetNoise2D(cellPos.X, cellPos.Y);
-				float felsic = Mathf.Clamp(a, 0.0001f, 1f);
-				float mafic = Mathf.Abs(Mathf.Clamp(a, -1f, 0.0001f));
-				felsic *= 50000f;
-				mafic *= 50000f;
+				float b = noiseGen.GetNoise2D((cellPos.X * 0.5f) + 100f, (cellPos.Y * 0.5f) + 100f);
+
+				float fw = Mathf.Clamp(b * 3f, 0f, 1f);
+				float mw = 1f - fw;
+				float mag = Mathf.Abs(a);
+
+				//float felsic = Mathf.Clamp(a, 0.0001f, 1f);
+				//float mafic = Mathf.Abs(Mathf.Clamp(a, -1f, 0.0001f));
+				//felsic *= 5000f;
+				//mafic *= 5000f;
+
+				float felsic = fw * mag * 10000f;
+				float mafic = mw * mag * 10000f;
+
+
 				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), felsic, mafic);
+				pt.age = MathF.Abs(mw) * 100f;
 			}
 		}
 	}

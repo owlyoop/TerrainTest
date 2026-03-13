@@ -43,24 +43,17 @@ public class PlatePoint
 		set => _mafic = value;
 	}
 
-	//total mass is felsic + mafic
+	//i am representing platepoints as 1km x 1km samples
+	public float area = 1f; 
+	public float mass;
+	public float thickness;
+	public float density;
+	public float buoyancy;
 
-	//width of crust in meters
-	//calculated from mass / density
-	//malic gets denser with age and also thicker
-	public float crustThickness;
 
-	// mass / thickness
-	public float density;      
-
-	//same as height. in meters.
-	
-
-	float age;  //1f = 1mil years?
-
-	//derived from thickness and density.
-	//thicker = higher elevation. denser = crust sinks so lower elevation
 	public float height { get; private set; }
+
+	public float age;
 
 	public Vector2 localPos;
 
@@ -97,21 +90,6 @@ public class PlatePoint
 
 	public float distTravelAsBoundary = 0f;
 	public float distTravelNoCollision = 0f; //not used, dunno if i will need to track this in the future
-	Vector2 lastBoundaryPos; //TODO?: The last position this point became a boundary.
-							 //When the plate moves a certain dist away, a new platepoint is created
-
-	/* TODO:
-	 * differentiate between oceanic and continental crust
-	 *		continental is made up of felsic, oceanic is mafic (cooled magma).
-	 *		plutonic rock from magma cooling
-	 * make crust age over time. oceanic crust cools and gets denser over time
-	 * continental is thicker and less dense
-	 * make elevation derived from crust thickness
-	 * make plate density derived from points? like a plate of only continental would be less dense than only oceanic.
-	 * make platepoints have their own velocity, and the plate's velocity is an avg of all points
-	 */
-
-	
 
 	public PlatePoint(Vector2 localPos, float felsic, float mafic, Plate2D plate)
 	{
@@ -128,39 +106,25 @@ public class PlatePoint
 
 		age = 0f;
 
-		CalculateDensity();
-		CalculateThickness();
-		CalculateHeight();
+		PhysicalProperties();
 	}
-
-	public float CalculateDensity()
+	public void PhysicalProperties()
 	{
-		float totalMass = Felsic + Mafic;
+		mass = Felsic + Mafic;
 
 		float ageRatio = Mathf.Clamp(age / MAFIC_MAX_AGE, 0f, 1f);
 		float maficDensity = Mathf.Lerp(DENSITY_MAFIC_YOUNG, DENSITY_MAFIC_OLD, ageRatio);
+
+		float felsicVolume = Felsic / DENSITY_FELSIC;
 		float maficVolume = Mafic / maficDensity;
+		float volume = felsicVolume + maficVolume;
 
-		float totalVolume = (Felsic / DENSITY_FELSIC) + maficVolume;
+		thickness = volume * area;
+		density = mass / volume;
+		
 
-		density = totalMass / totalVolume;
-		return density;
-	}
-	public void CalculateThickness()
-	{
-		float ageRatio = Mathf.Clamp(age / MAFIC_MAX_AGE, 0f, 1f);
-		float maficDensity = Mathf.Lerp(DENSITY_MAFIC_YOUNG, DENSITY_MAFIC_OLD, ageRatio);
-
-		//assuming the length&width are 1km
-		crustThickness = (Felsic / DENSITY_FELSIC) + (Mafic / maficDensity);
-
-	}
-
-	public void CalculateHeight()
-	{
-		float buoyancy = (3500f - density) / 3500f;	//todo: 
-		float baseElevation = crustThickness * buoyancy;
-		height = baseElevation;
+		buoyancy = (DENSITY_MAFIC_OLD - density) / DENSITY_MAFIC_OLD;
+		height = thickness * buoyancy;
 	}
 
 	/// <summary>
@@ -187,11 +151,24 @@ public class PlatePoint
 		material[1] = m;
 		Felsic = f;
 		Mafic = m;
-		CalculateHeight();
+		PhysicalProperties();
+		//todo: set neighbours as active
 		if (Felsic < 0.01f && Mafic < 0.01f)
 		{
-			this.plate.points.Remove(this);
+			//i need to store a reference to grid in platepoint class. jesus christ
+			var worldGrid = plate.map.worldGrid;
+			var grid = plate.map.worldGrid.grid;
 
+			this.plate.RemovePoint(this);
+			grid[gridIndex.X, gridIndex.Y].RemovePoint(this);
+			if (grid[gridIndex.X, gridIndex.Y].IsEmptyOrInactive() || grid[gridIndex.X, gridIndex.Y].points.Count == 0)
+			{
+				worldGrid.ForEachNeighbor(gridIndex.X, gridIndex.Y, (di, dj, otherCell) =>
+				{
+					otherCell.MarkAllAsBoundary(true);
+					otherCell.MarkAllAsEdgeBoundary(true);
+				}, checkSelf: false);
+			}
 		}
 		return material;
 	}
@@ -211,40 +188,77 @@ public class PlatePoint
 		return Crust;
 	}
 
-	public void OnTimestep()
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <returns>Returns true if the point still exists & was not removed after timestep</returns>
+	public bool OnTimestep()
 	{
 		age = age + 1f;
-		CalculateDensity();
-		CalculateThickness();
-		CalculateHeight();
+		
+		if (age > 500f)
+		{
+			RemoveMaterial(0f, 0.5f);
+			if (Felsic <= 0.01f && Mafic <= 0.01f)
+				return false;
+		}
+		PhysicalProperties();
+		return true;
 	}
 
-	public void UpdateTravelStats()
+	public void UpdateTravelStats(float requiredDistance, string spawnMethod)
 	{
 		float dist = plate.map.WrappedDistance(prevWorldPos, WorldPos);
 		if (IsEdgeBoundary && !IsColliding)
 			distTravelAsBoundary += dist;
-		if (distTravelAsBoundary >= 1f && plate.Velocity.LengthSquared() > 0f)
-		{
-			
-			Vector2 behind = WorldPos - (plate.Velocity.Normalized() * 1f);
-			behind.X = Mathf.PosMod(behind.X, plate.map.worldWidth);
-			behind.Y = Mathf.PosMod(behind.Y, plate.map.worldHeight);
-			Vector2I n = plate.map.worldGrid.GetIndexFromPosition(behind);
-			var newpt = new Vector2(n.X + 0.5f, n.Y + 0.5f);
 
-			var p = plate.AddPointToPlate(newpt, 10f, 10f);
+		if (distTravelAsBoundary < requiredDistance) return;
+		if (!IsEdgeBoundary || IsColliding) return;
+
+		if (plate.Velocity.LengthSquared() > 0f)
+		{
+			switch (spawnMethod)
+			{
+				case "single":
+					Vector2 behind = WorldPos - (plate.Velocity.Normalized() * 1f);
+					behind.X = Mathf.PosMod(behind.X, plate.map.worldWidth);
+					behind.Y = Mathf.PosMod(behind.Y, plate.map.worldHeight);
+					Vector2I n = plate.map.worldGrid.GetIndexFromPosition(behind);
+					var newpt = new Vector2(n.X + 0.5f, n.Y + 0.5f);
+					SpawnPoint(newpt, 5f, 10f);
+					break;
+				case "area":
+					plate.map.worldGrid.ForEachNeighbor(gridIndex.X, gridIndex.Y, (di, dj, otherCell) =>
+					{
+						if (!otherCell.IsCompletelyEmpty()) return;
+						Vector2 dir = new Vector2(di - gridIndex.X, dj - gridIndex.Y).Normalized();
+						float dot = dir.Dot(plate.Velocity.Normalized());
+						if (dot > 0.2f) return;
+
+						Vector2 worldPos = new Vector2(otherCell.x + 0.5f, otherCell.y + 0.5f);
+						SpawnPoint(worldPos, 5f, 10f);
+					}, checkSelf: false);
+					break;
+				default:
+					GD.PrintErr("Invalid spawnMethod param for UpdateTravelStats");
+					break;
+			}
+			
+		}
+
+		void SpawnPoint(Vector2 worldpos, float felsic, float mafic)
+		{
+			var p = plate.AddPointToPlate(worldpos, felsic, mafic);
 			if (p != null)
 			{
 				p.MarkPointAsBoundary(true);
 				p.MarkPointAsEdgeBoundary(true);
 				p.Velocity = plate.Velocity;
 				distTravelAsBoundary = 0f;
-				//plate.map.worldGrid.grid[gridIndex.X, gridIndex.Y].MarkAllAsBoundary(false);
-				//plate.map.worldGrid.grid[gridIndex.X, gridIndex.Y].MarkAllAsEdgeBoundary(false);
 			}
 		}
 	}
+	
 
 	#region state bookkeeping
 	public void MarkPointAsBoundary(bool choice)

@@ -38,21 +38,28 @@ public partial class MapViewer : Node2D
 	[Export] public CheckButton PlateCheckButton;
 	[Export] public RichTextLabel SelectedPlatePosition;
 	[Export] public RichTextLabel SelectedPlateRotation;
-	[Export] public RichTextLabel SelectedPlateDensity;
 	[Export] public RichTextLabel SelectedCellInfo;
 	[Export] public RichTextLabel NumPlatePointsInCell;
+	[Export] public RichTextLabel celldebug;
 
 	Cell2D selectedCell;
-
+	#region Multimesh Instances
 	MultiMeshInstance2D mmiPlatePts;
 	MultiMesh mmPlatePts;
+
 	MultiMeshInstance2D mmiPlatePtVels;
 	MultiMesh mmPlatePtVels;
 
 	MultiMeshInstance2D mmiPlateVels;
 	MultiMesh mmPlateVels;
 
+	MultiMeshInstance2D mmiPlateCenters;
+	MultiMesh mmPlateCenters;
+
 	int plateIndex = 0;
+
+	#endregion
+
 
 
 	Cell2D[,] cells;
@@ -63,19 +70,38 @@ public partial class MapViewer : Node2D
 
 	#region Wire Mesh Vertices
 	Vector2[] wmBox =
-		{
-			new(-0.1f, -0.1f), new(0.1f, -0.1f),
-			new(0.1f, -0.1f), new(0.1f, 0.1f),
-			new(0.1f, 0.1f), new(-0.1f, 0.1f),
-			new(-0.1f, 0.1f), new(-0.1f, -0.1f)
-		};
+	{
+		new(-0.1f, -0.1f), new(0.1f, -0.1f),
+		new(0.1f, -0.1f), new(0.1f, 0.1f),
+		new(0.1f, 0.1f), new(-0.1f, 0.1f),
+		new(-0.1f, 0.1f), new(-0.1f, -0.1f)
+	};
 
 	Vector2[] wmSimpleArrow =
-		{
-			new(0f, 0f), new(0, 0.7f),
-			new(0, 0.7f), new(0.1f, 0.6f),
-			new(0, 0.7f), new(-0.1f, 0.6f),
-		};
+	{
+		new(0f, 0f), new(0, 0.7f),
+		new(0, 0.7f), new(0.1f, 0.6f),
+		new(0, 0.7f), new(-0.1f, 0.6f)
+	};
+
+	Vector2[] wmArrow =
+	{
+		new(0.1f, 0f), new(-0.1f, 0f),
+		new(-0.1f, 0f), new(-0.1f, 0.7f),
+		new(-0.1f, 0.7f), new(-0.3f, 0.7f),
+		new(-0.3f, 0.7f), new(0f, 1f),
+		new(0f, 1f), new(0.3f, 0.7f),
+		new(0.3f, 0.7f), new(0.1f, 0.7f),
+		new(0.1f, 0.7f), new(0.1f, 0f)
+	};
+
+	Vector2[] wmPlateCenter =
+	{
+		new(0.5f, 0f), new(0f, -0.5f),
+		new(0f, -0.5f), new(-0.5f, 0f),
+		new(-0.5f, 0f), new(0f, 0.5f),
+		new(0f, 0.5f), new(0.5f, 0f),
+	};
 	#endregion
 
 	public override void _Ready()
@@ -164,7 +190,6 @@ public partial class MapViewer : Node2D
 		var plate = map.GetPlateByIndex(plateIndex);
 		SelectedPlatePosition.Text = plate.origin.ToString();
 		SelectedPlateRotation.Text = plate.rotation.ToString();
-		SelectedPlateDensity.Text = plate.density.ToString();
 	}
 
 	public void OnSpinBoxValueChanged(float value)
@@ -191,17 +216,19 @@ public partial class MapViewer : Node2D
 			HighlightSelectedCell(cell);
 			SelectedCellInfo.Text = cell.x.ToString() + ", " + cell.y.ToString();
 			NumPlatePointsInCell.Text = grid[cell.x, cell.y].points.Count().ToString();
-
-			GD.Print("\n" + NumPlatePointsInCell.Text);
+			
+			celldebug.Text = "";
+			string celltext = "";
 			foreach (var p in grid[cell.x, cell.y].points)
 			{
-				GD.Print(p.isActive);
-				GD.Print(p.plate.ID, " , grid idx: ", p.gridIndex.X, " ", p.gridIndex.Y);
-				GD.Print(p.collisionType);
-				GD.Print("Felsic: " + p.Felsic + " , Mafic: " + p.Mafic);
-				GD.Print("Height: " + p.height + " , density: " + p.density + " , thickness: " + p.crustThickness);
-				GD.Print("----");
+				celltext += p.plate.ID + " , grid idx: " + p.gridIndex.X + " " + p.gridIndex.Y + "\n";
+				celltext += "Age: " + p.age + " , collisiontype: " + p.collisionType + "\n";
+				celltext += "Felsic: " + p.Felsic + " , Mafic: " + p.Mafic + "\n";
+				celltext += "Height: " + Mathf.Round(p.height * 1000) + "m " + " , density: " + p.density +
+					" , thickness: " + Mathf.Round(p.thickness * 1000) + "m\n";
+				celltext += "----\n";
 			}
+			celldebug.Text = celltext;
 		}
 	}
 
@@ -233,17 +260,21 @@ public partial class MapViewer : Node2D
 
 	}
 
+	#endregion
+
+	#region Overlay Rendering
+
 	void DrawSelectedPlateOverlay()
 	{
 		var plate = map.GetPlateByIndex(plateIndex);
 
 		CreateOverlay(ref mmPlatePts, ref mmiPlatePts,
-			CreateWireMesh(wmBox, 1f),
+			CreateWireMesh(wmBox, 2f),
 			plate.points.Count(),
 			PlatePtColor);
 
 		CreateOverlay(ref mmPlateVels, ref mmiPlateVels,
-			CreateWireMesh(wmSimpleArrow, 12f),
+			CreateWireMesh(wmArrow, 12f),
 			map.Plates.Count(),
 			PlateVelocityColor);
 
@@ -252,13 +283,22 @@ public partial class MapViewer : Node2D
 			plate.points.Count(),
 			PlatePtVelColor);
 
+		CreateOverlay(ref mmPlateCenters, ref mmiPlateCenters,
+			CreateWireMesh(wmPlateCenter, 1f),
+			map.Plates.Count(),
+			Colors.Cyan);
+
 		if (OverlayPlateVelocity)
 		{
 			for (int i = 0; i < map.Plates.Count; i++)
 			{
 				var transform = new Transform2D(map.Plates[i].Velocity.Angle() - (MathF.PI / 2),
-					map.Plates[i].origin + map.Plates[i].offset);
+					map.Plates[i].Center);
 				mmPlateVels.SetInstanceTransform2D(i, transform);
+
+				var transform2 = new Transform2D(0f,
+					map.Plates[i].Center);
+				mmPlateCenters.SetInstanceTransform2D(i, transform2);
 			}
 		}
 
@@ -266,7 +306,7 @@ public partial class MapViewer : Node2D
 		{
 			var p = plate.points[i];
 
-			if (OverlayPlatePt)
+			if (OverlayPlatePt && p.isActive)
 			{
 				var ptsTransform = new Transform2D(Mathf.DegToRad(plate.rotation), p.WorldPos + new Vector2(0.0f, 0.0f));
 				mmPlatePts.SetInstanceTransform2D(i, ptsTransform);
@@ -282,11 +322,6 @@ public partial class MapViewer : Node2D
 			}
 		}
 	}
-
-	#endregion
-
-
-	#region Overlay Rendering
 
 	void CreateOverlay(ref MultiMesh mm, ref MultiMeshInstance2D mmi,  ArrayMesh mesh, int instanceCount, Color modulate)
 	{
@@ -447,6 +482,16 @@ public partial class MapViewer : Node2D
 						c = OceanicColor;
 					else c = ContinentalColor;
 				}
+				if (cell.points.Count > 0 && !cell.IsEmptyOrInactive())
+				{
+					float hue = (float)cell.points[0].plate.ID / (float)map.Plates.Count;
+					Color hsv = new Color();
+					hsv = Color.FromHsv(hue, 1f, 1f, 1f);
+					c = c + (hsv*0.3f);
+				}
+				
+
+				
 
 				if (!cell.IsCompletelyEmpty())
 				{
@@ -470,10 +515,16 @@ public partial class MapViewer : Node2D
 					//if (cell.ContainsEdgeBoundary)
 					//	c = Colors.BlueViolet + (cell.points[0].distTravelAsBoundary* Colors.White);
 				}
+				c = c + (c * avgHeights[i, j] * 0.5f);
 				if (counts[i, j] > 0)
+				{
 					SetPixelWorld(i, j, c);
+				}
+					
 			}
 		});
+
+		
 
 		//for empty points, get average of surrounding points
 		/*for (int i = 0; i < avgHeights.GetLength(0); i++)

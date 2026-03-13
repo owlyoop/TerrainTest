@@ -79,7 +79,7 @@ public class GridCell
 		points.Add(point);
 		PlateIDs.Add(point.plate.ID);
 		var num = GetNumberOfSamePlate(point);
-		if (num >= 3)
+		if (num >= 4)
 		{
 			Consolidate(point, true);
 		}
@@ -197,7 +197,7 @@ public class GridCell
 				count++;
 				f += points[i].Felsic;
 				m += points[i].Mafic;
-				plate.points.Remove(points[i]);
+				plate.RemovePoint(points[i]);
 				points.Remove(points[i]);
 			}
 		}
