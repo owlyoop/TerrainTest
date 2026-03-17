@@ -33,11 +33,15 @@ public static class PlateCollision
 			return;
 
 		var plates = new HashSet<int>(cell.PlateIDs);
+		List<PlatePoint> otherNeighbors = new List<PlatePoint>();
 
 		grid.ForEachNeighbor(cell.x, cell.y, (di, dj, otherCell) =>
 		{
 			if (otherCell.ContainsCollision || otherCell.ContainsBorderingOtherPlate)
+			{
 				plates.UnionWith(otherCell.PlateIDs);
+			}
+				
 		});
 
 		if (plates.Count < 2)
@@ -151,11 +155,12 @@ public static class PlateCollision
 
 		grid.ForEachNeighbor(cell.x, cell.y, (di, dj, otherCell) =>
 		{
-			if (otherCell.ContainsBorderingOtherPlate || otherCell.ContainsCollision)
+			if ((otherCell.ContainsBorderingOtherPlate || otherCell.ContainsCollision)
+			&& !otherCell.IsEmptyOrInactive())
 			{
 				foreach (var p in otherCell.points)
 				{
-					if (p.plate != point.plate)
+					if (p.plate != point.plate && p.isActive)
 					{
 						Vector2 dir = (p.WorldPos - point.WorldPos).Normalized();
 						gradient += dir;
@@ -174,11 +179,11 @@ public static class PlateCollision
 	static PlateCollisionType ClassifyCollision(float boundaryDot, PlatePoint point, Plate2D otherPlate)
 	{
 		//TODO: consider other plate
-		const float threshold = 0.1f;
+		const float threshold = 0.12f;
 
 		if (boundaryDot < threshold && boundaryDot > -threshold)
 			return PlateCollisionType.Transform;
-		else if (boundaryDot > 0.9f)
+		else if (boundaryDot <= -0.3f)
 			return PlateCollisionType.Divergent;
 		else if (point.GetCrustType() == PlatePoint.CrustType.Oceanic)
 			return PlateCollisionType.Subduction;
@@ -191,7 +196,6 @@ public static class PlateCollision
 		switch(info.Type)
 		{
 			case PlateCollisionType.Divergent:
-				//Spawn new points
 				//SpawnPointsAtDivergentBoundary(point, map);
 				break;
 			case PlateCollisionType.Orogenic:

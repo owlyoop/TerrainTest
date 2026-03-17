@@ -1,0 +1,40 @@
+[gd_scene load_steps=7 format=3 uid="uid://dr5u55urr53cx"]
+
+[ext_resource type="Script" uid="uid://cw57qj3ff76d0" path="res://Scripts/IcoWorld/Icosphere.cs" id="1_k5h7l"]
+[ext_resource type="Script" uid="uid://bhiqk2gbaxtcd" path="res://Scripts/FreeLookCameraBase.cs" id="2_fpldl"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yr2h4"]
+vertex_color_use_as_albedo = true
+vertex_color_is_srgb = true
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_fpldl"]
+sky_curve = 5.70818
+
+[sub_resource type="Sky" id="Sky_k5h7l"]
+sky_material = SubResource("ProceduralSkyMaterial_fpldl")
+
+[sub_resource type="Environment" id="Environment_o8y5b"]
+background_mode = 2
+background_energy_multiplier = 2.0
+sky = SubResource("Sky_k5h7l")
+ambient_light_source = 3
+reflected_light_source = 2
+
+[node name="Node3D" type="Node3D"]
+
+[node name="ico2" type="Node3D" parent="."]
+script = ExtResource("1_k5h7l")
+mat = SubResource("StandardMaterial3D_yr2h4")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.95695, 0.0700707, -0.281666, 2.05748e-09, 0.970422, 0.241414, 0.290251, -0.231021, 0.928646, -0.546682, 0.741078, 2.38414)
+script = ExtResource("2_fpldl")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.779666, -0.328797, 0.532929, 0, 0.851059, 0.525071, -0.626196, -0.40938, 0.663541, 1.83719, 0.874028, 1.10303)
+visible = false
+shadow_enabled = true
+directional_shadow_mode = 1
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_o8y5b")

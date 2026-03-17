@@ -1,0 +1,88 @@
+[gd_scene load_steps=8 format=3 uid="uid://bei2owprqu720"]
+
+[ext_resource type="Script" uid="uid://cyir2ydn6b8l0" path="res://Scripts/MapViewer.cs" id="1_c47n3"]
+[ext_resource type="Script" uid="uid://bpyeehm0dbjhk" path="res://Scripts/VoronoiWorld.cs" id="2_1qsgr"]
+[ext_resource type="Texture2D" uid="uid://bfpueoui461xu" path="res://map_noise.tres" id="2_botvf"]
+[ext_resource type="Script" uid="uid://dxomrv877ea6c" path="res://Scripts/WorldMap.cs" id="3_r2hvk"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_xdepj"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_w74eu"]
+noise_type = 0
+seed = 365
+frequency = 0.0199
+cellular_return_type = 0
+domain_warp_type = 2
+domain_warp_amplitude = 32.0
+domain_warp_frequency = 0.02
+domain_warp_fractal_octaves = 2
+domain_warp_fractal_lacunarity = 2.0
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_1w0k7"]
+width = 1
+height = 1
+noise = SubResource("FastNoiseLite_w74eu")
+seamless = true
+seamless_blend_skirt = 0.5
+
+[node name="main2D" type="Node2D"]
+
+[node name="MapViewer" type="Node2D" parent="." node_paths=PackedStringArray("cam1", "map", "LineOverlay", "mapDisplay")]
+script = ExtResource("1_c47n3")
+OverlayPlatePt = true
+OverlayPlatePtVelocity = true
+OverlayPlateVelocity = true
+PlatePtColor = Color(1, 0.9666667, 0, 0.7058824)
+PlateVelocityColor = Color(1, 1, 1, 1)
+PlatePtVelColor = Color(1, 0, 0.9113045, 1)
+DebugCollisionTransformColor = Color(0, 0.88235295, 0.58683497, 1)
+DebugCollisionDivergentColor = Color(1, 0.89154553, 0, 1)
+DebugCollisionSubductionColor = Color(0.54, 0, 0.008999863, 1)
+DebugCollisionOrogenicColor = Color(0.30390003, 0.2988, 0.36, 1)
+ContinentalColor = Color(0.5352, 0.72, 0.40320003, 1)
+OceanicColor = Color(0.32900003, 0.5268667, 0.7, 1)
+DefaultColor = Color(0.17050001, 0.3476, 0.55, 1)
+cam1 = NodePath("../CameraController/Camera2D")
+map = NodePath("../WorldMap")
+LineOverlay = NodePath("../Overlay")
+camSpeed = 20.0
+zoomSpeed = 1.5
+mapDisplay = NodePath("../MeshInstance2D")
+
+[node name="CameraController" type="Node2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="CameraController"]
+zoom = Vector2(2, 2)
+
+[node name="MeshInstance2D" type="MeshInstance2D" parent="."]
+z_index = -1
+texture_filter = 1
+scale = Vector2(600, 300)
+mesh = SubResource("QuadMesh_xdepj")
+texture = ExtResource("2_botvf")
+
+[node name="Overlay" type="Node2D" parent="."]
+
+[node name="VoronoiMap" type="Node2D" parent="." node_paths=PackedStringArray("map")]
+visible = false
+texture_filter = 1
+script = ExtResource("2_1qsgr")
+map = NodePath("../WorldMap")
+dimensions = 5
+numSites = 12
+lineWidth = 0.16
+
+[node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("mapViewer", "voronoi", "timer")]
+script = ExtResource("3_r2hvk")
+worldHeight = 140
+noiseGen = SubResource("FastNoiseLite_w74eu")
+noiseTex = SubResource("NoiseTexture2D_1w0k7")
+mapViewer = NodePath("../MapViewer")
+voronoi = NodePath("../VoronoiMap")
+timer = NodePath("Timer")
+PlatePointDensity = 1.0
+Timescale = 0.01
+
+[node name="Timer" type="Timer" parent="WorldMap"]
+wait_time = 0.02
+autostart = true

@@ -295,8 +295,11 @@ public partial class WorldGrid
 		}
 	}
 
-	//test function
-	public void CollideWithForces()
+	
+	/// <summary>
+	/// test function for updating plate velocity based on neighbours.
+	/// </summary>
+	public void UpdateForces()
 	{
 		int width = grid.GetLength(0);
 		int height = grid.GetLength(1);

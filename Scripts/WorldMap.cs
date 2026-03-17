@@ -98,10 +98,10 @@ public partial class WorldMap : Node
 
 		//check for collisions
 		start = Time.GetTicksUsec();
-		worldGrid.CollideWithForces();
+		worldGrid.UpdateForces();
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 1000f;
-		GD.Print("Work time for collide: ", workertime);
+		GD.Print("Work time for forces: ", workertime);
 
 
 
@@ -111,11 +111,18 @@ public partial class WorldMap : Node
 			Plates[i].UpdateVelocity();
 		}
 
+		Plates[timestep % (Plates.Count - 1)].UpdateCenterSlow();
+
+		/*Parallel.ForEach(Plates, p =>
+		{
+			p.UpdateCenterSlow();
+		});*/
 
 		mapViewer.DisplayMap();
 
 		GD.Print("-----------");
 		OnTimestepCompleted.Invoke();
+		timestep++;
 	}
 
 

@@ -1,0 +1,274 @@
+[gd_scene load_steps=4 format=3 uid="uid://blfe0oll6l5dr"]
+
+[ext_resource type="Script" uid="uid://b3bcj68jin6be" path="res://Scripts/UIController.cs" id="1_sqjgc"]
+[ext_resource type="PackedScene" uid="uid://bei2owprqu720" path="res://2dplatesim.tscn" id="2_kghc8"]
+[ext_resource type="PackedScene" uid="uid://c4jq2tya12i5w" path="res://Prefabs/checkbox_item.tscn" id="3_nb44r"]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="UIController" type="CanvasLayer" parent="." node_paths=PackedStringArray("PlateInfoGroup", "CellInfoGroup", "PlateSpinBox", "PlateCheckButton", "SelectedPlatePosition", "SelectedPlateRotation", "SelectedCellInfo", "NumPlatePointsInCell", "celldebug", "mapview", "cam", "map")]
+script = ExtResource("1_sqjgc")
+PlateInfoGroup = NodePath("Plate Info UI")
+CellInfoGroup = NodePath("Cell Info UI")
+PlateSpinBox = NodePath("Plate Info UI/SpinBox")
+PlateCheckButton = NodePath("Cell Info UI/CheckButton")
+SelectedPlatePosition = NodePath("Plate Info UI/Selected Plate Pos")
+SelectedPlateRotation = NodePath("Plate Info UI/Selected Plate Rot")
+SelectedCellInfo = NodePath("Cell Info UI/Selected Cell")
+NumPlatePointsInCell = NodePath("Cell Info UI/NumPlatePoints")
+celldebug = NodePath("Cell Info UI/Cell info label")
+mapview = NodePath("SubViewportContainer/SubViewport/2Dplatesim/MapViewer")
+cam = NodePath("SubViewportContainer/SubViewport/2Dplatesim/CameraController/Camera2D")
+map = NodePath("SubViewportContainer/SubViewport/2Dplatesim/WorldMap")
+
+[node name="bg panel" type="Panel" parent="UIController"]
+offset_right = 1152.0
+offset_bottom = 648.0
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="UIController"]
+offset_left = 128.0
+offset_top = 64.0
+offset_right = 896.0
+offset_bottom = 576.0
+
+[node name="SubViewport" type="SubViewport" parent="UIController/SubViewportContainer"]
+disable_3d = true
+handle_input_locally = false
+size = Vector2i(768, 512)
+render_target_update_mode = 4
+
+[node name="2Dplatesim" parent="UIController/SubViewportContainer/SubViewport" instance=ExtResource("2_kghc8")]
+
+[node name="MapViewer" parent="UIController/SubViewportContainer/SubViewport/2Dplatesim" index="0" node_paths=PackedStringArray("ui")]
+ui = NodePath("../../../..")
+
+[node name="Cell Info UI" type="Control" parent="UIController"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 904.0
+offset_top = 256.0
+offset_right = 904.0
+offset_bottom = 256.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Cell Label" type="RichTextLabel" parent="UIController/Cell Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 5.0
+offset_top = 35.0
+offset_right = 305.0
+offset_bottom = 60.0
+text = "Image Cell:"
+
+[node name="Selected Cell" type="RichTextLabel" parent="UIController/Cell Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 170.0
+offset_top = 35.0
+offset_right = 470.0
+offset_bottom = 60.0
+text = "444,444"
+
+[node name="NumPlatePoints Label" type="RichTextLabel" parent="UIController/Cell Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 5.0
+offset_top = 70.0
+offset_right = 305.0
+offset_bottom = 95.0
+text = "# of PlatePoints in Cell:"
+
+[node name="NumPlatePoints" type="RichTextLabel" parent="UIController/Cell Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 190.0
+offset_top = 70.0
+offset_right = 490.0
+offset_bottom = 95.0
+text = "22"
+
+[node name="Cell info label" type="RichTextLabel" parent="UIController/Cell Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 5.0
+offset_top = 100.0
+offset_right = 576.0
+offset_bottom = 480.0
+text = "Cell info"
+
+[node name="CheckButton" type="CheckButton" parent="UIController/Cell Info UI"]
+layout_mode = 0
+offset_left = 175.0
+offset_top = 4.0
+offset_right = 219.0
+offset_bottom = 28.0
+
+[node name="Plate Info UI" type="Control" parent="UIController"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 896.0
+offset_top = 64.0
+offset_right = 936.0
+offset_bottom = 104.0
+
+[node name="Plate Num Label" type="RichTextLabel" parent="UIController/Plate Info UI"]
+z_index = 5
+layout_mode = 1
+offset_left = 5.0
+offset_top = 5.0
+offset_right = 89.0
+offset_bottom = 30.0
+text = "Plate #: "
+
+[node name="SpinBox" type="SpinBox" parent="UIController/Plate Info UI"]
+layout_mode = 0
+offset_left = 70.0
+offset_top = 2.0
+offset_right = 170.0
+offset_bottom = 33.0
+rounded = true
+
+[node name="Plate Position Label" type="RichTextLabel" parent="UIController/Plate Info UI"]
+z_index = 5
+layout_mode = 1
+offset_left = 5.0
+offset_top = 35.0
+offset_right = 305.0
+offset_bottom = 60.0
+text = "Plate origin position:"
+
+[node name="Selected Plate Pos" type="RichTextLabel" parent="UIController/Plate Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 170.0
+offset_top = 35.0
+offset_right = 470.0
+offset_bottom = 60.0
+text = "333,333"
+
+[node name="Plate Rotation Label" type="RichTextLabel" parent="UIController/Plate Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 5.0
+offset_top = 70.0
+offset_right = 305.0
+offset_bottom = 95.0
+text = "Plate origin rotation:"
+
+[node name="Selected Plate Rot" type="RichTextLabel" parent="UIController/Plate Info UI"]
+z_index = 5
+layout_mode = 0
+offset_left = 170.0
+offset_top = 70.0
+offset_right = 470.0
+offset_bottom = 95.0
+text = "333,333"
+
+[node name="Map overlay checkboxs" type="Control" parent="UIController"]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -256.0
+offset_top = 496.0
+offset_bottom = 648.0
+grow_horizontal = 0
+
+[node name="Checkbox Item" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+layout_mode = 0
+offset_right = 256.0
+
+[node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item" index="1"]
+text = "Plate points"
+
+[node name="Checkbox Item2" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+layout_mode = 0
+offset_top = 24.0
+offset_right = 256.0
+offset_bottom = 48.0
+
+[node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item2" index="1"]
+text = "Plate point velocities"
+
+[node name="Checkbox Item3" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+layout_mode = 0
+offset_top = 48.0
+offset_right = 256.0
+offset_bottom = 72.0
+
+[node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item3" index="1"]
+text = "Plate point boundary normals"
+
+[node name="Checkbox Item4" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+layout_mode = 0
+offset_top = 72.0
+offset_right = 256.0
+offset_bottom = 96.0
+
+[node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item4" index="1"]
+text = "Plate velocities"
+
+[node name="Checkbox Item5" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+layout_mode = 0
+offset_top = 96.0
+offset_right = 256.0
+offset_bottom = 120.0
+
+[node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item5" index="1"]
+text = "Plate center points"
+
+[node name="Checkbox Item6" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+layout_mode = 0
+offset_top = 120.0
+offset_right = 256.0
+offset_bottom = 144.0
+
+[node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item6" index="1"]
+text = "Inactive plate points"
+
+[node name="Play Button" type="Button" parent="UIController"]
+offset_left = 136.0
+offset_top = 8.0
+offset_right = 184.0
+offset_bottom = 56.0
+
+[node name="Pause Button" type="Button" parent="UIController"]
+offset_left = 200.0
+offset_top = 8.0
+offset_right = 248.0
+offset_bottom = 56.0
+
+[node name="Top bar" type="Control" parent="UIController"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Timestep label" type="Label" parent="UIController/Top bar"]
+layout_mode = 0
+offset_left = 264.0
+offset_top = 16.0
+offset_right = 344.0
+offset_bottom = 48.0
+text = "Timestep:"
+vertical_alignment = 1
+
+[node name="Timestep Value" type="Label" parent="UIController/Top bar"]
+layout_mode = 0
+offset_left = 344.0
+offset_top = 16.0
+offset_right = 448.0
+offset_bottom = 47.0
+text = "9999999"
+vertical_alignment = 1
+
+[connection signal="value_changed" from="UIController/Plate Info UI/SpinBox" to="UIController/SubViewportContainer/SubViewport/2Dplatesim/MapViewer" method="OnSpinBoxValueChanged"]
+
+[editable path="UIController/SubViewportContainer/SubViewport/2Dplatesim"]
+[editable path="UIController/Map overlay checkboxs/Checkbox Item"]
+[editable path="UIController/Map overlay checkboxs/Checkbox Item2"]
+[editable path="UIController/Map overlay checkboxs/Checkbox Item3"]
+[editable path="UIController/Map overlay checkboxs/Checkbox Item4"]
+[editable path="UIController/Map overlay checkboxs/Checkbox Item5"]
+[editable path="UIController/Map overlay checkboxs/Checkbox Item6"]

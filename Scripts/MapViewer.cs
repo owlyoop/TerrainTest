@@ -23,24 +23,15 @@ public partial class MapViewer : Node2D
 	[Export] public Color DefaultColor;
 
 	[ExportCategory("References")]
+	[Export] public UIController ui;
 	[Export] public Camera2D cam1;
 	[Export] public WorldMap map;
 	[Export] public Node2D LineOverlay;
 	[Export] public float camSpeed;
 	[Export] public float zoomSpeed;
+	
 
 	[Export] public MeshInstance2D mapDisplay;
-
-	[ExportCategory("UI")]
-	[Export] public Control PlateInfoGroup;
-	[Export] public Control CellInfoGroup;
-	[Export] public SpinBox PlateSpinBox;
-	[Export] public CheckButton PlateCheckButton;
-	[Export] public RichTextLabel SelectedPlatePosition;
-	[Export] public RichTextLabel SelectedPlateRotation;
-	[Export] public RichTextLabel SelectedCellInfo;
-	[Export] public RichTextLabel NumPlatePointsInCell;
-	[Export] public RichTextLabel celldebug;
 
 	Cell2D selectedCell;
 	#region Multimesh Instances
@@ -133,10 +124,10 @@ public partial class MapViewer : Node2D
 	{
 		if (@event.IsActionPressed("Select"))
 		{
-			if (PlateCheckButton.ButtonPressed)
+			if (ui.PlateCheckButton.ButtonPressed)
 			{
-				PlateInfoGroup.Visible = false;
-				CellInfoGroup.Visible = true;
+				ui.PlateInfoGroup.Visible = false;
+				ui.CellInfoGroup.Visible = true;
 				//GD.Print(GetViewport().GetMousePosition());
 				var viewToWorld = cam1.GetCanvasTransform().AffineInverse();
 				var worldPos = viewToWorld * GetViewport().GetMousePosition();
@@ -145,8 +136,8 @@ public partial class MapViewer : Node2D
 			}
 			else
 			{
-				PlateInfoGroup.Visible = true;
-				CellInfoGroup.Visible = false;
+				ui.PlateInfoGroup.Visible = true;
+				ui.CellInfoGroup.Visible = false;
 			}
 
 		}
@@ -185,12 +176,7 @@ public partial class MapViewer : Node2D
 	#region UI
 
 
-	void DisplayPlateInfo()
-	{
-		var plate = map.GetPlateByIndex(plateIndex);
-		SelectedPlatePosition.Text = plate.origin.ToString();
-		SelectedPlateRotation.Text = plate.rotation.ToString();
-	}
+	
 
 	public void OnSpinBoxValueChanged(float value)
 	{
@@ -203,32 +189,17 @@ public partial class MapViewer : Node2D
 		plateIndex = (int)value;
 
 		DrawSelectedPlateOverlay();
-		DisplayPlateInfo();
 	}
 
 	void OnCellSelected(Cell2D cell)
 	{
 		var grid = map.worldGrid.grid;
-
+		
 		selectedCell = cell;
 		if (cell != null)
 		{
+			ui.OnCellSelected(cell);
 			HighlightSelectedCell(cell);
-			SelectedCellInfo.Text = cell.x.ToString() + ", " + cell.y.ToString();
-			NumPlatePointsInCell.Text = grid[cell.x, cell.y].points.Count().ToString();
-			
-			celldebug.Text = "";
-			string celltext = "";
-			foreach (var p in grid[cell.x, cell.y].points)
-			{
-				celltext += p.plate.ID + " , grid idx: " + p.gridIndex.X + " " + p.gridIndex.Y + "\n";
-				celltext += "Age: " + p.age + " , collisiontype: " + p.collisionType + "\n";
-				celltext += "Felsic: " + p.Felsic + " , Mafic: " + p.Mafic + "\n";
-				celltext += "Height: " + Mathf.Round(p.height * 1000) + "m " + " , density: " + p.density +
-					" , thickness: " + Mathf.Round(p.thickness * 1000) + "m\n";
-				celltext += "----\n";
-			}
-			celldebug.Text = celltext;
 		}
 	}
 
@@ -312,9 +283,10 @@ public partial class MapViewer : Node2D
 				mmPlatePts.SetInstanceTransform2D(i, ptsTransform);
 			}
 
-			if (OverlayPlatePtVelocity)
+			if (OverlayPlatePtVelocity && p.isActive)
 			{
-				var velTransform = new Transform2D(p.Velocity.Angle() - (MathF.PI / 2),
+				
+				var velTransform = new Transform2D(p.boundaryNormal.Angle() ,
 				new Vector2(1f, Mathf.Clamp(p.Velocity.Length() * 10f, 1f, 5f)),
 				0f,
 				p.WorldPos + new Vector2(0.0f, 0.0f));
@@ -482,12 +454,12 @@ public partial class MapViewer : Node2D
 						c = OceanicColor;
 					else c = ContinentalColor;
 				}
-				if (cell.points.Count > 0 && !cell.IsEmptyOrInactive())
+				if (cell.points.Count > 0)
 				{
 					float hue = (float)cell.points[0].plate.ID / (float)map.Plates.Count;
 					Color hsv = new Color();
 					hsv = Color.FromHsv(hue, 1f, 1f, 1f);
-					c = c + (hsv*0.3f);
+					c = c + (hsv*0.1f);
 				}
 				
 

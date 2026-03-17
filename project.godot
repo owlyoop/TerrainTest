@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="TerrainTest"
-run/main_scene="uid://bei2owprqu720"
+run/main_scene="uid://blfe0oll6l5dr"
 config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -23,10 +23,6 @@ project/assembly_name="TerrainTest"
 
 movie_writer/movie_file="C:/Users/treyk/Godot/projects/TerrainTest/Buh.avi"
 movie_writer/fps=30
-
-[editor_plugins]
-
-enabled=PackedStringArray()
 
 [input]
 

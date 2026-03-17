@@ -10,6 +10,7 @@ public partial class Plate2D
     public Vector2 origin; //The origin of the plate created from voronoi polygons. not the actual center
 	public Vector2 offset;
 	public Vector2 Center;
+	private Vector2 _localCenterSum;
 	public float rotation; //in degrees
 
 	public List<PlatePoint> points; //the points that make up this plate, initially created from points on a grid that were inside the voronoi polygon
@@ -36,7 +37,7 @@ public partial class Plate2D
 	public Vector2 WorldToLocal(Vector2 worldPos)
 	{
 		//todo: this is ugly. shameful.
-		float dx = worldPos.X - origin.X - offset.X;
+		/*float dx = worldPos.X - origin.X - offset.X;
 		
 		float halfW = map.worldWidth * 0.5f;
 		if (dx > halfW) dx -= map.worldWidth;
@@ -48,6 +49,17 @@ public partial class Plate2D
 		halfW = map.worldHeight * 0.5f;
 		if (dy > halfW) dy -= map.worldHeight;
 		if (dy < -halfW) dy += map.worldHeight;
+		return new Vector2(dx, dy).Rotated(-Mathf.DegToRad(rotation));*/
+
+		float x = origin.X + offset.X;
+		float y = origin.Y + offset.Y;
+
+		float hw = map.worldWidth * 0.5f;
+		float hh = map.worldHeight * 0.5f;
+
+		float dx = Mathf.PosMod((worldPos.X - x) + hw, map.worldWidth) - hw;
+		float dy = Mathf.PosMod((worldPos.Y - y) + hh, map.worldHeight) - hh;
+
 		return new Vector2(dx, dy).Rotated(-Mathf.DegToRad(rotation));
 	}
 
@@ -71,22 +83,30 @@ public partial class Plate2D
 		points.Add(p);
 		p.prevWorldPos = oldWorld;
 
-
-		Vector2 centerLocal = WorldToLocal(Center);
-		centerLocal = ((centerLocal * (points.Count - 1)) + p.localPos) / points.Count;
-		Center = LocalToWorld(centerLocal);
+		_localCenterSum += p.localPos;
 
 
 		return p;
 	}
 
+	public void AddExistingPointToPlate(PlatePoint point)
+	{
+		//need to find new localpos
+		//var newpos = this.WorldToLocal(point.WorldPos);
+		Vector2 world = point.WorldPos;
+		point.plate.RemovePoint(point);
+		point.plate = this;
+		point.localPos = WorldToLocal(world);
+		points.Add(point);
+		_localCenterSum += point.localPos;
+	}
+
 	public void RemovePoint(PlatePoint point)
 	{
-		points.Remove(point);
+		if (!points.Remove(point))
+			return;
 
-		Vector2 centerLocal = WorldToLocal(Center);
-		centerLocal = ((centerLocal * (points.Count + 1)) - point.localPos) / points.Count;
-		Center = LocalToWorld(centerLocal);
+		_localCenterSum -= point.localPos;
 	}
 
 	public void RemovePoint(int idx)
@@ -94,9 +114,27 @@ public partial class Plate2D
 		var point = points[idx];
 		points.RemoveAt(idx);
 
-		Vector2 centerLocal = WorldToLocal(Center);
-		centerLocal = ((centerLocal * (points.Count + 1)) - point.localPos) / points.Count;
-		Center = LocalToWorld(centerLocal);
+		_localCenterSum -= point.localPos;
+	}
+
+	//this isnt working how id expect, the plate centers slowly get more messed up and drift away faster
+	void UpdateCenter()
+	{
+		if (points.Count == 0) return;
+		Center = LocalToWorld(_localCenterSum / points.Count);
+
+	}
+
+	//todo: only run this like once every 5 timesteps or something
+	public void UpdateCenterSlow()
+	{
+		Center = Vector2.Zero;
+		foreach(var p in points)
+		{
+			Center += p.localPos;
+		}
+		Center = Center / points.Count;
+		Center = LocalToWorld(Center);
 	}
 
 	
@@ -112,22 +150,7 @@ public partial class Plate2D
 		}
 	}
 
-	public void AddExistingPointToPlate(PlatePoint point)
-	{
-		//need to find new localpos
-		//var newpos = this.WorldToLocal(point.WorldPos);
-		Vector2 world = point.WorldPos;
-		point.plate.RemovePoint(point);
-		point.plate = this;
-		point.localPos = WorldToLocal(world);
 
-		Vector2 centerLocal = WorldToLocal(Center);
-		centerLocal = ((centerLocal * (points.Count - 1)) + point.localPos) / points.Count;
-		Center = LocalToWorld(centerLocal);
-
-		points.Add(point);
-
-	}
 
 	public void MovePlate()
 	{
@@ -208,14 +231,10 @@ public partial class Plate2D
 
 	public void InitializeCenter()
 	{
-		Vector2 avg = Vector2.Zero;
-		int count = 0;
-		foreach(var p in points)
-		{
-			avg += p.localPos;
-			count++;
-		}
-		avg = avg / count;
-		Center = LocalToWorld(avg);
+		_localCenterSum = Vector2.Zero;
+
+		foreach (var p in points)
+			_localCenterSum += p.localPos;
+		UpdateCenter();
 	}
 }

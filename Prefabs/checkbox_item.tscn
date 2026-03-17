@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://c4jq2tya12i5w"]
+
+[node name="Checkbox Item" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 216.0
+offset_bottom = 24.0
+
+[node name="CheckBox" type="CheckBox" parent="."]
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 0
+offset_left = 24.0
+offset_right = 116.0
+offset_bottom = 23.0
+text = "Map overlay label txt"
