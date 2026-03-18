@@ -33,7 +33,7 @@ public partial class WorldMap : Node
 	[Export] public float Timescale = 0.1f; // how much is added to age per timestep;
 
 	int timestep = 1;
-	public event Action OnTimestepCompleted;
+	public event Action<int> OnTimestepCompleted;
     //X and Y are image dimensions. Used for collision detecting between platepoints of differing plates
     public WorldGrid worldGrid;
 
@@ -121,7 +121,7 @@ public partial class WorldMap : Node
 		mapViewer.DisplayMap();
 
 		GD.Print("-----------");
-		OnTimestepCompleted.Invoke();
+		OnTimestepCompleted.Invoke(timestep);
 		timestep++;
 	}
 

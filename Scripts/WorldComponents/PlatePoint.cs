@@ -215,7 +215,7 @@ public class PlatePoint
 		if (distTravelAsBoundary < requiredDistance) return;
 		if (!IsEdgeBoundary || IsColliding) return;
 
-		if (plate.Velocity.LengthSquared() > 0f)
+		if (plate.Velocity.Length() > 0f)
 		{
 			switch (spawnMethod)
 			{

@@ -59,6 +59,9 @@ public partial class MapViewer : Node2D
 	float[,] avgHeights;
 	int[,] counts;
 
+	[Signal]
+	public delegate void CellSelectedEventHandler(Cell2D cell);
+
 	#region Wire Mesh Vertices
 	Vector2[] wmBox =
 	{
@@ -100,10 +103,19 @@ public partial class MapViewer : Node2D
 		cam1.Position = new Vector2(map.worldWidth / 2f, map.worldHeight / 2f);
 		cam1.Zoom *= 2.5f;
 		OnCameraZoom();
-		map.OnTimestepCompleted += DrawSelectedPlateOverlay;
+		
 
 		avgHeights = new float[map.worldWidth, map.worldHeight];
 		counts = new int[map.worldWidth, map.worldHeight];
+
+		map.OnTimestepCompleted += DrawSelectedPlateOverlay;
+		ui.PlateSelectionChanged += OnPlateSelectionChanged;
+	}
+
+	public override void _ExitTree()
+	{
+		ui.PlateSelectionChanged -= OnPlateSelectionChanged;
+		map.OnTimestepCompleted -= DrawSelectedPlateOverlay;
 	}
 
 	public void Initialize(int width, int height)
@@ -118,27 +130,21 @@ public partial class MapViewer : Node2D
 		RedrawMap();
 	}
 
+	void OnPlateSelectionChanged(int index)
+	{
+		plateIndex = index;
+		DrawSelectedPlateOverlay(0);
+	}
+
 
 	#region Input
 	public override void _Input(InputEvent @event)
 	{
 		if (@event.IsActionPressed("Select"))
 		{
-			if (ui.PlateCheckButton.ButtonPressed)
-			{
-				ui.PlateInfoGroup.Visible = false;
-				ui.CellInfoGroup.Visible = true;
-				//GD.Print(GetViewport().GetMousePosition());
-				var viewToWorld = cam1.GetCanvasTransform().AffineInverse();
-				var worldPos = viewToWorld * GetViewport().GetMousePosition();
-				//GD.Print(worldPos);
-				OnCellSelected(GetCellFromPosition(worldPos));
-			}
-			else
-			{
-				ui.PlateInfoGroup.Visible = true;
-				ui.CellInfoGroup.Visible = false;
-			}
+			var viewToWorld = cam1.GetCanvasTransform().AffineInverse();
+			var worldPos = viewToWorld * GetViewport().GetMousePosition();
+			OnCellSelected(GetCellFromPosition(worldPos));
 
 		}
 		if (@event.IsActionPressed("Cam_Zoom_In"))
@@ -188,7 +194,7 @@ public partial class MapViewer : Node2D
 
 		plateIndex = (int)value;
 
-		DrawSelectedPlateOverlay();
+		DrawSelectedPlateOverlay(0);
 	}
 
 	void OnCellSelected(Cell2D cell)
@@ -198,7 +204,7 @@ public partial class MapViewer : Node2D
 		selectedCell = cell;
 		if (cell != null)
 		{
-			ui.OnCellSelected(cell);
+			EmitSignal(SignalName.CellSelected, cell);
 			HighlightSelectedCell(cell);
 		}
 	}
@@ -235,7 +241,7 @@ public partial class MapViewer : Node2D
 
 	#region Overlay Rendering
 
-	void DrawSelectedPlateOverlay()
+	void DrawSelectedPlateOverlay(int timestep)
 	{
 		var plate = map.GetPlateByIndex(plateIndex);
 
