@@ -18,7 +18,11 @@ public partial class Plate2D
 
     public Vector2 Velocity { get; private set; }  //derived from all points
 
+	public Vector2 sumForce;
+	public float sumTorque;
+
 	public float angularVelocity;
+	public float totalMass;
 
     public int ID;
 	
@@ -167,14 +171,13 @@ public partial class Plate2D
 		Center += Velocity;
 		Center.X = Center.X % map.worldWidth;
 		Center.Y = Center.Y % map.worldHeight;
-		rotation += 0.0f;   //TODO: angular velocity
+		rotation += angularVelocity;
 
 		for (int i = points.Count - 1; i >= 0; i--)
 		{
 			if (i <= points.Count - 1)
 			{
 				var p = points[i];
-
 				Vector2 newWorldPos = p.WorldPos;
 				map.worldGrid.MovePoint(p, newWorldPos);
 			}
@@ -201,34 +204,35 @@ public partial class Plate2D
 		Velocity /= count;
 	}
 
-	/// <summary>
-	/// Updates the velocity of this plate, which is an average of all the platepoint's velocities
-	/// </summary>
 	public void UpdateVelocity()
 	{
-		var speed = Velocity.Length();
-		Velocity = new Vector2(0, 0);
-		float count = 0f;
+		//a = sumforce / totalmass
+		//alpha = sumtorq / inertia
+		//velcity += a
+		//angvel += alpha
+		if (points.Count == 0) return;
+
+		//todo i think world wrapping fucks this up
+
+		totalMass = 0f;
+		var inertia = 0f;
 		foreach (var p in points)
 		{
-			if (p.isActive)
-			{
-				float weight = 0.01f;
-				if (p.IsColliding)
-					weight = 4f;
-				else if (p.IsBoundary || p.IsEdgeBoundary || p.IsBorderingOtherPlate)
-					weight = 1.4f;
-				Velocity += (p.Velocity * weight);
-
-				count = count + 1f;
-				
-			}
+			Vector2 r = p.WorldPos - Center;
+			totalMass += p.mass;
+			inertia += p.mass * (r.X * r.X + r.Y * r.Y);
 		}
-		Velocity /= count;
-		Velocity = Velocity.Normalized();
-		Velocity = Velocity * speed;
-	}
 
+		var a = sumForce / totalMass;
+		var alpha = sumTorque / inertia;
+		Velocity += a;
+		angularVelocity += alpha;
+
+		sumForce = Vector2.Zero;
+		sumTorque = 0f;
+
+	}
+	
 	public void InitializeCenter()
 	{
 		_localCenterSum = Vector2.Zero;

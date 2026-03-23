@@ -9,7 +9,7 @@ public class GridCell
 
 	public HashSet<int> PlateIDs;	//A unique list of the plate IDs that contain a point that lies in this gridcell
 
-	public Dictionary<int, Vector2> OpposingForceSums = new Dictionary<int, Vector2>();
+	
 
 	public int x { get; private set; }
 	public int y { get; private set; }
@@ -23,6 +23,10 @@ public class GridCell
 
 
 	public PlateCollisionType collisionType;
+
+	public Dictionary<int, Vector2> OpposingForceSums = new Dictionary<int, Vector2>();
+	public Dictionary<int, float> OpposingMassSums = new Dictionary<int, float>();
+
 	public GridCell(int x, int y)
 	{
 		points = new List<PlatePoint>();
@@ -41,15 +45,26 @@ public class GridCell
 	public void UpdateOpposingForceSums()
 	{
 		OpposingForceSums.Clear();
+		OpposingMassSums.Clear();
 		foreach (var p in points)
 		{
-			//if (!p.isActive) continue;
+			if (!p.isActive) continue;
 			//if (!p.IsColliding && !p.IsBorderingOtherPlate) continue;
 			int id = p.plate.ID;
+			var mass = p.mass;
+			//0.2 deformation factor todo use platepoints density for this or something? buh. im not good at physics
+			var v = p.plate.Velocity + ((p.Velocity - p.plate.Velocity) * 0.2f);
 			if (!OpposingForceSums.ContainsKey(id))
+			{
 				OpposingForceSums[id] = Vector2.Zero;
-			OpposingForceSums[id] += p.Velocity;
+				OpposingMassSums[id] = 0f;
+			}
+
+			OpposingForceSums[id] += v * mass;
+			OpposingMassSums[id] += mass;
 		}
+		foreach (var plate in OpposingForceSums.Keys)
+			OpposingForceSums[plate] /= OpposingMassSums[plate];
 	}
 
 	public bool IsEmptyOrInactive()

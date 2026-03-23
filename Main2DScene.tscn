@@ -590,8 +590,10 @@ offset_bottom = 47.0
 text = "9999999"
 vertical_alignment = 1
 
-[connection signal="pressed" from="UIController/Plate Info UI/Plate # Selector/Button_Left" to="UIController" method="OnButtonLeftPressed"]
-[connection signal="pressed" from="UIController/Plate Info UI/Plate # Selector/Button_Right" to="UIController" method="OnButtonRightPressed"]
+[connection signal="pressed" from="UIController/Plate Info UI/Plate # Selector/Button_Left" to="UIController" method="OnPlateButtonLeftPressed"]
+[connection signal="pressed" from="UIController/Plate Info UI/Plate # Selector/Button_Right" to="UIController" method="OnPlateButtonRightPressed"]
+[connection signal="pressed" from="UIController/PlatePoint Info UI/Plate # Selector/Button_Left" to="UIController" method="OnPlatePtButtonLeftPressed"]
+[connection signal="pressed" from="UIController/PlatePoint Info UI/Plate # Selector/Button_Right" to="UIController" method="OnPlatePtButtonRightPressed"]
 
 [editable path="UIController/SubViewportContainer/SubViewport/2Dplatesim"]
 [editable path="UIController/Map overlay checkboxs/Checkbox Item"]

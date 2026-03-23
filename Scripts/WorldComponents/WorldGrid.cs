@@ -295,10 +295,6 @@ public partial class WorldGrid
 		}
 	}
 
-	
-	/// <summary>
-	/// test function for updating plate velocity based on neighbours.
-	/// </summary>
 	public void UpdateForces()
 	{
 		int width = grid.GetLength(0);
@@ -312,11 +308,9 @@ public partial class WorldGrid
 				cell.UpdateOpposingForceSums();
 				if (!cell.ContainsCollision && !cell.ContainsBorderingOtherPlate)
 					continue;
-				
-				//calculate forces being applied to this from bordering gridcells
+
 				Vector2 totalForce = Vector2.Zero;
 				float count = 0.001f;
-
 				ForEachNeighbor(i, j, (di, dj, otherCell) =>
 				{
 					foreach (var o in otherCell.OpposingForceSums)
@@ -324,27 +318,29 @@ public partial class WorldGrid
 						totalForce += o.Value;
 						count = count + 1;
 					}
-				}, true);
-				
-				totalForce =  totalForce / count;
+				}, false);
 
+				totalForce = totalForce / count;
+				
+				//sum
 				foreach (var p in cell.points)
 				{
-					p.Velocity = p.Velocity * 0.98f;
-					//TODO: apply force properly. this is arbituary for testing
-					float speed = p.Velocity.Length();
-					float ospeed = totalForce.Length();
-					p.Velocity = p.Velocity.Normalized().Lerp(totalForce.Normalized(), 0.2f);
-					if (ospeed <= 0f)
-						p.Velocity *= speed;
-					else
-						p.Velocity *= Mathf.Clamp(ospeed / (float)count, 0.01f, 10f);
-					//p.Velocity *= speed;
+					float damp = 0.8f; //todo make this stuff a const somewhere
+					var relative = totalForce - p.plate.Velocity;
+					var force = relative * damp * p.mass;
+
+					//todo: handle world wrapping
+					var r = p.WorldPos - p.plate.Center;
+					var tau = r.X * force.Y - r.Y * force.X;
+
+					p.plate.sumTorque += tau;
+					p.plate.sumForce += force;
+
 				}
 			}
 		}
 	}
-
+	
 	//Only called on initial world creation, so every gridcell is guranteed to only have 1 platepoint in it
 	public void InitializeBoundaries()
 	{

@@ -227,6 +227,7 @@ public class PlatePoint
 					var newpt = new Vector2(n.X + 0.5f, n.Y + 0.5f);
 					SpawnPoint(newpt, 5f, 10f);
 					break;
+
 				case "area":
 					plate.map.worldGrid.ForEachNeighbor(gridIndex.X, gridIndex.Y, (di, dj, otherCell) =>
 					{
@@ -239,6 +240,7 @@ public class PlatePoint
 						SpawnPoint(worldPos, 5f, 10f);
 					}, checkSelf: false);
 					break;
+
 				default:
 					GD.PrintErr("Invalid spawnMethod param for UpdateTravelStats");
 					break;

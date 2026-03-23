@@ -96,9 +96,14 @@ public partial class WorldMap : Node
 		GD.Print("Work time for updatepoints: ", workertime);
 
 
+
+
 		//check for collisions
 		start = Time.GetTicksUsec();
+		//todo: reset plate sumforce sumtorque
+
 		worldGrid.UpdateForces();
+
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for forces: ", workertime);

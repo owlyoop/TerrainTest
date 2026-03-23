@@ -75,10 +75,21 @@ public partial class UIController : Node
 	{
 		if (cell == null) return;
 		var gridcell = worldGrid.grid[cell.x, cell.y];
+		selectedPlatePtIndex = 0;
 		DisplayGridcellInfo(gridcell);
 	}
 
-	void OnButtonLeftPressed()
+	void OnPlayButtonPressed()
+	{
+
+	}
+
+	void OnPauseButtonPressed()
+	{
+
+	}
+
+	void OnPlateButtonLeftPressed()
 	{
 		selectedPlateIndex = (selectedPlateIndex - 1) % (map.Plates.Count() - 1);
 		if (selectedPlateIndex < 0)
@@ -89,7 +100,7 @@ public partial class UIController : Node
 		EmitSignal(SignalName.PlateSelectionChanged, selectedPlateIndex);
 	}
 
-	void OnButtonRightPressed()
+	void OnPlateButtonRightPressed()
 	{
 		selectedPlateIndex = (selectedPlateIndex + 1);
 		selectedPlateIndex = selectedPlateIndex % (map.Plates.Count() - 1);
@@ -97,11 +108,32 @@ public partial class UIController : Node
 		EmitSignal(SignalName.PlateSelectionChanged, selectedPlateIndex);
 	}
 
+	void OnPlatePtButtonLeftPressed()
+	{
+		selectedPlatePtIndex--;
+		if (selectedPlatePtIndex < 0)
+			selectedPlatePtIndex = 0;
+		DisplayPlatepointInfo(selectedCell.points[selectedPlatePtIndex]);
+	}
+
+	void OnPlatePtButtonRightPressed()
+	{
+		selectedPlatePtIndex++;
+		if (selectedPlatePtIndex > selectedCell.points.Count() - 1)
+			selectedPlatePtIndex = selectedCell.points.Count - 1;
+		DisplayPlatepointInfo(selectedCell.points[selectedPlatePtIndex]);
+	}
+
 	void OnTimestepCompleted(int timestep)
 	{
 		TimestepText.Text = timestep.ToString();
 		DisplayPlateInfo(selectedPlateIndex);
-		if (selectedCell != null) DisplayGridcellInfo(selectedCell);
+		if (selectedCell != null)
+		{
+			DisplayGridcellInfo(selectedCell);
+			DisplayPlatepointInfo(selectedCell.points[selectedPlatePtIndex]);
+		}
+		
 	}
 
 
@@ -111,8 +143,8 @@ public partial class UIController : Node
 		var center = new Vector2((float)Math.Round(plate.Center.X, 2), (float)Math.Round(plate.Center.Y, 2));
 		LabelPlateCenter.Text = center.ToString();
 		LabelPlateRotation.Text = plate.rotation.ToString();
-		LabelPlateVelocity.Text = Math.Round(plate.Velocity.LengthSquared(), 2).ToString();
-		LabelPlateAngVel.Text = plate.angularVelocity.ToString();
+		LabelPlateVelocity.Text = Math.Round(plate.Velocity.Length(), 3).ToString();
+		LabelPlateAngVel.Text = Math.Round(plate.angularVelocity, 4).ToString();
 		LabelNumPlatePts.Text = plate.points.Count().ToString();
 		LabelPlateID.Text = index.ToString();
 	}
@@ -129,9 +161,16 @@ public partial class UIController : Node
 		LabelCollisionType.Text = cell.collisionType.ToString();
 	}
 
-	void DisplayPlatepointInfo()
+	void DisplayPlatepointInfo(PlatePoint point)
 	{
-
+		LabelFelsic.Text = Math.Round(point.Felsic).ToString();
+		LabelMafic.Text = Math.Round(point.Mafic).ToString();
+		LabelAge.Text = Math.Round(point.age).ToString();
+		LabelMass.Text = Math.Round(point.mass).ToString();
+		LabelThickness.Text = Math.Round(point.thickness).ToString();
+		LabelDensity.Text = Math.Round(point.density).ToString();
+		LabelBuoyancy.Text = Math.Round(point.buoyancy).ToString();
+		LabelHeight.Text = Math.Round(point.height, 2).ToString();
 	}
 
 }
