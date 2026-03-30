@@ -94,7 +94,7 @@ public class GridCell
 		points.Add(point);
 		PlateIDs.Add(point.plate.ID);
 		var num = GetNumberOfSamePlate(point);
-		if (num >= 4)
+		if (num >= 3)
 		{
 			Consolidate(point, true);
 		}
@@ -201,6 +201,7 @@ public class GridCell
 		int count = 0;
 		float f = 0;
 		float m = 0;
+		float age = 0;
 		bool newPtShouldBeActive = false;
 		for (int i = points.Count - 1; i >= 0; i--)
 		{
@@ -212,21 +213,25 @@ public class GridCell
 				count++;
 				f += points[i].Felsic;
 				m += points[i].Mafic;
+				age += points[i].age;
 				plate.RemovePoint(points[i]);
 				points.Remove(points[i]);
 			}
 		}
-		newpos /= count;
+		//newpos /= count;
 		f /= count;
 		m /= count;
-
+		age /= count;
 		if (useGridcellCenter)
 		{
-			newpos = new Vector2( this.x + 0.5f, 
+			newpos = new Vector2(this.x + 0.5f,
 				this.y + 0.5f);
 		}
-
+		else
+			newpos /= count;
 		var p = new PlatePoint(plate.WorldToLocal(newpos), f, m, plate);
+		p.age = age;
+		p.PhysicalProperties();
 		p.isActive = newPtShouldBeActive;
 		plate.points.Add(p);
 		p.gridIndex = point.gridIndex;

@@ -38,6 +38,10 @@ public partial class UIController : Node
 	[Export] public Label LabelBuoyancy;
 	[Export] public Label LabelHeight;
 
+	[ExportCategory("Mapmode UI")]
+	[Export] public Button MapButtonElevation;
+	[Export] public Button MapButtonAge;
+
 	[ExportCategory("References")]
 	[Export] public MapViewer mapview;
 	[Export] public Camera2D cam;

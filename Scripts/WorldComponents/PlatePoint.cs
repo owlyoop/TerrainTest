@@ -124,7 +124,7 @@ public class PlatePoint
 		
 
 		buoyancy = (DENSITY_MAFIC_OLD - density) / DENSITY_MAFIC_OLD;
-		height = thickness * buoyancy;
+		height = thickness * buoyancy; //km. values seem to mainly be between 0 and 0.5, todo look into this
 	}
 
 	/// <summary>
@@ -250,6 +250,37 @@ public class PlatePoint
 
 		void SpawnPoint(Vector2 worldpos, float felsic, float mafic)
 		{
+			//check if new point is completely surrounded by this points plate.
+			//if so, then material should be avg of all 8
+			//	this is because when a plate rotates, the spacing of platepts creates holes so this stops "tearing" in the middle from all
+			//		the new pts being spawned with very little material
+			bool isInternal = true;
+			float f = 0f;
+			float m = 0f;
+			float age = 0f;
+			int count = 0;
+			plate.map.worldGrid.ForEachNeighbor(gridIndex.X, gridIndex.Y, (di, dj, otherCell) =>
+			{
+				if (isInternal)
+				{
+					foreach (var p in otherCell.points)
+					{
+						if (p.plate != this.plate)
+						{
+							isInternal = false;
+							break;
+						}
+						else
+						{
+							f += p.Felsic;
+							m += p.Mafic;
+							age += p.age;
+							count++;
+						}
+					}
+				}
+			}, checkSelf: false);
+
 			var p = plate.AddPointToPlate(worldpos, felsic, mafic);
 			if (p != null)
 			{
@@ -257,6 +288,13 @@ public class PlatePoint
 				p.MarkPointAsEdgeBoundary(true);
 				p.Velocity = plate.Velocity;
 				distTravelAsBoundary = 0f;
+				if (isInternal)
+				{
+					p.Felsic = f / count;
+					p.Mafic = m / count;
+					p.age = age / count;
+					p.PhysicalProperties();
+				}
 			}
 		}
 	}

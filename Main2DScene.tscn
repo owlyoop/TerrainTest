@@ -1,12 +1,14 @@
-[gd_scene load_steps=4 format=3 uid="uid://blfe0oll6l5dr"]
+[gd_scene load_steps=6 format=3 uid="uid://blfe0oll6l5dr"]
 
 [ext_resource type="Script" uid="uid://b3bcj68jin6be" path="res://Scripts/UIController.cs" id="1_sqjgc"]
 [ext_resource type="PackedScene" uid="uid://bei2owprqu720" path="res://2dplatesim.tscn" id="2_kghc8"]
+[ext_resource type="Gradient" uid="uid://dtqb6frkoi1ox" path="res://Resources/OceanGradient.tres" id="3_lqarn"]
 [ext_resource type="PackedScene" uid="uid://c4jq2tya12i5w" path="res://Prefabs/checkbox_item.tscn" id="3_nb44r"]
+[ext_resource type="Gradient" uid="uid://bnbfbj1l3et6k" path="res://Resources/ElevationGradient.tres" id="4_yn7b7"]
 
 [node name="Node2D" type="Node2D"]
 
-[node name="UIController" type="CanvasLayer" parent="." node_paths=PackedStringArray("TimestepText", "PlateInfoGroup", "CellInfoGroup", "ButtonPlateSelectLeft", "LabelPlateID", "ButtonPlateSelectRight", "LabelPlateCenter", "LabelPlateVelocity", "LabelPlateRotation", "LabelPlateAngVel", "LabelNumPlatePts", "LabelCellCoords", "LabelCellNumPlatePts", "LabelCellUniquePlates", "LabelHasCollision", "LabelCollisionType", "ButtonPlatePtSelectLeft", "ButtonPlatePtSelectRight", "LabelFelsic", "LabelMafic", "LabelAge", "LabelMass", "LabelThickness", "LabelDensity", "LabelBuoyancy", "LabelHeight", "mapview", "cam", "map")]
+[node name="UIController" type="CanvasLayer" parent="." node_paths=PackedStringArray("TimestepText", "PlateInfoGroup", "CellInfoGroup", "ButtonPlateSelectLeft", "LabelPlateID", "ButtonPlateSelectRight", "LabelPlateCenter", "LabelPlateVelocity", "LabelPlateRotation", "LabelPlateAngVel", "LabelNumPlatePts", "LabelCellCoords", "LabelCellNumPlatePts", "LabelCellUniquePlates", "LabelHasCollision", "LabelCollisionType", "ButtonPlatePtSelectLeft", "ButtonPlatePtSelectRight", "LabelFelsic", "LabelMafic", "LabelAge", "LabelMass", "LabelThickness", "LabelDensity", "LabelBuoyancy", "LabelHeight", "MapButtonElevation", "MapButtonAge", "mapview", "cam", "map")]
 script = ExtResource("1_sqjgc")
 TimestepText = NodePath("Top bar/Timestep Value")
 PlateInfoGroup = NodePath("Plate Info UI")
@@ -34,6 +36,8 @@ LabelThickness = NodePath("PlatePoint Info UI/Value_Thickness")
 LabelDensity = NodePath("PlatePoint Info UI/Value_Density")
 LabelBuoyancy = NodePath("PlatePoint Info UI/Value_Buoyancy")
 LabelHeight = NodePath("PlatePoint Info UI/Value_Height")
+MapButtonElevation = NodePath("Map Mode UI/Button_Elevation")
+MapButtonAge = NodePath("Map Mode UI/Button_Age")
 mapview = NodePath("SubViewportContainer/SubViewport/2Dplatesim/MapViewer")
 cam = NodePath("SubViewportContainer/SubViewport/2Dplatesim/CameraController/Camera2D")
 map = NodePath("SubViewportContainer/SubViewport/2Dplatesim/WorldMap")
@@ -59,6 +63,8 @@ render_target_update_mode = 4
 [node name="MapViewer" parent="UIController/SubViewportContainer/SubViewport/2Dplatesim" index="0" node_paths=PackedStringArray("ui")]
 OverlayPlatePtVelocity = false
 DebugCollisionSubductionColor = Color(0.2132, 0.32057998, 0.52, 1)
+OceanGradient = ExtResource("3_lqarn")
+ElevationGradient = ExtResource("4_yn7b7")
 ui = NodePath("../../../..")
 
 [node name="Plate Info UI" type="Control" parent="UIController"]
@@ -589,6 +595,28 @@ offset_right = 448.0
 offset_bottom = 47.0
 text = "9999999"
 vertical_alignment = 1
+
+[node name="Map Mode UI" type="Control" parent="UIController"]
+layout_mode = 3
+anchors_preset = 0
+offset_top = 192.0
+offset_right = 40.0
+offset_bottom = 232.0
+
+[node name="Button_Elevation" type="Button" parent="UIController/Map Mode UI"]
+layout_mode = 0
+offset_left = 16.0
+offset_right = 112.0
+offset_bottom = 24.0
+text = "Elevation"
+
+[node name="Button_Age" type="Button" parent="UIController/Map Mode UI"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 40.0
+offset_right = 112.0
+offset_bottom = 71.0
+text = "Age"
 
 [connection signal="pressed" from="UIController/Plate Info UI/Plate # Selector/Button_Left" to="UIController" method="OnPlateButtonLeftPressed"]
 [connection signal="pressed" from="UIController/Plate Info UI/Plate # Selector/Button_Right" to="UIController" method="OnPlateButtonRightPressed"]

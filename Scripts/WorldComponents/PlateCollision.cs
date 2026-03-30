@@ -48,6 +48,23 @@ public static class PlateCollision
 			return;
 
 		var collisionCache = new Dictionary<(int plateID, int otherID), CollisionInfo>();
+		var receivers = new Dictionary<int, List<PlatePoint>>(plates.Count);
+		foreach (var id in plates)
+			receivers[id] = new List<PlatePoint>(16);
+
+		grid.ForEachNeighbor(cell.x, cell.y, (di, dj, otherCell) =>
+		{
+			if (otherCell.ContainsCollision || otherCell.ContainsBorderingOtherPlate)
+			{
+				foreach (var p in otherCell.points)
+				{
+					if (!p.isActive) continue;
+					if (receivers.TryGetValue(p.plate.ID, out var list))
+						list.Add(p);
+				}
+			}
+
+		}, checkSelf: true);
 
 		for (int i = cell.points.Count - 1; i >= 0; i--)
 		{
@@ -68,7 +85,7 @@ public static class PlateCollision
 
 				cell.collisionType = collisionInfo.Type;
 				p.collisionType = collisionInfo.Type;
-				HandleCollision(p, map.Plates[pi], collisionInfo);
+				HandleCollision(p, receivers[pi], collisionInfo);
 			}
 		}
 
@@ -190,7 +207,7 @@ public static class PlateCollision
 		else return PlateCollisionType.Orogenic;
 	}
 
-	static void HandleCollision(PlatePoint point, Plate2D otherplate, CollisionInfo info)
+	static void HandleCollision(PlatePoint point, List<PlatePoint> receivers, CollisionInfo info)
 	{
 		//todo: transfer material to other platepoints & dont use these arbituary placeholder values
 		switch(info.Type)
@@ -199,13 +216,13 @@ public static class PlateCollision
 				//SpawnPointsAtDivergentBoundary(point, map);
 				break;
 			case PlateCollisionType.Orogenic:
-				point.RemoveMaterial(1f, 0.0f);
+				point.RemoveMaterial(10f, 0.5f);
 				break;
 			case PlateCollisionType.Subduction:
-				point.RemoveMaterial(3f, 12f);
+				point.RemoveMaterial(30f, 120f);
 				break;
 			case PlateCollisionType.Transform:
-				point.RemoveMaterial(1f, 1f);
+				point.RemoveMaterial(0.5f, 10f);
 				break;
 		}
 	}

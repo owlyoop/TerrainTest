@@ -1,10 +1,28 @@
 using Godot;
 using System;
+using System.Drawing;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
+using Color = Godot.Color;
 
 public partial class MapViewer : Node2D
 {
+	public enum MapMode
+	{
+		Elevation,
+		Age,
+		Density,
+		Buoyancy,
+
+	}
+	MapMode _mapMode;
+	#region Map Mode Flags
+	bool _showSeaLevel;
+	bool _showCollisions;
+
+	#endregion
+
 	[ExportCategory("Overlay Settings")]
 	[Export] public bool OverlayPlatePt;
 	[Export] public bool OverlayPlatePtVelocity;
@@ -22,6 +40,13 @@ public partial class MapViewer : Node2D
 	[Export] public Color OceanicColor;
 	[Export] public Color DefaultColor;
 
+	[ExportCategory("Map Colors")]
+	[Export] public Gradient OceanGradient;
+	[Export] public Gradient ElevationGradient;
+	[Export] public Gradient AgeGradient;
+	[Export] public Gradient DensityGradient;
+	[Export] public Gradient BuoyancyGradient;
+
 	[ExportCategory("References")]
 	[Export] public UIController ui;
 	[Export] public Camera2D cam1;
@@ -33,7 +58,7 @@ public partial class MapViewer : Node2D
 
 	[Export] public MeshInstance2D mapDisplay;
 
-	Cell2D selectedCell;
+	Cell2D _selectedCell;
 	#region Multimesh Instances
 	MultiMeshInstance2D mmiPlatePts;
 	MultiMesh mmPlatePts;
@@ -47,7 +72,7 @@ public partial class MapViewer : Node2D
 	MultiMeshInstance2D mmiPlateCenters;
 	MultiMesh mmPlateCenters;
 
-	int plateIndex = 0;
+	int _plateIndex = 0;
 
 	#endregion
 
@@ -110,6 +135,8 @@ public partial class MapViewer : Node2D
 
 		map.OnTimestepCompleted += DrawSelectedPlateOverlay;
 		ui.PlateSelectionChanged += OnPlateSelectionChanged;
+
+		_mapMode = MapMode.Elevation;
 	}
 
 	public override void _ExitTree()
@@ -126,13 +153,13 @@ public partial class MapViewer : Node2D
 
 	public void DisplayMap()
 	{
-		DisplayPlates();
+		DisplayPlatesSmoothed();
 		RedrawMap();
 	}
 
 	void OnPlateSelectionChanged(int index)
 	{
-		plateIndex = index;
+		_plateIndex = index;
 		DrawSelectedPlateOverlay(0);
 	}
 
@@ -192,7 +219,7 @@ public partial class MapViewer : Node2D
 			n.QueueFree();
 		}
 
-		plateIndex = (int)value;
+		_plateIndex = (int)value;
 
 		DrawSelectedPlateOverlay(0);
 	}
@@ -201,7 +228,7 @@ public partial class MapViewer : Node2D
 	{
 		var grid = map.worldGrid.grid;
 		
-		selectedCell = cell;
+		_selectedCell = cell;
 		if (cell != null)
 		{
 			EmitSignal(SignalName.CellSelected, cell);
@@ -239,11 +266,12 @@ public partial class MapViewer : Node2D
 
 	#endregion
 
+
 	#region Overlay Rendering
 
 	void DrawSelectedPlateOverlay(int timestep)
 	{
-		var plate = map.GetPlateByIndex(plateIndex);
+		var plate = map.GetPlateByIndex(_plateIndex);
 
 		CreateOverlay(ref mmPlatePts, ref mmiPlatePts,
 			CreateWireMesh(wmBox, 2f),
@@ -348,10 +376,7 @@ public partial class MapViewer : Node2D
 	}
 
 	//Image uses 0,0 as the topleft but 2d arrays use 0,0 as bottomleff
-	void SetPixelWorld(int x, int y, Color color)
-	{
-		img.SetPixel(x, img.GetHeight() - 1 - y, color);
-	}
+
 
 	void GenerateCells(int width, int height)
 	{
@@ -422,131 +447,176 @@ public partial class MapViewer : Node2D
 		return img;
 	}
 
-	void DisplayPlates()
+	void DisplayPlatesSmoothed()
 	{
-		int width = counts.GetLength(0);
-		int height = counts.GetLength(1);
-		Parallel.For(0, width, i =>
+		int width = cells.GetLength(0);
+		int height = cells.GetLength(1);
+		int numPlates = map.Plates.Count();
+
+		float[,,] values = new float[numPlates, width, height];
+		float[,,] weights = new float[numPlates, width, height];
+		float[,,] final = new float[numPlates, width, height];
+
+		float[,,] compimg = new float[numPlates, width, height];
+
+		void AddWeight(int p, int x, int y, float value, float weight)
 		{
-			for (int j = 0; j < height; j++)
+			if (weight <= 0f) return;
+			x = x % width;
+			if (x < 0) x += width;
+			y = y % height;
+			if (y < 0) y += height;
+			values[p, x, y] += value * weight;
+			weights[p, x, y] += weight;
+		}
+
+		Parallel.For(0, map.Plates.Count, plateIdx =>
+		{
+			var plate = map.Plates[plateIdx];
+
+			foreach(var p in plate.points)
 			{
-				SetPixelWorld(i, j, DefaultColor);
-				counts[i, j] = 0;
-				avgHeights[i, j] = 0f;
+				float val = GetPixelValue(p);
+
+				float cx = p.WorldPos.X - 0.5f;
+				float cy = p.WorldPos.Y - 0.5f;
+				int x0 = Mathf.FloorToInt(cx);
+				int y0 = Mathf.FloorToInt(cy);
+				float tx = cx - x0;
+				float ty = cy - y0;
+
+				float w00 = (1f - tx) * (1f - ty);
+				float w10 = tx * (1f - ty);
+				float w01 = (1f - tx) * ty;
+				float w11 = tx * ty;
+
+				AddWeight(plateIdx, x0, y0, val, w00);
+				AddWeight(plateIdx, x0 + 1, y0, val, w10);
+				AddWeight(plateIdx, x0, y0 + 1, val, w01);
+				AddWeight(plateIdx, x0 + 1, y0 + 1, val, w11);
+			}
+
+			for (int x = 0; x < width; x++)
+			{
+				for (int y = 0; y < height; y++)
+				{
+					if (weights[plateIdx, x, y] > 0)
+						final[plateIdx, x, y] = values[plateIdx, x, y] / weights[plateIdx, x, y];
+					else final[plateIdx, x, y] = 0;
+				}
+			}
+
+			for (int x = 0; x < width; x++)
+			{
+				for (int y = 0; y < height; y++)
+				{
+					float v = Bilinear(final, plateIdx, x + 0.5f, y + 0.5f);
+					v = Mathf.Clamp(v, 0f, 1f);
+					compimg[plateIdx, x, y] = v;
+				}
 			}
 		});
 
-		Parallel.ForEach(map.Plates, plate =>
+		Parallel.For(0, width, x =>
 		{
-			foreach (var p in plate.points)
+			for (int y = 0; y < height; y++)
 			{
-				var x = p.gridIndex.X;
-				var y = p.gridIndex.Y;
-
-				counts[x, y]++;
-				avgHeights[x, y] += (p.height / (float)counts[x, y]);
+				float val = 0f;
+				for (int p = 0; p < compimg.GetLength(0); p++)
+				{
+					val += compimg[p, x, y];
+				}
+				SetPixelWorld(x, y, GetPixelColor(val));
 			}
 		});
-
-		Parallel.For(0, width, i =>
-		{
-			for (int j = 0; j < height; j++)
-			{
-				var cell = map.worldGrid.grid[i, j];
-				var c = DefaultColor;
-				if (cell.points.Count > 0)
-				{
-					if (cell.points[0].GetCrustType() == PlatePoint.CrustType.Oceanic)
-						c = OceanicColor;
-					else c = ContinentalColor;
-				}
-				if (cell.points.Count > 0)
-				{
-					float hue = (float)cell.points[0].plate.ID / (float)map.Plates.Count;
-					Color hsv = new Color();
-					hsv = Color.FromHsv(hue, 1f, 1f, 1f);
-					c = c + (hsv*0.1f);
-				}
-				
-
-				
-
-				if (!cell.IsCompletelyEmpty())
-				{
-					if (cell.collisionType == PlateCollisionType.Transform)
-					{
-						c = DebugCollisionTransformColor;
-					}
-					else if (cell.collisionType == PlateCollisionType.Subduction)
-					{
-						c = DebugCollisionSubductionColor;
-					}
-					else if (cell.collisionType == PlateCollisionType.Orogenic)
-					{
-						c = DebugCollisionOrogenicColor;
-					}
-					else if (cell.collisionType == PlateCollisionType.Divergent)
-					{
-						c = DebugCollisionDivergentColor;
-					}
-
-					//if (cell.ContainsEdgeBoundary)
-					//	c = Colors.BlueViolet + (cell.points[0].distTravelAsBoundary* Colors.White);
-				}
-				c = c + (c * avgHeights[i, j] * 0.5f);
-				if (counts[i, j] > 0)
-				{
-					SetPixelWorld(i, j, c);
-				}
-					
-			}
-		});
-
-		
-
-		//for empty points, get average of surrounding points
-		/*for (int i = 0; i < avgHeights.GetLength(0); i++)
-		{
-			for (int j = 0; j < avgHeights.GetLength(1); j++)
-			{
-				if (counts[i, j] == 0)
-				{
-					var b = 0;
-					var h = 0f;
-					for (int dx = -1; dx <= 1; dx++)
-					{
-						for (int dy = -1; dy <= 1; dy++)
-						{
-							if (dx == 0 & dy == 0) continue;
-							int di = i + dx;
-							int dj = j + dy;
-
-							if (di >= 0 && di < counts.GetLength(0)
-								&& dj >= 0 && dj < counts.GetLength(1))
-							{
-								if (counts[di, dj] > 0)
-								{
-									b++;
-									h += avgHeights[di, dj];
-								}
-							}
-						}
-					}
-
-					h = h / b;
-					var c = Colors.DarkSeaGreen;
-					if (h < 0.5f)
-						c = Colors.DeepSkyBlue;
-					c *= (h + 0.5f);
-					//SetPixelWorld(i, j, c);
-				}
-			}
-		}*/
 	}
 
+	float Bilinear(float[,,] field, int plate, float x, float y)
+	{
+		int width = field.GetLength(1);
+		int height = field.GetLength(2);
 
+		int x0 = Mathf.FloorToInt(x);
+		int y0 = Mathf.FloorToInt(y);
+		int x1 = x0 + 1;
+		int y1 = y0 + 1;
+
+		float tx = x - x0;
+		float ty = y - y0;
+
+		x0 = x0 % width;
+		x1 = x1 % width;
+		y0 = y0 % height;
+		y1 = y1 % height;
+
+		float v00 = field[plate, x0, y0];
+		float v10 = field[plate, x1, y0];
+		float v01 = field[plate, x0, y1];
+		float v11 = field[plate, x1, y1];
+
+		float a = Mathf.Lerp(v00, v10, tx);
+		float b = Mathf.Lerp(v01, v11, tx);
+		return Mathf.Lerp(a, b, ty);
+	}
+
+	float GetPixelValue(PlatePoint point)
+	{
+		float val = 0f;
+		switch (_mapMode)
+		{
+			case MapMode.Elevation:
+				val = Mathf.Remap(point.height, 0f, 10f, 0f, 1f);
+				val = Mathf.Clamp(val, 0f, 1f);
+				break;
+
+			case MapMode.Age:
+				break;
+
+			case MapMode.Density:
+				break;
+
+			case MapMode.Buoyancy:
+				break;
+
+			default:
+				val = 0f;
+				break;
+		}
+		return val;
+	}
+
+	Color GetPixelColor(float value)
+	{
+		Color col = Colors.White;
+		
+		switch (_mapMode)
+		{
+			case MapMode.Elevation:
+				if (value >= 0.5f)
+					col = ElevationGradient.Sample((value - 0.5f) * 2f);
+				else col = OceanGradient.Sample(value * 2f);
+					break;
+
+			case MapMode.Age:
+				col = AgeGradient.Sample(value);
+				break;
+
+			case MapMode.Density:
+				col = DensityGradient.Sample(value);
+				break;
+
+			case MapMode.Buoyancy:
+				col = BuoyancyGradient.Sample(value);
+				break;
+		}
+
+		return col;
+	}
+
+	void SetPixelWorld(int x, int y, Color color)
+	{
+		img.SetPixel(x, img.GetHeight() - 1 - y, color);
+	}
 
 	#endregion
-
-
 }

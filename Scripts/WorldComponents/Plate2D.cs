@@ -185,8 +185,6 @@ public partial class Plate2D
 		}
 	}
 
-
-
 	//Initializes all of the platepoints velocity
 	public void InitializePlateVelocity(Vector2 velocity)
 	{

@@ -9,8 +9,8 @@
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_w74eu"]
 noise_type = 0
-seed = 365
-frequency = 0.0199
+seed = 505
+frequency = 0.0022
 cellular_return_type = 0
 domain_warp_type = 2
 domain_warp_amplitude = 32.0
