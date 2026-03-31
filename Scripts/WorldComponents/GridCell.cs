@@ -52,8 +52,8 @@ public class GridCell
 			//if (!p.IsColliding && !p.IsBorderingOtherPlate) continue;
 			int id = p.plate.ID;
 			var mass = p.mass;
-			//0.2 deformation factor todo use platepoints density for this or something? buh. im not good at physics
-			var v = p.plate.Velocity + ((p.Velocity - p.plate.Velocity) * 0.2f);
+			if (p.mass <= 0f) mass = 1f;
+			var v = p.plate.Velocity;
 			if (!OpposingForceSums.ContainsKey(id))
 			{
 				OpposingForceSums[id] = Vector2.Zero;

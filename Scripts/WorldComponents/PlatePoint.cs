@@ -151,7 +151,30 @@ public class PlatePoint
 		material[1] = m;
 		Felsic = f;
 		Mafic = m;
-		PhysicalProperties();
+		//PhysicalProperties();
+		//CheckIfDestroySelf();
+		
+		return material;
+	}
+
+	public void AddMaterial(float felsic, float mafic)
+	{
+		Felsic += felsic;
+		Mafic += mafic;
+		//PhysicalProperties();
+	}
+
+	public void GiveMaterial(PlatePoint receiver, float felsic, float mafic)
+	{
+		RemoveMaterial(felsic, mafic);
+		receiver.Felsic += felsic;
+		receiver.Mafic += mafic;
+		//receiver.PhysicalProperties();
+		//CheckIfDestroySelf();
+	}
+
+	public void CheckIfDestroySelf()
+	{
 		//todo: set neighbours as active
 		if (Felsic < 0.01f && Mafic < 0.01f)
 		{
@@ -170,13 +193,6 @@ public class PlatePoint
 				}, checkSelf: false);
 			}
 		}
-		return material;
-	}
-
-	public void AddMaterial(float felsic, float mafic)
-	{
-		Felsic += felsic;
-		Mafic += mafic;
 	}
 
 	public CrustType GetCrustType()
@@ -198,9 +214,7 @@ public class PlatePoint
 		
 		if (age > 500f)
 		{
-			RemoveMaterial(0f, 0.5f);
-			if (Felsic <= 0.01f && Mafic <= 0.01f)
-				return false;
+			RemoveMaterial(0f, 100f);
 		}
 		PhysicalProperties();
 		return true;

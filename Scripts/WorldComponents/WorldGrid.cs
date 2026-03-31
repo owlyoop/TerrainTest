@@ -230,7 +230,7 @@ public partial class WorldGrid
 						}
 					}
 				}
-			});
+			}, checkSelf: false);
 
 			if (!boundary && !otherplate && !result.IsCollision)
 				result.IsActive = false;
@@ -325,6 +325,8 @@ public partial class WorldGrid
 				//sum
 				foreach (var p in cell.points)
 				{
+					var m = p.mass;
+					if (p.mass <= 0f) m = 1f;
 					float damp = 0.8f; //todo make this stuff a const somewhere
 					var relative = totalForce - p.plate.Velocity;
 					var force = relative * damp * p.mass;

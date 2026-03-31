@@ -84,6 +84,12 @@ public partial class MapViewer : Node2D
 	float[,] avgHeights;
 	int[,] counts;
 
+	float[,,] values;
+	float[,,] weights;
+	float[,,] final;
+
+	float[,,] compimg;
+
 	[Signal]
 	public delegate void CellSelectedEventHandler(Cell2D cell);
 
@@ -136,7 +142,10 @@ public partial class MapViewer : Node2D
 		map.OnTimestepCompleted += DrawSelectedPlateOverlay;
 		ui.PlateSelectionChanged += OnPlateSelectionChanged;
 
+
+
 		_mapMode = MapMode.Elevation;
+		
 	}
 
 	public override void _ExitTree()
@@ -147,12 +156,20 @@ public partial class MapViewer : Node2D
 
 	public void Initialize(int width, int height)
 	{
+		var numPlates = map.Plates.Count;
+
+		values = new float[numPlates, width, height];
+		weights = new float[numPlates, width, height];
+		final = new float[numPlates, width, height];
+		compimg = new float[numPlates, width, height];
+
 		GenerateCells(width, height);
 		CreateMesh();
 	}
 
 	public void DisplayMap()
 	{
+		
 		DisplayPlatesSmoothed();
 		RedrawMap();
 	}
@@ -451,13 +468,13 @@ public partial class MapViewer : Node2D
 	{
 		int width = cells.GetLength(0);
 		int height = cells.GetLength(1);
-		int numPlates = map.Plates.Count();
 
-		float[,,] values = new float[numPlates, width, height];
-		float[,,] weights = new float[numPlates, width, height];
-		float[,,] final = new float[numPlates, width, height];
+		var numPlates = map.Plates.Count;
 
-		float[,,] compimg = new float[numPlates, width, height];
+		values = new float[numPlates, width, height];
+		weights = new float[numPlates, width, height];
+		final = new float[numPlates, width, height];
+		compimg = new float[numPlates, width, height];
 
 		void AddWeight(int p, int x, int y, float value, float weight)
 		{

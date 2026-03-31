@@ -150,7 +150,7 @@ public partial class Plate2D
 			bool valid = point.OnTimestep();
 			//if (!valid) continue;
 			//if (point.IsEdgeBoundary || point.IsBoundary )
-				point.UpdateTravelStats(0.1f, "area");
+				point.UpdateTravelStats(0.25f, "area");
 		}
 	}
 
@@ -216,15 +216,29 @@ public partial class Plate2D
 		var inertia = 0f;
 		foreach (var p in points)
 		{
+			if (!float.IsFinite(p.mass) || p.mass <= 0.001f) continue;
+
 			Vector2 r = p.WorldPos - Center;
 			totalMass += p.mass;
 			inertia += p.mass * (r.X * r.X + r.Y * r.Y);
 		}
+		if (totalMass <= 0f) totalMass = 1f;
+		if (inertia <= 0f) inertia = 1f;
 
 		var a = sumForce / totalMass;
 		var alpha = sumTorque / inertia;
+
+		if (!float.IsFinite(a.X) || !float.IsFinite(a.Y) || !float.IsFinite(alpha))
+		{
+			sumForce = Vector2.Zero;
+			sumTorque = 0f;
+			return;
+		}
+
 		Velocity += a;
+		Velocity.LimitLength(2f);
 		angularVelocity += alpha;
+		angularVelocity = Mathf.Clamp(angularVelocity, -5f, 5f);
 
 		sumForce = Vector2.Zero;
 		sumTorque = 0f;

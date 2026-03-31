@@ -135,7 +135,8 @@ public partial class UIController : Node
 		if (selectedCell != null)
 		{
 			DisplayGridcellInfo(selectedCell);
-			DisplayPlatepointInfo(selectedCell.points[selectedPlatePtIndex]);
+			if (selectedCell.points.Count > 0)
+				DisplayPlatepointInfo(selectedCell.points[selectedPlatePtIndex]);
 		}
 		
 	}

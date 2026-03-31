@@ -88,28 +88,6 @@ public static class PlateCollision
 				HandleCollision(p, receivers[pi], collisionInfo);
 			}
 		}
-
-		/*foreach (var p in cell.points)
-		{
-			foreach (var pi in plates)
-			{
-				if (p.plate.ID == pi)
-					continue;
-
-				var cacheKey = (p.plate.ID, pi);
-
-				if (!collisionCache.TryGetValue(cacheKey, out var collisionInfo))
-				{
-					var otherplate = map.Plates[pi];
-					collisionInfo = GetLocalCollisionType(p, otherplate, cell, grid);
-					collisionCache[cacheKey] = collisionInfo;
-				}
-
-				cell.collisionType = collisionInfo.Type;
-				p.collisionType = collisionInfo.Type;
-				HandleCollision(p, map.Plates[pi], collisionInfo);
-			}
-		}*/
 	}
 
 	/// <summary>
@@ -209,6 +187,7 @@ public static class PlateCollision
 
 	static void HandleCollision(PlatePoint point, List<PlatePoint> receivers, CollisionInfo info)
 	{
+		int count = receivers.Count;
 		//todo: transfer material to other platepoints & dont use these arbituary placeholder values
 		switch(info.Type)
 		{
@@ -216,30 +195,34 @@ public static class PlateCollision
 				//SpawnPointsAtDivergentBoundary(point, map);
 				break;
 			case PlateCollisionType.Orogenic:
-				point.RemoveMaterial(10f, 0.5f);
 				break;
 			case PlateCollisionType.Subduction:
-				point.RemoveMaterial(30f, 120f);
+				//transfer felsic to less dense point, mafic subducts
+				foreach(var p in receivers)
+				{
+					if (point.density > p.density)
+					{
+						point.GiveMaterial(p, 100f / count, 0f);
+					}
+					else
+					{
+						p.GiveMaterial(point, 100f / count, 0f);
+					}
+				}
 				break;
 			case PlateCollisionType.Transform:
-				point.RemoveMaterial(0.5f, 10f);
+				foreach (var p in receivers)
+				{
+					if (point.density > p.density)
+					{
+						point.GiveMaterial(p, 10f / count, 10f / count);
+					}
+					else
+					{
+						p.GiveMaterial(point, 10f / count, 10f / count);
+					}
+				}
 				break;
-		}
-	}
-
-	
-	static void SpawnPointsAtDivergentBoundary(PlatePoint point, WorldMap map)
-	{
-		//check if gridcell is empty
-		var cell = map.worldGrid.grid[point.gridIndex.X, point.gridIndex.Y];
-
-		Vector2 otherpos = point.gridIndex + point.Velocity;
-		var idx = map.worldGrid.GetIndexFromPosition(otherpos);
-		var otherCell = map.worldGrid.grid[idx.X, idx.Y];
-
-		if (otherCell.IsCompletelyEmpty())
-		{
-			//point.plate.AddPointToPlate(otherpos, 1f, 1f);
 		}
 	}
 }

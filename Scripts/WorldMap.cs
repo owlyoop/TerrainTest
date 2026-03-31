@@ -61,7 +61,7 @@ public partial class WorldMap : Node
 		{
 			float rx = (float)GD.RandRange(-1f, 1f);
 			float ry = (float)GD.RandRange(-1f, 1f);
-			float speed = (float)GD.RandRange(0.2f, 4f);
+			float speed = (float)GD.RandRange(2f, 4f);
 			p.InitializePlateVelocity(new Vector2(rx, ry) * (speed * 0.05f));
 			p.InitializeCenter();
 		}
@@ -109,12 +109,21 @@ public partial class WorldMap : Node
 		GD.Print("Work time for forces: ", workertime);
 
 
-
+		/*for (int i = 0; i < Plates.Count; i++)
+		{
+			Plates[i].CheckForNewPoints();
+			Plates[i].UpdateVelocity();
+		}*/
 		for (int i = 0; i < Plates.Count; i++)
 		{
 			Plates[i].CheckForNewPoints();
 			Plates[i].UpdateVelocity();
-		}
+			for (int p = Plates[i].points.Count - 1; p >= 0; p--)
+			{
+				Plates[i].points[p].PhysicalProperties();
+				Plates[i].points[p].CheckIfDestroySelf();
+			}
+		};
 
 		Plates[timestep % (Plates.Count - 1)].UpdateCenterSlow();
 
