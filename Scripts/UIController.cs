@@ -25,6 +25,7 @@ public partial class UIController : Node
 	[Export] public Label LabelCellUniquePlates;
 	[Export] public Label LabelHasCollision;
 	[Export] public Label LabelCollisionType;
+	[Export] public Label LabelCellAvgHeight;
 
 	[Export] public Button ButtonPlatePtSelectLeft;
 	[Export] public Button ButtonPlatePtSelectRight;
@@ -85,12 +86,16 @@ public partial class UIController : Node
 
 	void OnPlayButtonPressed()
 	{
-
+		map.IsRunning = true;
+		if (!map.timer.IsConnected(Timer.SignalName.Timeout, Callable.From(map.Timestep)))
+			map.timer.Timeout += map.Timestep;
 	}
 
 	void OnPauseButtonPressed()
 	{
-
+		map.IsRunning = false;
+		if (map.timer.IsConnected(Timer.SignalName.Timeout, Callable.From(map.Timestep)))
+			map.timer.Timeout -= map.Timestep;
 	}
 
 	void OnPlateButtonLeftPressed()
@@ -141,6 +146,26 @@ public partial class UIController : Node
 		
 	}
 
+	void OnMapmodeElevationButtonPressed()
+	{
+		mapview.mapMode = MapViewer.MapMode.Elevation;
+	}
+
+	void OnMapmodeAgeButtonPressed()
+	{
+		mapview.mapMode = MapViewer.MapMode.Age;
+	}
+
+	void OnMapmodeDensityButtonPressed()
+	{
+		mapview.mapMode = MapViewer.MapMode.Density;
+	}
+
+	void OnMapmodeBuyoancyButtonPressed()
+	{
+		mapview.mapMode = MapViewer.MapMode.Buoyancy;
+	}
+
 
 	void DisplayPlateInfo(int index)
 	{
@@ -164,6 +189,17 @@ public partial class UIController : Node
 		LabelCellUniquePlates.Text = cell.PlateIDs.Count().ToString();
 		LabelHasCollision.Text = cell.ContainsCollision.ToString();
 		LabelCollisionType.Text = cell.collisionType.ToString();
+
+		var avgh = 0f;
+		int count = 0;
+		foreach(var p in cell.points)
+		{
+			avgh += p.height;
+			count++;
+		}
+		avgh = avgh / count;
+
+		LabelCellAvgHeight.Text = Math.Round(avgh, 2).ToString();
 	}
 
 	void DisplayPlatepointInfo(PlatePoint point)
@@ -172,9 +208,9 @@ public partial class UIController : Node
 		LabelMafic.Text = Math.Round(point.Mafic).ToString();
 		LabelAge.Text = Math.Round(point.age).ToString();
 		LabelMass.Text = Math.Round(point.mass).ToString();
-		LabelThickness.Text = Math.Round(point.thickness).ToString();
+		LabelThickness.Text = Math.Round(point.thickness, 2).ToString();
 		LabelDensity.Text = Math.Round(point.density).ToString();
-		LabelBuoyancy.Text = Math.Round(point.buoyancy).ToString();
+		LabelBuoyancy.Text = Math.Round(point.buoyancy, 2).ToString();
 		LabelHeight.Text = Math.Round(point.height, 2).ToString();
 	}
 

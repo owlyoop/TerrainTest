@@ -9,7 +9,7 @@
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_w74eu"]
 noise_type = 0
-seed = 505
+seed = 675
 frequency = 0.0022
 cellular_return_type = 0
 domain_warp_type = 2
@@ -69,7 +69,7 @@ texture_filter = 1
 script = ExtResource("2_1qsgr")
 map = NodePath("../WorldMap")
 dimensions = 5
-numSites = 12
+numSites = 10
 lineWidth = 0.16
 
 [node name="WorldMap" type="Node" parent="." node_paths=PackedStringArray("mapViewer", "voronoi", "timer")]

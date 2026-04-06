@@ -20,37 +20,35 @@ public struct CollisionInfo
 	public float BoundaryDot;
 	public PlateCollisionType Type;
 }
+
 public static class PlateCollision
 {
 	static WorldMap map;
 	static WorldGrid grid;
+
+	static Dictionary<(int cellKey, int plateId, int otherId), Vector2> gradientCache
+		= new Dictionary<(int, int, int), Vector2>();
+
+	static public void ClearGradientCache()
+	{
+		gradientCache.Clear();
+	}
+
 	public static void RegisterCollisions(GridCell cell, WorldMap _map)
 	{
 		map = _map;
 		grid = map.worldGrid;
 
+
 		if (cell.PlateIDs.Count < 2)
 			return;
 
 		var plates = new HashSet<int>(cell.PlateIDs);
-		List<PlatePoint> otherNeighbors = new List<PlatePoint>();
-
-		grid.ForEachNeighbor(cell.x, cell.y, (di, dj, otherCell) =>
-		{
-			if (otherCell.ContainsCollision || otherCell.ContainsBorderingOtherPlate)
-			{
-				plates.UnionWith(otherCell.PlateIDs);
-			}
-				
-		});
-
-		if (plates.Count < 2)
-			return;
-
-		var collisionCache = new Dictionary<(int plateID, int otherID), CollisionInfo>();
 		var receivers = new Dictionary<int, List<PlatePoint>>(plates.Count);
+		var collisionCache = new Dictionary<(int plateID, int otherID), CollisionInfo>();
+
 		foreach (var id in plates)
-			receivers[id] = new List<PlatePoint>(16);
+			receivers[id] = new List<PlatePoint>(32);
 
 		grid.ForEachNeighbor(cell.x, cell.y, (di, dj, otherCell) =>
 		{
@@ -59,12 +57,18 @@ public static class PlateCollision
 				foreach (var p in otherCell.points)
 				{
 					if (!p.isActive) continue;
+					plates.Add(p.plate.ID);
 					if (receivers.TryGetValue(p.plate.ID, out var list))
 						list.Add(p);
+					else
+						receivers[p.plate.ID] = new List<PlatePoint>{p};
 				}
 			}
 
 		}, checkSelf: true);
+
+		if (plates.Count < 2)
+			return;
 
 		for (int i = cell.points.Count - 1; i >= 0; i--)
 		{
@@ -85,7 +89,8 @@ public static class PlateCollision
 
 				cell.collisionType = collisionInfo.Type;
 				p.collisionType = collisionInfo.Type;
-				HandleCollision(p, receivers[pi], collisionInfo);
+				if (receivers[pi].Count > 0)
+					HandleCollision(p, receivers[pi], collisionInfo);
 			}
 		}
 	}
@@ -99,10 +104,18 @@ public static class PlateCollision
 	/// <returns></returns>
 	static CollisionInfo GetLocalCollisionType(PlatePoint point, Plate2D otherplate, GridCell cell, WorldGrid grid)
 	{
-		//Collision type is local because if a square plate collides into an L-shaped plate, then one side of the square plate would collide
-		//	more similarily to a transform fault vs another side being mountain building
-		//kinda slow
-		point.boundaryNormal = ComputeGradient(point, otherplate, cell);
+		int cellkey = cell.x * 10000 + cell.y;
+		var cachekey = (cellkey, point.plate.ID, otherplate.ID);
+
+		if (!gradientCache.TryGetValue(cachekey, out var cachedgradient))
+		{
+			cachedgradient = ComputeGradient(point, otherplate, cell);
+			gradientCache[cachekey] = cachedgradient;
+		}
+
+		point.boundaryNormal = cachedgradient;
+		//point.boundaryNormal = ComputeGradient(point, otherplate, cell);
+		//point.boundaryNormal = ComputeGradientSimple(point, otherplate);
 
 		var vel = point.plate.Velocity.Normalized();
 
@@ -145,6 +158,7 @@ public static class PlateCollision
 		//	then i shouldnt use the gradient
 		//		maybe fallback to using the 2 plate vels to compute boundary
 		//		or just assume its either subduction or orogenic? since itll never happen for divergent or transform
+		//TODO: this is very slow
 		Vector2 gradient = Vector2.Zero;
 		int count = 0;
 
@@ -171,6 +185,17 @@ public static class PlateCollision
 			return Vector2.Zero;
 	}
 
+	static Vector2 ComputeGradientSimple(PlatePoint point, Plate2D otherplate)
+	{
+		Vector2 relativeVelocity = point.plate.Velocity - otherplate.Velocity;
+
+		if (relativeVelocity.Length() < 0.001f)
+			return Vector2.Zero;  // Plates moving together, no clear boundary
+
+		Vector2 normal = new Vector2(-relativeVelocity.Y, relativeVelocity.X).Normalized();
+		return normal;
+	}
+
 	static PlateCollisionType ClassifyCollision(float boundaryDot, PlatePoint point, Plate2D otherPlate)
 	{
 		//TODO: consider other plate
@@ -187,40 +212,73 @@ public static class PlateCollision
 
 	static void HandleCollision(PlatePoint point, List<PlatePoint> receivers, CollisionInfo info)
 	{
+		if (info.Type == PlateCollisionType.Divergent) return;
 		int count = receivers.Count;
-		//todo: transfer material to other platepoints & dont use these arbituary placeholder values
-		switch(info.Type)
+		if (count == 0) return;
+		PlatePoint closest = null;
+		var dist = 100000f;
+		foreach(var p in receivers)
+		{
+			var d = map.WrappedDistance(p.WorldPos, point.WorldPos);
+			if (d < dist)
+			{
+				dist = d;
+				closest = p;
+			}
+		}
+
+		switch (info.Type)
 		{
 			case PlateCollisionType.Divergent:
 				//SpawnPointsAtDivergentBoundary(point, map);
 				break;
+
 			case PlateCollisionType.Orogenic:
+				//crust compress & pile, thickness increases
+				if (point.density < closest.density)
+				{
+					float f = closest.Felsic * 0.4f;
+					float m = closest.Mafic * 0.1f;
+					closest.GiveMaterial(point, f + 10f, m + 10f);
+				}
+				else
+				{
+					float f = point.Felsic * 0.4f;
+					float m = point.Mafic * 0.1f;
+					point.GiveMaterial(closest, f + 10f, m + 10f);
+				}
+
+				//point.AddMaterial(10f, 0f);
+				//closest.AddMaterial(10f, 0f);
 				break;
+
 			case PlateCollisionType.Subduction:
 				//transfer felsic to less dense point, mafic subducts
-				foreach(var p in receivers)
+				if (point.density < closest.density)
 				{
-					if (point.density > p.density)
-					{
-						point.GiveMaterial(p, 100f / count, 0f);
-					}
-					else
-					{
-						p.GiveMaterial(point, 100f / count, 0f);
-					}
+					float f = closest.Felsic * 0.2f;
+					closest.GiveMaterial(point, f, 0);
+					closest.RemoveMaterial(0, (closest.Mafic * 0.2f) + 10f);
+				}
+				else
+				{
+					float f = point.Felsic * 0.2f;
+					point.GiveMaterial(closest, f, 0);
+					point.RemoveMaterial(0, (point.Mafic * 0.2f ) + 10f);
 				}
 				break;
+
 			case PlateCollisionType.Transform:
-				foreach (var p in receivers)
+				if (point.density < closest.density)
 				{
-					if (point.density > p.density)
-					{
-						point.GiveMaterial(p, 10f / count, 10f / count);
-					}
-					else
-					{
-						p.GiveMaterial(point, 10f / count, 10f / count);
-					}
+					/*closest.GiveMaterial(point,
+						closest.Felsic * closest.buoyancy * (closest.Velocity.Normalized().Dot(closest.boundaryNormal)),
+						closest.Mafic * closest.buoyancy * (closest.Velocity.Normalized().Dot(closest.boundaryNormal)));*/
+					closest.GiveMaterial(point, closest.Felsic * 0.01f, closest.Mafic * 0.01f);
+				}
+				else
+				{
+					point.GiveMaterial(closest, point.Felsic * 0.01f,	point.Mafic * 0.01f);
 				}
 				break;
 		}

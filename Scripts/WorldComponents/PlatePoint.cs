@@ -26,7 +26,7 @@ public class PlatePoint
 	private float _mafic;	//Oceanic, about 10-15% denser than felsic?
 
 	/// <summary>
-	/// Mass of Felsic (continental) rock material
+	/// Mass of Felsic (continental) rock material (billions kg)
 	/// </summary>
 	public float Felsic
 	{
@@ -35,7 +35,7 @@ public class PlatePoint
 	}
 
 	/// <summary>
-	/// Mass of Mafic (oceanic) rock material
+	/// Mass of Mafic (oceanic) rock material (billions kg)
 	/// </summary>
 	public float Mafic
 	{
@@ -46,6 +46,8 @@ public class PlatePoint
 	//i am representing platepoints as 1km x 1km samples
 	public float area = 1f; 
 	public float mass;
+	//continental thickness in earth usually 25 - 70 km
+	//oceanic < 10km
 	public float thickness;
 	public float density;
 	public float buoyancy;
@@ -104,7 +106,7 @@ public class PlatePoint
 		Felsic = felsic;
 		Mafic = mafic;
 
-		age = 0f;
+		age = 1f;
 
 		PhysicalProperties();
 	}
@@ -118,6 +120,13 @@ public class PlatePoint
 		float felsicVolume = Felsic / DENSITY_FELSIC;
 		float maficVolume = Mafic / maficDensity;
 		float volume = felsicVolume + maficVolume;
+
+		if (!float.IsFinite(volume) || volume <= 0.000001f)
+		{
+			Felsic = 1;
+			Mafic = 1;
+			volume = 10;
+		}
 
 		thickness = volume * area;
 		density = mass / volume;
@@ -136,24 +145,23 @@ public class PlatePoint
 	/// <param name="mafic">Amount of malic the giver loses to the receiver</param>
 	public static void TransferMaterial(PlatePoint giver, PlatePoint receiver, float felsic, float mafic)
 	{
-		giver.Felsic -= felsic;
-		giver.Mafic -= mafic;
+		giver.RemoveMaterial(felsic, mafic);
 		receiver.Felsic += felsic;
 		receiver.Mafic += mafic;
 	}
 
 	public float[] RemoveMaterial(float felsic, float mafic)
 	{
-		float f = Mathf.Clamp(Felsic - felsic, 0f, float.MaxValue);
-		float m = Mathf.Clamp(Mafic - mafic, 0f, float.MaxValue);
-		float[] material = new float[2];
-		material[0] = f;
-		material[1] = m;
-		Felsic = f;
-		Mafic = m;
-		//PhysicalProperties();
-		//CheckIfDestroySelf();
-		
+		float originalFelsic = Felsic;
+		float originalMafic = Mafic;
+
+		float newFelsic = Mathf.Clamp(Felsic - felsic, 0f, float.MaxValue);
+		float newMafic = Mathf.Clamp(Mafic - mafic, 0f, float.MaxValue);
+
+		Felsic = newFelsic;
+		Mafic = newMafic;
+
+		float[] material = [originalFelsic - newFelsic, originalMafic - newMafic];
 		return material;
 	}
 
@@ -161,14 +169,14 @@ public class PlatePoint
 	{
 		Felsic += felsic;
 		Mafic += mafic;
-		//PhysicalProperties();
 	}
+
 
 	public void GiveMaterial(PlatePoint receiver, float felsic, float mafic)
 	{
-		RemoveMaterial(felsic, mafic);
-		receiver.Felsic += felsic;
-		receiver.Mafic += mafic;
+		var mats = RemoveMaterial(felsic, mafic);
+		receiver.Felsic += mats[0];
+		receiver.Mafic += mats[1];
 		//receiver.PhysicalProperties();
 		//CheckIfDestroySelf();
 	}
@@ -181,10 +189,11 @@ public class PlatePoint
 			//i need to store a reference to grid in platepoint class. jesus christ
 			var worldGrid = plate.map.worldGrid;
 			var grid = plate.map.worldGrid.grid;
-
+			var cell = grid[gridIndex.X, gridIndex.Y];
 			this.plate.RemovePoint(this);
-			grid[gridIndex.X, gridIndex.Y].RemovePoint(this);
-			if (grid[gridIndex.X, gridIndex.Y].IsEmptyOrInactive() || grid[gridIndex.X, gridIndex.Y].points.Count == 0)
+			cell.RemovePoint(this);
+
+			if (cell.IsEmptyOrInactive() || cell.points.Count == 0)
 			{
 				worldGrid.ForEachNeighbor(gridIndex.X, gridIndex.Y, (di, dj, otherCell) =>
 				{
@@ -192,6 +201,8 @@ public class PlatePoint
 					otherCell.MarkAllAsEdgeBoundary(true);
 				}, checkSelf: false);
 			}
+
+			//cell.RemovePoint(this);
 		}
 	}
 
@@ -211,11 +222,13 @@ public class PlatePoint
 	public bool OnTimestep()
 	{
 		age = age + 1f;
-		
-		if (age > 500f)
+		if (age > 1000f)
 		{
-			RemoveMaterial(0f, 100f);
+			float m = Mafic * 0.01f;
+			RemoveMaterial(4f, m + 10f);
 		}
+		else AddMaterial(2f, 2f);
+
 		PhysicalProperties();
 		return true;
 	}
@@ -251,7 +264,7 @@ public class PlatePoint
 						if (dot > 0.2f) return;
 
 						Vector2 worldPos = new Vector2(otherCell.x + 0.5f, otherCell.y + 0.5f);
-						SpawnPoint(worldPos, 5f, 10f);
+						SpawnPoint(worldPos, 1f, 10f);
 					}, checkSelf: false);
 					break;
 
@@ -282,7 +295,6 @@ public class PlatePoint
 						if (p.plate != this.plate)
 						{
 							isInternal = false;
-							break;
 						}
 						else
 						{
@@ -298,12 +310,13 @@ public class PlatePoint
 			var p = plate.AddPointToPlate(worldpos, felsic, mafic);
 			if (p != null)
 			{
-				p.MarkPointAsBoundary(true);
-				p.MarkPointAsEdgeBoundary(true);
+				//p.MarkPointAsBoundary(true);
+				//p.MarkPointAsEdgeBoundary(true);
 				p.Velocity = plate.Velocity;
 				distTravelAsBoundary = 0f;
 				if (isInternal)
 				{
+					if (count == 0) count = 1;
 					p.Felsic = f / count;
 					p.Mafic = m / count;
 					p.age = age / count;

@@ -164,14 +164,17 @@ public partial class WorldGrid
 			}
 		});
 
+
 		for (int i = 0; i < width; i++)
 		{
 			for (int j = 0; j < height; j++)
 			{
 				//todo: look over , see what i can move out of here to be done in parallel
-				ApplyCellResults(i,j, results[i,j]);
+				ApplyCellResults(i, j, results[i, j]);
 			}
 		}
+
+		
 		
 	}
 
@@ -278,7 +281,10 @@ public partial class WorldGrid
 			cell.MarkAllAsEdgeBoundary(result.IsEdgeBoundary);
 			cell.MarkAllAsBorderingOtherPlate(result.IsBorderingOtherPlate);
 			if (result.RegisterCollisions)
+			{
 				PlateCollision.RegisterCollisions(cell, map);
+			}
+				
 		}
 
 		//mark empty cell neighbours as boundaries
@@ -300,49 +306,108 @@ public partial class WorldGrid
 		int width = grid.GetLength(0);
 		int height = grid.GetLength(1);
 
-		for (int i = 0; i < width; i++)
+		Parallel.For(0, width, i =>
 		{
 			for (int j = 0; j < height; j++)
 			{
 				var cell = grid[i, j];
-				cell.UpdateOpposingForceSums();
-				if (!cell.ContainsCollision && !cell.ContainsBorderingOtherPlate)
+
+				if (!cell.ContainsCollision || cell.PlateIDs.Count < 2)
 					continue;
 
-				Vector2 totalForce = Vector2.Zero;
-				float count = 0.001f;
-				ForEachNeighbor(i, j, (di, dj, otherCell) =>
-				{
-					foreach (var o in otherCell.OpposingForceSums)
-					{
-						totalForce += o.Value;
-						count = count + 1;
-					}
-				}, false);
-
-				totalForce = totalForce / count;
-				
-				//sum
 				foreach (var p in cell.points)
 				{
-					var m = p.mass;
-					if (p.mass <= 0f) m = 1f;
-					float damp = 0.8f; //todo make this stuff a const somewhere
-					var relative = totalForce - p.plate.Velocity;
-					var force = relative * damp * p.mass;
+					if (!p.isActive) continue;
+					var totalForce = Vector2.Zero;
 
-					//todo: handle world wrapping
+					ForEachNeighbor(i, j, (di, dj, otherCell) =>
+					{
+						foreach (var op in otherCell.points)
+						{
+							if (op.plate.ID == p.plate.ID) continue;
+
+							Vector2 dirAway = (p.WorldPos - op.WorldPos).Normalized();
+
+							float repulsionStr = (op.mass / op.plate.totalMass) * 100f;
+							totalForce += dirAway * repulsionStr;
+						}
+
+					}, checkSelf: true);
+
+					var force = totalForce;
+
 					var r = p.WorldPos - p.plate.Center;
-					var tau = r.X * force.Y - r.Y * force.X;
+					var tau = (r.X * force.Y - r.Y * force.X);
 
-					p.plate.sumTorque += tau;
-					p.plate.sumForce += force;
-
+					p.plate.sumTorque += tau * 0.25f;
+					p.plate.sumForce += (force * 1f);
+					p.plate.numForcePts++;
 				}
 			}
-		}
+		});
 	}
-	
+
+	public void Erosion()
+	{
+		int width = grid.GetLength(0);
+		int height = grid.GetLength(1);
+
+
+		//for (int i = 0; i < width; i++)
+		Parallel.For(0, width, i => 
+		{
+			for (int j = 0; j < height; j++)
+			{
+				var cell = grid[i, j];
+
+				if (cell.points.Count == 0) continue;
+				//if (cell.IsEmptyOrInactive()) continue;
+
+				foreach (var p in cell.points)
+				{
+					var neighbors = new List<(PlatePoint otherPoint, float dif)>();
+					//if (!p.isActive) continue;
+					//float fmax = p.Felsic * 0.2f;
+					//float mmax = p.Mafic * 0.2f;
+					float totaldifs = 0f;
+
+					ForEachNeighbor(i, j, (di, dj, otherCell) =>
+					{
+						float dif = float.MaxValue;
+
+						foreach (var o in otherCell.points)
+						{
+							dif = p.height - o.height;
+							
+							if (dif > 0f && dif < float.MaxValue)
+							{
+								neighbors.Add((o, dif));
+								totaldifs += dif;
+							}
+						}
+					}, true);
+
+
+					neighbors.Sort((a, b) => a.dif.CompareTo(b.dif));
+
+					foreach (var (o, dif) in neighbors)
+					{
+						if (p != o)
+						{
+							//float f = (dif / totaldifs) * fmax;
+							//float m = (dif / totaldifs) * mmax;
+
+							float f = p.Felsic * 0.01f * dif;
+							float m = p.Mafic * 0.01f * dif;
+							p.GiveMaterial(o, f, m);
+							//p.CheckIfDestroySelf();
+						}
+					}
+				}
+			}
+		});
+	}
+
 	//Only called on initial world creation, so every gridcell is guranteed to only have 1 platepoint in it
 	public void InitializeBoundaries()
 	{

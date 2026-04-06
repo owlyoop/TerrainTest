@@ -19,6 +19,7 @@ public partial class Plate2D
     public Vector2 Velocity { get; private set; }  //derived from all points
 
 	public Vector2 sumForce;
+	public int numForcePts = 0;
 	public float sumTorque;
 
 	public float angularVelocity;
@@ -40,21 +41,6 @@ public partial class Plate2D
 
 	public Vector2 WorldToLocal(Vector2 worldPos)
 	{
-		//todo: this is ugly. shameful.
-		/*float dx = worldPos.X - origin.X - offset.X;
-		
-		float halfW = map.worldWidth * 0.5f;
-		if (dx > halfW) dx -= map.worldWidth;
-		if (dx < -halfW) dx += map.worldWidth;
-
-
-		float dy = worldPos.Y - origin.Y - offset.Y;
-
-		halfW = map.worldHeight * 0.5f;
-		if (dy > halfW) dy -= map.worldHeight;
-		if (dy < -halfW) dy += map.worldHeight;
-		return new Vector2(dx, dy).Rotated(-Mathf.DegToRad(rotation));*/
-
 		float x = origin.X + offset.X;
 		float y = origin.Y + offset.Y;
 
@@ -141,6 +127,20 @@ public partial class Plate2D
 		Center = LocalToWorld(Center);
 	}
 
+	public void UpdateCenterOfMass()
+	{
+		Vector2 weightedSum = Vector2.Zero;
+		float total = 0f;
+
+		foreach (var p in points)
+		{
+			weightedSum += p.localPos * p.mass;
+			total += p.mass;
+		}
+
+		Center = LocalToWorld(weightedSum / total);
+	}
+
 	
 	public void CheckForNewPoints()
 	{
@@ -149,12 +149,10 @@ public partial class Plate2D
 			var point = points[i];
 			bool valid = point.OnTimestep();
 			//if (!valid) continue;
-			//if (point.IsEdgeBoundary || point.IsBoundary )
-				point.UpdateTravelStats(0.25f, "area");
+			if (point.IsEdgeBoundary || point.IsBoundary )
+				point.UpdateTravelStats(1f, "area");
 		}
 	}
-
-
 
 	public void MovePlate()
 	{
@@ -225,7 +223,8 @@ public partial class Plate2D
 		if (totalMass <= 0f) totalMass = 1f;
 		if (inertia <= 0f) inertia = 1f;
 
-		var a = sumForce / totalMass;
+		var a = sumForce / numForcePts;
+		a /= totalMass;
 		var alpha = sumTorque / inertia;
 
 		if (!float.IsFinite(a.X) || !float.IsFinite(a.Y) || !float.IsFinite(alpha))
@@ -234,15 +233,14 @@ public partial class Plate2D
 			sumTorque = 0f;
 			return;
 		}
-
-		Velocity += a;
-		Velocity.LimitLength(2f);
-		angularVelocity += alpha;
-		angularVelocity = Mathf.Clamp(angularVelocity, -5f, 5f);
+		Velocity += a * 0.96f;
+		Velocity = Velocity.LimitLength(1f);
+		angularVelocity += alpha * 0.94f;
+		angularVelocity = Mathf.Clamp(angularVelocity, -1000f / points.Count, 1000f / points.Count);
 
 		sumForce = Vector2.Zero;
 		sumTorque = 0f;
-
+		numForcePts = 0;
 	}
 	
 	public void InitializeCenter()
@@ -251,6 +249,7 @@ public partial class Plate2D
 
 		foreach (var p in points)
 			_localCenterSum += p.localPos;
-		UpdateCenter();
+		UpdateCenterOfMass();
 	}
+
 }

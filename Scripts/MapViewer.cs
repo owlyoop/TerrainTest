@@ -16,7 +16,7 @@ public partial class MapViewer : Node2D
 		Buoyancy,
 
 	}
-	MapMode _mapMode;
+	public MapMode mapMode;
 	#region Map Mode Flags
 	bool _showSeaLevel;
 	bool _showCollisions;
@@ -81,14 +81,10 @@ public partial class MapViewer : Node2D
 	Cell2D[,] cells;
 
 	Image img;
-	float[,] avgHeights;
-	int[,] counts;
 
 	float[,,] values;
 	float[,,] weights;
 	float[,,] final;
-
-	float[,,] compimg;
 
 	[Signal]
 	public delegate void CellSelectedEventHandler(Cell2D cell);
@@ -136,15 +132,13 @@ public partial class MapViewer : Node2D
 		OnCameraZoom();
 		
 
-		avgHeights = new float[map.worldWidth, map.worldHeight];
-		counts = new int[map.worldWidth, map.worldHeight];
 
 		map.OnTimestepCompleted += DrawSelectedPlateOverlay;
 		ui.PlateSelectionChanged += OnPlateSelectionChanged;
 
 
 
-		_mapMode = MapMode.Elevation;
+		mapMode = MapMode.Elevation;
 		
 	}
 
@@ -161,7 +155,6 @@ public partial class MapViewer : Node2D
 		values = new float[numPlates, width, height];
 		weights = new float[numPlates, width, height];
 		final = new float[numPlates, width, height];
-		compimg = new float[numPlates, width, height];
 
 		GenerateCells(width, height);
 		CreateMesh();
@@ -464,6 +457,7 @@ public partial class MapViewer : Node2D
 		return img;
 	}
 
+	//Bilinear
 	void DisplayPlatesSmoothed()
 	{
 		int width = cells.GetLength(0);
@@ -474,7 +468,6 @@ public partial class MapViewer : Node2D
 		values = new float[numPlates, width, height];
 		weights = new float[numPlates, width, height];
 		final = new float[numPlates, width, height];
-		compimg = new float[numPlates, width, height];
 
 		void AddWeight(int p, int x, int y, float value, float weight)
 		{
@@ -484,6 +477,7 @@ public partial class MapViewer : Node2D
 			y = y % height;
 			if (y < 0) y += height;
 			values[p, x, y] += value * weight;
+
 			weights[p, x, y] += weight;
 		}
 
@@ -494,9 +488,8 @@ public partial class MapViewer : Node2D
 			foreach(var p in plate.points)
 			{
 				float val = GetPixelValue(p);
-
-				float cx = p.WorldPos.X - 0.5f;
-				float cy = p.WorldPos.Y - 0.5f;
+				float cx = p.WorldPos.X;
+				float cy = p.WorldPos.Y;
 				int x0 = Mathf.FloorToInt(cx);
 				int y0 = Mathf.FloorToInt(cy);
 				float tx = cx - x0;
@@ -522,16 +515,6 @@ public partial class MapViewer : Node2D
 					else final[plateIdx, x, y] = 0;
 				}
 			}
-
-			for (int x = 0; x < width; x++)
-			{
-				for (int y = 0; y < height; y++)
-				{
-					float v = Bilinear(final, plateIdx, x + 0.5f, y + 0.5f);
-					v = Mathf.Clamp(v, 0f, 1f);
-					compimg[plateIdx, x, y] = v;
-				}
-			}
 		});
 
 		Parallel.For(0, width, x =>
@@ -539,60 +522,47 @@ public partial class MapViewer : Node2D
 			for (int y = 0; y < height; y++)
 			{
 				float val = 0f;
-				for (int p = 0; p < compimg.GetLength(0); p++)
+				float totalWeight = 0f;
+				for (int p = 0; p < final.GetLength(0); p++)
 				{
-					val += compimg[p, x, y];
+					float plateWeight = weights[p, x, y];
+					if (plateWeight > 0)
+					{
+						val += final[p, x, y] * plateWeight;
+						totalWeight += plateWeight;
+					}
+
 				}
+
+				if (totalWeight > 0)
+					val /= totalWeight;
+
 				SetPixelWorld(x, y, GetPixelColor(val));
 			}
 		});
 	}
 
-	float Bilinear(float[,,] field, int plate, float x, float y)
-	{
-		int width = field.GetLength(1);
-		int height = field.GetLength(2);
-
-		int x0 = Mathf.FloorToInt(x);
-		int y0 = Mathf.FloorToInt(y);
-		int x1 = x0 + 1;
-		int y1 = y0 + 1;
-
-		float tx = x - x0;
-		float ty = y - y0;
-
-		x0 = x0 % width;
-		x1 = x1 % width;
-		y0 = y0 % height;
-		y1 = y1 % height;
-
-		float v00 = field[plate, x0, y0];
-		float v10 = field[plate, x1, y0];
-		float v01 = field[plate, x0, y1];
-		float v11 = field[plate, x1, y1];
-
-		float a = Mathf.Lerp(v00, v10, tx);
-		float b = Mathf.Lerp(v01, v11, tx);
-		return Mathf.Lerp(a, b, ty);
-	}
-
 	float GetPixelValue(PlatePoint point)
 	{
 		float val = 0f;
-		switch (_mapMode)
+		switch (mapMode)
 		{
 			case MapMode.Elevation:
-				val = Mathf.Remap(point.height, 0f, 10f, 0f, 1f);
+				val = Mathf.Remap(point.height, 0f, 1f, 0f, 1f);
 				val = Mathf.Clamp(val, 0f, 1f);
 				break;
 
 			case MapMode.Age:
+				val = Mathf.Remap(point.age, 0f, 900f, 0f, 1f);
+				val = Mathf.Clamp(val, 0f, 1f);
 				break;
 
 			case MapMode.Density:
+				val = Mathf.Remap(point.density, 2500f, 3000f, 0f, 1f);
 				break;
 
 			case MapMode.Buoyancy:
+				val = Mathf.Remap(point.buoyancy, 0.1f, 0.4f, 0f, 1f);
 				break;
 
 			default:
@@ -606,13 +576,11 @@ public partial class MapViewer : Node2D
 	{
 		Color col = Colors.White;
 		
-		switch (_mapMode)
+		switch (mapMode)
 		{
 			case MapMode.Elevation:
-				if (value >= 0.5f)
-					col = ElevationGradient.Sample((value - 0.5f) * 2f);
-				else col = OceanGradient.Sample(value * 2f);
-					break;
+				col = ElevationGradient.Sample(value);
+				break;
 
 			case MapMode.Age:
 				col = AgeGradient.Sample(value);

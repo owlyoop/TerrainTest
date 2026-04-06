@@ -31,6 +31,7 @@ public partial class WorldMap : Node
 
 	[ExportCategory("World Simulation")]
 	[Export] public float Timescale = 0.1f; // how much is added to age per timestep;
+	[Export] public bool IsRunning = true;
 
 	int timestep = 1;
 	public event Action<int> OnTimestepCompleted;
@@ -78,6 +79,8 @@ public partial class WorldMap : Node
 	//Main Tectonic Plate Loop
 	public void Timestep()
     {
+		PlateCollision.ClearGradientCache();
+
 		var start = Time.GetTicksUsec();
 		//move all tect plates
 		for (int i = 0; i < Plates.Count; i++)
@@ -95,25 +98,17 @@ public partial class WorldMap : Node
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for updatepoints: ", workertime);
 
-
-
-
 		//check for collisions
 		start = Time.GetTicksUsec();
-		//todo: reset plate sumforce sumtorque
-
 		worldGrid.UpdateForces();
-
 		end = Time.GetTicksUsec();
 		workertime = (end - start) / 1000f;
 		GD.Print("Work time for forces: ", workertime);
 
 
-		/*for (int i = 0; i < Plates.Count; i++)
-		{
-			Plates[i].CheckForNewPoints();
-			Plates[i].UpdateVelocity();
-		}*/
+
+
+		start = Time.GetTicksUsec();
 		for (int i = 0; i < Plates.Count; i++)
 		{
 			Plates[i].CheckForNewPoints();
@@ -124,8 +119,17 @@ public partial class WorldMap : Node
 				Plates[i].points[p].CheckIfDestroySelf();
 			}
 		};
+		end = Time.GetTicksUsec();
+		workertime = (end - start) / 1000f;
+		GD.Print("Work time for misc: ", workertime);
 
-		Plates[timestep % (Plates.Count - 1)].UpdateCenterSlow();
+		start = Time.GetTicksUsec();
+		worldGrid.Erosion();
+		end = Time.GetTicksUsec();
+		workertime = (end - start) / 1000f;
+		GD.Print("Work time for erosion: ", workertime);
+
+		Plates[timestep % (Plates.Count - 1)].UpdateCenterOfMass();
 
 		mapViewer.DisplayMap();
 
@@ -174,13 +178,15 @@ public partial class WorldMap : Node
 				float mw = 1f - fw;
 				float mag = Mathf.Abs(a);
 
-				float felsic = fw * mag * 100000f;
-				float mafic = mw * mag * 100000f;
+				float felsic = fw * mag * 10000f;
+				float mafic = mw * mag * 10000f;
 
 
-				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), felsic, mafic);
-				//pt.age = MathF.Abs(mw) * 100f;
-				pt.age = 0f;
+				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), 
+					felsic + (felsic * (closestPlate.ID * 0.1f)), 
+					mafic + (mafic * (closestPlate.ID * 0.1f)));
+				pt.age = MathF.Abs(fw) * 20f;
+				//pt.age = 0f;
 			}
 		}
 	}
@@ -199,5 +205,20 @@ public partial class WorldMap : Node
 		return Mathf.Sqrt(dx * dx + dy * dy);
 	}
 
+	public Vector2 WrappedDelta(Vector2 from, Vector2 to)
+	{
+		float dx = to.X - from.X;
+		float dy = to.Y - from.Y;
 
+		float halfW = worldWidth * 0.5f;
+		float halfH = worldHeight * 0.5f;
+
+		if (dx > halfW) dx -= worldWidth;
+		else if (dx < -halfW) dx += worldWidth;
+
+		if (dy > halfH) dy -= worldHeight;
+		else if (dy < -halfH) dy += worldHeight;
+
+		return new Vector2(dx, dy);
+	}
 }

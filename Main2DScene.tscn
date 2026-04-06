@@ -1,14 +1,17 @@
-[gd_scene load_steps=6 format=3 uid="uid://blfe0oll6l5dr"]
+[gd_scene load_steps=9 format=3 uid="uid://blfe0oll6l5dr"]
 
 [ext_resource type="Script" uid="uid://b3bcj68jin6be" path="res://Scripts/UIController.cs" id="1_sqjgc"]
 [ext_resource type="PackedScene" uid="uid://bei2owprqu720" path="res://2dplatesim.tscn" id="2_kghc8"]
 [ext_resource type="Gradient" uid="uid://dtqb6frkoi1ox" path="res://Resources/OceanGradient.tres" id="3_lqarn"]
 [ext_resource type="PackedScene" uid="uid://c4jq2tya12i5w" path="res://Prefabs/checkbox_item.tscn" id="3_nb44r"]
-[ext_resource type="Gradient" uid="uid://bnbfbj1l3et6k" path="res://Resources/ElevationGradient.tres" id="4_yn7b7"]
+[ext_resource type="Gradient" uid="uid://dl1xl6u2w8vlb" path="res://Resources/ElevationGradient2.tres" id="4_nb44r"]
+[ext_resource type="Gradient" uid="uid://bqxnewdl6uity" path="res://Resources/AgeGradient.tres" id="5_lqarn"]
+[ext_resource type="Gradient" uid="uid://dqxdvyuakf5vk" path="res://Resources/ViridisGradient.tres" id="6_hfl72"]
+[ext_resource type="Gradient" uid="uid://dpclto2fk4vha" path="res://Resources/YellowGreenBlueGradient.tres" id="7_op1uj"]
 
 [node name="Node2D" type="Node2D"]
 
-[node name="UIController" type="CanvasLayer" parent="." node_paths=PackedStringArray("TimestepText", "PlateInfoGroup", "CellInfoGroup", "ButtonPlateSelectLeft", "LabelPlateID", "ButtonPlateSelectRight", "LabelPlateCenter", "LabelPlateVelocity", "LabelPlateRotation", "LabelPlateAngVel", "LabelNumPlatePts", "LabelCellCoords", "LabelCellNumPlatePts", "LabelCellUniquePlates", "LabelHasCollision", "LabelCollisionType", "ButtonPlatePtSelectLeft", "ButtonPlatePtSelectRight", "LabelFelsic", "LabelMafic", "LabelAge", "LabelMass", "LabelThickness", "LabelDensity", "LabelBuoyancy", "LabelHeight", "MapButtonElevation", "MapButtonAge", "mapview", "cam", "map")]
+[node name="UIController" type="CanvasLayer" parent="." node_paths=PackedStringArray("TimestepText", "PlateInfoGroup", "CellInfoGroup", "ButtonPlateSelectLeft", "LabelPlateID", "ButtonPlateSelectRight", "LabelPlateCenter", "LabelPlateVelocity", "LabelPlateRotation", "LabelPlateAngVel", "LabelNumPlatePts", "LabelCellCoords", "LabelCellNumPlatePts", "LabelCellUniquePlates", "LabelHasCollision", "LabelCollisionType", "LabelCellAvgHeight", "ButtonPlatePtSelectLeft", "ButtonPlatePtSelectRight", "LabelFelsic", "LabelMafic", "LabelAge", "LabelMass", "LabelThickness", "LabelDensity", "LabelBuoyancy", "LabelHeight", "MapButtonElevation", "MapButtonAge", "mapview", "cam", "map")]
 script = ExtResource("1_sqjgc")
 TimestepText = NodePath("Top bar/Timestep Value")
 PlateInfoGroup = NodePath("Plate Info UI")
@@ -26,6 +29,7 @@ LabelCellNumPlatePts = NodePath("Cell Info UI/Value_NumPlatePts")
 LabelCellUniquePlates = NodePath("Cell Info UI/Value_UniquePlates")
 LabelHasCollision = NodePath("Cell Info UI/Value_HasCollision")
 LabelCollisionType = NodePath("Cell Info UI/Value_CollisionType")
+LabelCellAvgHeight = NodePath("Cell Info UI/Value_AvgHeight")
 ButtonPlatePtSelectLeft = NodePath("PlatePoint Info UI/Plate # Selector/Button_Left")
 ButtonPlatePtSelectRight = NodePath("PlatePoint Info UI/Plate # Selector/Button_Right")
 LabelFelsic = NodePath("PlatePoint Info UI/Value_Felsic")
@@ -64,8 +68,14 @@ render_target_update_mode = 4
 OverlayPlatePtVelocity = false
 DebugCollisionSubductionColor = Color(0.2132, 0.32057998, 0.52, 1)
 OceanGradient = ExtResource("3_lqarn")
-ElevationGradient = ExtResource("4_yn7b7")
+ElevationGradient = ExtResource("4_nb44r")
+AgeGradient = ExtResource("5_lqarn")
+DensityGradient = ExtResource("6_hfl72")
+BuoyancyGradient = ExtResource("7_op1uj")
 ui = NodePath("../../../..")
+
+[node name="VoronoiMap" parent="UIController/SubViewportContainer/SubViewport/2Dplatesim" index="4"]
+numSites = 7
 
 [node name="Plate Info UI" type="Control" parent="UIController"]
 layout_mode = 3
@@ -282,6 +292,15 @@ offset_bottom = 120.0
 text = "Orogenic"
 horizontal_alignment = 2
 
+[node name="Value_AvgHeight" type="Label" parent="UIController/Cell Info UI"]
+layout_mode = 0
+offset_left = 152.0
+offset_top = 120.0
+offset_right = 240.0
+offset_bottom = 144.0
+text = "99"
+horizontal_alignment = 2
+
 [node name="Labels" type="Control" parent="UIController/Cell Info UI"]
 anchors_preset = 0
 offset_right = 40.0
@@ -321,11 +340,18 @@ offset_right = 122.0
 offset_bottom = 120.0
 text = "Collision Type:"
 
+[node name="Label_AvgHeight" type="Label" parent="UIController/Cell Info UI/Labels"]
+layout_mode = 0
+offset_top = 120.0
+offset_right = 122.0
+offset_bottom = 144.0
+text = "Avg Height:"
+
 [node name="PlatePoint Info UI" type="Control" parent="UIController"]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 912.0
-offset_top = 344.0
+offset_top = 404.0
 offset_right = 1136.0
 offset_bottom = 648.0
 
@@ -618,10 +644,32 @@ offset_right = 112.0
 offset_bottom = 71.0
 text = "Age"
 
+[node name="Button_Density" type="Button" parent="UIController/Map Mode UI"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 80.0
+offset_right = 112.0
+offset_bottom = 111.0
+text = "Density"
+
+[node name="Button_Buyoancy" type="Button" parent="UIController/Map Mode UI"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 120.0
+offset_right = 112.0
+offset_bottom = 151.0
+text = "Buyoancy"
+
 [connection signal="pressed" from="UIController/Plate Info UI/Plate # Selector/Button_Left" to="UIController" method="OnPlateButtonLeftPressed"]
 [connection signal="pressed" from="UIController/Plate Info UI/Plate # Selector/Button_Right" to="UIController" method="OnPlateButtonRightPressed"]
 [connection signal="pressed" from="UIController/PlatePoint Info UI/Plate # Selector/Button_Left" to="UIController" method="OnPlatePtButtonLeftPressed"]
 [connection signal="pressed" from="UIController/PlatePoint Info UI/Plate # Selector/Button_Right" to="UIController" method="OnPlatePtButtonRightPressed"]
+[connection signal="pressed" from="UIController/Top bar/Play Button" to="UIController" method="OnPlayButtonPressed"]
+[connection signal="pressed" from="UIController/Top bar/Pause Button" to="UIController" method="OnPauseButtonPressed"]
+[connection signal="pressed" from="UIController/Map Mode UI/Button_Elevation" to="UIController" method="OnMapmodeElevationButtonPressed"]
+[connection signal="pressed" from="UIController/Map Mode UI/Button_Age" to="UIController" method="OnMapmodeAgeButtonPressed"]
+[connection signal="pressed" from="UIController/Map Mode UI/Button_Density" to="UIController" method="OnMapmodeDensityButtonPressed"]
+[connection signal="pressed" from="UIController/Map Mode UI/Button_Buyoancy" to="UIController" method="OnMapmodeBuyoancyButtonPressed"]
 
 [editable path="UIController/SubViewportContainer/SubViewport/2Dplatesim"]
 [editable path="UIController/Map overlay checkboxs/Checkbox Item"]

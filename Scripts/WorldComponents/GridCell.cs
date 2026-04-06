@@ -46,25 +46,31 @@ public class GridCell
 	{
 		OpposingForceSums.Clear();
 		OpposingMassSums.Clear();
+
 		foreach (var p in points)
 		{
 			if (!p.isActive) continue;
-			//if (!p.IsColliding && !p.IsBorderingOtherPlate) continue;
+			if (!p.IsColliding && !p.IsBorderingOtherPlate) continue;
+
 			int id = p.plate.ID;
 			var mass = p.mass;
-			if (p.mass <= 0f) mass = 1f;
-			var v = p.plate.Velocity;
+			if (mass <= 0f) mass = 1f;
+
 			if (!OpposingForceSums.ContainsKey(id))
 			{
 				OpposingForceSums[id] = Vector2.Zero;
 				OpposingMassSums[id] = 0f;
 			}
-
-			OpposingForceSums[id] += v * mass;
+			OpposingForceSums[id] += p.plate.Velocity * p.mass;
 			OpposingMassSums[id] += mass;
+
 		}
+
 		foreach (var plate in OpposingForceSums.Keys)
+		{
 			OpposingForceSums[plate] /= OpposingMassSums[plate];
+		}
+			
 	}
 
 	public bool IsEmptyOrInactive()
@@ -94,10 +100,22 @@ public class GridCell
 		points.Add(point);
 		PlateIDs.Add(point.plate.ID);
 		var num = GetNumberOfSamePlate(point);
-		if (num >= 3)
+		if (num >= 4)
 		{
 			Consolidate(point, true);
 		}
+
+		if (PlateIDs.Count >= 2)
+		{
+			//TransferMatDifPlates();
+			MergeToDensest();
+		}
+		else if (PlateIDs.Count >= 2)
+		{
+			//TransferMatDifPlates();
+			//MergeToDensePlate();
+		}
+			
 	}
 
 	public void RemovePoint(PlatePoint point)
@@ -201,7 +219,7 @@ public class GridCell
 		int count = 0;
 		float f = 0;
 		float m = 0;
-		float age = 0;
+		float age = 0.0001f;
 		bool newPtShouldBeActive = false;
 		for (int i = points.Count - 1; i >= 0; i--)
 		{
@@ -214,11 +232,12 @@ public class GridCell
 				f += points[i].Felsic;
 				m += points[i].Mafic;
 				age += points[i].age;
+				points[i].Felsic = 0f;
+				points[i].Mafic = 0f;
 				plate.RemovePoint(points[i]);
 				points.Remove(points[i]);
 			}
 		}
-		//newpos /= count;
 		f /= count;
 		m /= count;
 		age /= count;
@@ -237,4 +256,104 @@ public class GridCell
 		p.gridIndex = point.gridIndex;
 		points.Add(p);
 	}
+
+	public void MergeToDensest()
+	{
+		if (points.Count < 2 || PlateIDs.Count < 2) return;
+
+		var plate = points[0].plate;
+		float maxDensity = 0f;
+		float felsic = 0f;
+		float mafic = 0f;
+		float age = 0;
+		int count = 0;
+		PlatePoint best = null;
+		foreach (var pt in points)
+		{
+			if (!pt.isActive) continue;
+			felsic += pt.Felsic;
+			mafic += pt.Mafic;
+			age += pt.age;
+			count++;
+			if (pt.density > maxDensity)
+			{
+				plate = pt.plate;
+				maxDensity = pt.density;
+				best = pt;
+			}
+		}
+
+		for (int i = points.Count - 1; i >= 0; i--)
+		{
+			points[i].RemoveMaterial(float.MaxValue, float.MaxValue);
+			points[i].plate.RemovePoint(points[i]);
+			points.Remove(points[i]);
+		}
+		if (count == 0) count = 1;
+		//felsic *= 0.999f;
+		//mafic *= 0.999f;
+		age /= count;
+		var newpos = new Vector2(this.x + 0.5f, this.y + 0.5f);
+		var p = new PlatePoint(plate.WorldToLocal(newpos), felsic, mafic, plate);
+		p.age = age;
+		p.PhysicalProperties();
+		p.isActive = true;
+		p.gridIndex = new Vector2I(x, y);
+		plate.points.Add(p);
+		points.Add(p);
+		PlateIDs.Clear();
+		PlateIDs.Add(p.plate.ID);
+	}
+
+	public void TransferMatDifPlates()
+	{
+		if (points.Count < 2 && PlateIDs.Count < 2) return;
+
+		var plate = points[0].plate;
+		float bestDensity = 0;
+		float felsic = 0f;
+		float mafic = 0f;
+		float age = 1;
+		int count = 0;
+		PlatePoint best = null;
+		foreach (var pt in points)
+		{
+			if (!pt.isActive) continue;
+			felsic += pt.Felsic;
+			mafic += pt.Mafic;
+			age += pt.age;
+			count++;
+			if (pt.plate.totalMass > bestDensity)
+			{
+				plate = pt.plate;
+				bestDensity = pt.plate.totalMass;
+				best = pt;
+			}
+		}
+
+		if (count == 0) count = 1;
+
+		for (int i = points.Count - 1; i >= 0; i--)
+		{
+			var point = points[i];
+			if (best == null) continue;
+			if (point == best) continue;
+			if (!point.isActive) continue;
+
+			float f = point.Felsic * 1f;
+			float m = point.Mafic * 1f;
+
+			point.GiveMaterial(best, f, m);
+			point.CheckIfDestroySelf();
+		}
+		if (best != null)
+		{
+			best.Felsic *= 0.99f;
+			best.Mafic *= 0.99f;
+			//best.PhysicalProperties();
+		}
+		
+
+	}
+
 }
