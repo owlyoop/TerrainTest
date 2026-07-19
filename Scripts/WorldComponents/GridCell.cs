@@ -22,7 +22,7 @@ public class GridCell
 	public bool HasCollisionChecked { get; private set; }   //Used for the update functions that check for collisions/boundaries to avoid repeated checks.
 
 
-	public PlateCollisionType collisionType;
+	//public PlateCollisionType collisionType;
 
 	public Dictionary<int, Vector2> OpposingForceSums = new Dictionary<int, Vector2>();
 	public Dictionary<int, float> OpposingMassSums = new Dictionary<int, float>();
@@ -35,7 +35,7 @@ public class GridCell
 		ContainsCollision = false;
 		ContainsEdgeBoundary = false;
 		ContainsBorderingOtherPlate = false;
-		collisionType = PlateCollisionType.None;
+		//collisionType = PlateCollisionType.None;
 		HasCollisionChecked = false;
 		this.x = x;
 		this.y = y;
@@ -144,7 +144,7 @@ public class GridCell
 		this.ContainsBoundary = false;
 		this.ContainsEdgeBoundary = false;
 		this.ContainsBorderingOtherPlate = false;
-		this.collisionType = PlateCollisionType.None;
+		//this.collisionType = PlateCollisionType.None;
 		foreach (var p in points)
 		{
 			p.MarkPointAsColliding(false);
@@ -252,7 +252,8 @@ public class GridCell
 		p.age = age;
 		p.PhysicalProperties();
 		p.isActive = newPtShouldBeActive;
-		plate.points.Add(p);
+		//plate.points.Add(p);
+		plate.AddDirect(p);
 		p.gridIndex = point.gridIndex;
 		points.Add(p);
 	}
@@ -262,20 +263,24 @@ public class GridCell
 		if (points.Count < 2 || PlateIDs.Count < 2) return;
 
 		var plate = points[0].plate;
-		float maxDensity = 0f;
+		float maxDensity = float.MaxValue;
 		float felsic = 0f;
 		float mafic = 0f;
 		float age = 0;
+		float maxage = 0;
 		int count = 0;
 		PlatePoint best = null;
+
 		foreach (var pt in points)
 		{
 			if (!pt.isActive) continue;
 			felsic += pt.Felsic;
 			mafic += pt.Mafic;
 			age += pt.age;
+			if (pt.age > maxage)
+				maxage = pt.age;
 			count++;
-			if (pt.density > maxDensity)
+			if (pt.density < maxDensity)
 			{
 				plate = pt.plate;
 				maxDensity = pt.density;
@@ -290,16 +295,20 @@ public class GridCell
 			points.Remove(points[i]);
 		}
 		if (count == 0) count = 1;
-		//felsic *= 0.999f;
-		//mafic *= 0.999f;
-		age /= count;
+		//felsic *= 0.99f;
+		//mafic *= 0.99f;
+		if (felsic > 100000) felsic = 100000;
+		if (mafic > 100000) mafic = 100000;
+		//age /= count;
+		age = maxage;
 		var newpos = new Vector2(this.x + 0.5f, this.y + 0.5f);
 		var p = new PlatePoint(plate.WorldToLocal(newpos), felsic, mafic, plate);
 		p.age = age;
 		p.PhysicalProperties();
 		p.isActive = true;
 		p.gridIndex = new Vector2I(x, y);
-		plate.points.Add(p);
+		//plate.points.Add(p);
+		plate.AddDirect(p);
 		points.Add(p);
 		PlateIDs.Clear();
 		PlateIDs.Add(p.plate.ID);
@@ -340,14 +349,16 @@ public class GridCell
 			if (point == best) continue;
 			if (!point.isActive) continue;
 
-			float f = point.Felsic * 1f;
-			float m = point.Mafic * 1f;
+			float f = point.Felsic * 0.98f;
+			float m = point.Mafic * 0.98f;
 
-			point.GiveMaterial(best, f, m);
+			point.GiveMaterial(best, f + 100f, m + 100f);
 			point.CheckIfDestroySelf();
 		}
 		if (best != null)
 		{
+			//best.Felsic /= count;
+			//best.Mafic /= count;
 			best.Felsic *= 0.99f;
 			best.Mafic *= 0.99f;
 			//best.PhysicalProperties();

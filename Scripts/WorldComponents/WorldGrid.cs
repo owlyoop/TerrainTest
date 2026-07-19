@@ -273,7 +273,7 @@ public partial class WorldGrid
 			cell.MarkAsEmpty();
 
 		//collision register
-		cell.collisionType = PlateCollisionType.None;
+		//cell.collisionType = PlateCollisionType.None;
 		if (!cell.IsEmptyOrInactive())
 		{
 			cell.MarkAllAsColliding(result.IsCollision);
@@ -282,7 +282,7 @@ public partial class WorldGrid
 			cell.MarkAllAsBorderingOtherPlate(result.IsBorderingOtherPlate);
 			if (result.RegisterCollisions)
 			{
-				PlateCollision.RegisterCollisions(cell, map);
+				//PlateCollision.RegisterCollisions(cell, map);
 			}
 				
 		}
@@ -312,8 +312,8 @@ public partial class WorldGrid
 			{
 				var cell = grid[i, j];
 
-				if (!cell.ContainsCollision || cell.PlateIDs.Count < 2)
-					continue;
+				//if (!cell.ContainsCollision || cell.PlateIDs.Count < 2)
+				//	continue;
 
 				foreach (var p in cell.points)
 				{
@@ -328,7 +328,7 @@ public partial class WorldGrid
 
 							Vector2 dirAway = (p.WorldPos - op.WorldPos).Normalized();
 
-							float repulsionStr = (op.mass / op.plate.totalMass) * 100f;
+							float repulsionStr = (op.mass) * 1f;
 							totalForce += dirAway * repulsionStr;
 						}
 
@@ -339,8 +339,8 @@ public partial class WorldGrid
 					var r = p.WorldPos - p.plate.Center;
 					var tau = (r.X * force.Y - r.Y * force.X);
 
-					p.plate.sumTorque += tau * 0.25f;
-					p.plate.sumForce += (force * 1f);
+					p.plate.sumTorque += tau * 1f;// * totalForce.LengthSquared();
+					p.plate.sumForce += (force);
 					p.plate.numForcePts++;
 				}
 			}
@@ -385,22 +385,24 @@ public partial class WorldGrid
 								totaldifs += dif;
 							}
 						}
-					}, true);
+					}, false);
 
 
 					neighbors.Sort((a, b) => a.dif.CompareTo(b.dif));
 
+					int iter = 1;
 					foreach (var (o, dif) in neighbors)
 					{
-						if (p != o)
+						if (p != o && dif > 1f)
 						{
 							//float f = (dif / totaldifs) * fmax;
 							//float m = (dif / totaldifs) * mmax;
 
-							float f = p.Felsic * 0.01f * dif;
-							float m = p.Mafic * 0.01f * dif;
+							float f = p.Felsic * 0.005f * (1 + dif);
+							float m = p.Mafic * 0.005f * (1 + dif);
 							p.GiveMaterial(o, f, m);
 							//p.CheckIfDestroySelf();
+							iter++;
 						}
 					}
 				}

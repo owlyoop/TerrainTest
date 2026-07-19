@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://blfe0oll6l5dr"]
+[gd_scene format=3 uid="uid://blfe0oll6l5dr"]
 
 [ext_resource type="Script" uid="uid://b3bcj68jin6be" path="res://Scripts/UIController.cs" id="1_sqjgc"]
 [ext_resource type="PackedScene" uid="uid://bei2owprqu720" path="res://2dplatesim.tscn" id="2_kghc8"]
@@ -9,9 +9,9 @@
 [ext_resource type="Gradient" uid="uid://dqxdvyuakf5vk" path="res://Resources/ViridisGradient.tres" id="6_hfl72"]
 [ext_resource type="Gradient" uid="uid://dpclto2fk4vha" path="res://Resources/YellowGreenBlueGradient.tres" id="7_op1uj"]
 
-[node name="Node2D" type="Node2D"]
+[node name="Node2D" type="Node2D" unique_id=397752632]
 
-[node name="UIController" type="CanvasLayer" parent="." node_paths=PackedStringArray("TimestepText", "PlateInfoGroup", "CellInfoGroup", "ButtonPlateSelectLeft", "LabelPlateID", "ButtonPlateSelectRight", "LabelPlateCenter", "LabelPlateVelocity", "LabelPlateRotation", "LabelPlateAngVel", "LabelNumPlatePts", "LabelCellCoords", "LabelCellNumPlatePts", "LabelCellUniquePlates", "LabelHasCollision", "LabelCollisionType", "LabelCellAvgHeight", "ButtonPlatePtSelectLeft", "ButtonPlatePtSelectRight", "LabelFelsic", "LabelMafic", "LabelAge", "LabelMass", "LabelThickness", "LabelDensity", "LabelBuoyancy", "LabelHeight", "MapButtonElevation", "MapButtonAge", "mapview", "cam", "map")]
+[node name="UIController" type="CanvasLayer" parent="." unique_id=1992943113 node_paths=PackedStringArray("TimestepText", "PlateInfoGroup", "CellInfoGroup", "ButtonPlateSelectLeft", "LabelPlateID", "ButtonPlateSelectRight", "LabelPlateCenter", "LabelPlateVelocity", "LabelPlateRotation", "LabelPlateAngVel", "LabelNumPlatePts", "LabelCellCoords", "LabelCellNumPlatePts", "LabelCellUniquePlates", "LabelHasCollision", "LabelCollisionType", "LabelCellAvgHeight", "ButtonPlatePtSelectLeft", "ButtonPlatePtSelectRight", "LabelFelsic", "LabelMafic", "LabelAge", "LabelMass", "LabelThickness", "LabelDensity", "LabelBuoyancy", "LabelHeight", "MapButtonElevation", "MapButtonAge", "mapview", "cam", "map")]
 script = ExtResource("1_sqjgc")
 TimestepText = NodePath("Top bar/Timestep Value")
 PlateInfoGroup = NodePath("Plate Info UI")
@@ -46,23 +46,23 @@ mapview = NodePath("SubViewportContainer/SubViewport/2Dplatesim/MapViewer")
 cam = NodePath("SubViewportContainer/SubViewport/2Dplatesim/CameraController/Camera2D")
 map = NodePath("SubViewportContainer/SubViewport/2Dplatesim/WorldMap")
 
-[node name="bg panel" type="Panel" parent="UIController"]
+[node name="bg panel" type="Panel" parent="UIController" unique_id=2080034801]
 offset_right = 1152.0
 offset_bottom = 648.0
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="UIController"]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="UIController" unique_id=1946193425]
 offset_left = 128.0
 offset_top = 64.0
 offset_right = 896.0
 offset_bottom = 576.0
 
-[node name="SubViewport" type="SubViewport" parent="UIController/SubViewportContainer"]
+[node name="SubViewport" type="SubViewport" parent="UIController/SubViewportContainer" unique_id=2130157551]
 disable_3d = true
 handle_input_locally = false
 size = Vector2i(768, 512)
 render_target_update_mode = 4
 
-[node name="2Dplatesim" parent="UIController/SubViewportContainer/SubViewport" instance=ExtResource("2_kghc8")]
+[node name="2Dplatesim" parent="UIController/SubViewportContainer/SubViewport" unique_id=562377810 instance=ExtResource("2_kghc8")]
 
 [node name="MapViewer" parent="UIController/SubViewportContainer/SubViewport/2Dplatesim" index="0" node_paths=PackedStringArray("ui")]
 OverlayPlatePtVelocity = false
@@ -75,21 +75,21 @@ BuoyancyGradient = ExtResource("7_op1uj")
 ui = NodePath("../../../..")
 
 [node name="VoronoiMap" parent="UIController/SubViewportContainer/SubViewport/2Dplatesim" index="4"]
-numSites = 7
+numSites = 8
 
-[node name="Plate Info UI" type="Control" parent="UIController"]
+[node name="Plate Info UI" type="Control" parent="UIController" unique_id=803107968]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 896.0
 offset_right = 1152.0
 offset_bottom = 192.0
 
-[node name="Labels" type="Control" parent="UIController/Plate Info UI"]
+[node name="Labels" type="Control" parent="UIController/Plate Info UI" unique_id=565959039]
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="Label_Center" type="Label" parent="UIController/Plate Info UI/Labels"]
+[node name="Label_Center" type="Label" parent="UIController/Plate Info UI/Labels" unique_id=1740442460]
 layout_mode = 0
 offset_left = 32.0
 offset_top = 72.0
@@ -97,7 +97,7 @@ offset_right = 89.0
 offset_bottom = 95.0
 text = "Center:"
 
-[node name="Label_Rotation" type="Label" parent="UIController/Plate Info UI/Labels"]
+[node name="Label_Rotation" type="Label" parent="UIController/Plate Info UI/Labels" unique_id=1007903198]
 layout_mode = 0
 offset_left = 32.0
 offset_top = 96.0
@@ -105,7 +105,7 @@ offset_right = 103.0
 offset_bottom = 119.0
 text = "Rotation:"
 
-[node name="Label_Velocity" type="Label" parent="UIController/Plate Info UI/Labels"]
+[node name="Label_Velocity" type="Label" parent="UIController/Plate Info UI/Labels" unique_id=891799847]
 layout_mode = 0
 offset_left = 32.0
 offset_top = 120.0
@@ -113,7 +113,7 @@ offset_right = 103.0
 offset_bottom = 143.0
 text = "Velocity:"
 
-[node name="Label_AngVelocity" type="Label" parent="UIController/Plate Info UI/Labels"]
+[node name="Label_AngVelocity" type="Label" parent="UIController/Plate Info UI/Labels" unique_id=1891688858]
 layout_mode = 0
 offset_left = 32.0
 offset_top = 144.0
@@ -121,7 +121,7 @@ offset_right = 162.0
 offset_bottom = 167.0
 text = "Angular Velocity:"
 
-[node name="Label_PlatePts" type="Label" parent="UIController/Plate Info UI/Labels"]
+[node name="Label_PlatePts" type="Label" parent="UIController/Plate Info UI/Labels" unique_id=1153754519]
 layout_mode = 0
 offset_left = 32.0
 offset_top = 168.0
@@ -129,14 +129,14 @@ offset_right = 159.0
 offset_bottom = 191.0
 text = "# of Platepoints:"
 
-[node name="Plate # Selector" type="Control" parent="UIController/Plate Info UI"]
+[node name="Plate # Selector" type="Control" parent="UIController/Plate Info UI" unique_id=1934949220]
 anchors_preset = 0
 offset_left = 32.0
 offset_top = 8.0
 offset_right = 224.0
 offset_bottom = 56.0
 
-[node name="Plate Num Label" type="RichTextLabel" parent="UIController/Plate Info UI/Plate # Selector"]
+[node name="Plate Num Label" type="RichTextLabel" parent="UIController/Plate Info UI/Plate # Selector" unique_id=280767375]
 z_index = 5
 layout_mode = 1
 offset_left = -8.0
@@ -147,7 +147,7 @@ text = "Plate #: "
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Button_Left" type="Button" parent="UIController/Plate Info UI/Plate # Selector"]
+[node name="Button_Left" type="Button" parent="UIController/Plate Info UI/Plate # Selector" unique_id=987421225]
 layout_mode = 0
 offset_left = 80.0
 offset_top = 8.0
@@ -155,7 +155,7 @@ offset_right = 104.0
 offset_bottom = 39.0
 text = "<"
 
-[node name="Button_Right" type="Button" parent="UIController/Plate Info UI/Plate # Selector"]
+[node name="Button_Right" type="Button" parent="UIController/Plate Info UI/Plate # Selector" unique_id=1629781108]
 layout_mode = 0
 offset_left = 152.0
 offset_top = 8.0
@@ -163,7 +163,7 @@ offset_right = 176.0
 offset_bottom = 39.0
 text = ">"
 
-[node name="Plate Num Value" type="Label" parent="UIController/Plate Info UI/Plate # Selector"]
+[node name="Plate Num Value" type="Label" parent="UIController/Plate Info UI/Plate # Selector" unique_id=1116069554]
 layout_mode = 0
 offset_left = 104.0
 offset_top = 8.0
@@ -173,7 +173,7 @@ text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Value_Center" type="Label" parent="UIController/Plate Info UI"]
+[node name="Value_Center" type="Label" parent="UIController/Plate Info UI" unique_id=1816616702]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -186,7 +186,7 @@ grow_horizontal = 0
 text = "100,100"
 horizontal_alignment = 2
 
-[node name="Value_Velocity" type="Label" parent="UIController/Plate Info UI"]
+[node name="Value_Velocity" type="Label" parent="UIController/Plate Info UI" unique_id=431169954]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -199,7 +199,7 @@ grow_horizontal = 0
 text = "10"
 horizontal_alignment = 2
 
-[node name="Value_Rotation" type="Label" parent="UIController/Plate Info UI"]
+[node name="Value_Rotation" type="Label" parent="UIController/Plate Info UI" unique_id=1588610281]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -212,7 +212,7 @@ grow_horizontal = 0
 text = "45"
 horizontal_alignment = 2
 
-[node name="Value_AngVelocity" type="Label" parent="UIController/Plate Info UI"]
+[node name="Value_AngVelocity" type="Label" parent="UIController/Plate Info UI" unique_id=1733977761]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -225,7 +225,7 @@ grow_horizontal = 0
 text = "10"
 horizontal_alignment = 2
 
-[node name="Value_PlatePts" type="Label" parent="UIController/Plate Info UI"]
+[node name="Value_PlatePts" type="Label" parent="UIController/Plate Info UI" unique_id=793706251]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -238,7 +238,7 @@ grow_horizontal = 0
 text = "1000"
 horizontal_alignment = 2
 
-[node name="Cell Info UI" type="Control" parent="UIController"]
+[node name="Cell Info UI" type="Control" parent="UIController" unique_id=1583155709]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 904.0
@@ -248,7 +248,7 @@ offset_bottom = 400.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Value_GridcellCoords" type="Label" parent="UIController/Cell Info UI"]
+[node name="Value_GridcellCoords" type="Label" parent="UIController/Cell Info UI" unique_id=323369432]
 layout_mode = 0
 offset_left = 152.0
 offset_right = 240.0
@@ -256,7 +256,7 @@ offset_bottom = 24.0
 text = "100,111"
 horizontal_alignment = 2
 
-[node name="Value_NumPlatePts" type="Label" parent="UIController/Cell Info UI"]
+[node name="Value_NumPlatePts" type="Label" parent="UIController/Cell Info UI" unique_id=1122515117]
 layout_mode = 0
 offset_left = 152.0
 offset_top = 24.0
@@ -265,7 +265,7 @@ offset_bottom = 48.0
 text = "8"
 horizontal_alignment = 2
 
-[node name="Value_UniquePlates" type="Label" parent="UIController/Cell Info UI"]
+[node name="Value_UniquePlates" type="Label" parent="UIController/Cell Info UI" unique_id=1351098749]
 layout_mode = 0
 offset_left = 152.0
 offset_top = 48.0
@@ -274,7 +274,8 @@ offset_bottom = 72.0
 text = "2"
 horizontal_alignment = 2
 
-[node name="Value_HasCollision" type="Label" parent="UIController/Cell Info UI"]
+[node name="Value_HasCollision" type="Label" parent="UIController/Cell Info UI" unique_id=1306382208]
+visible = false
 layout_mode = 0
 offset_left = 152.0
 offset_top = 72.0
@@ -283,7 +284,8 @@ offset_bottom = 96.0
 text = "Yes"
 horizontal_alignment = 2
 
-[node name="Value_CollisionType" type="Label" parent="UIController/Cell Info UI"]
+[node name="Value_CollisionType" type="Label" parent="UIController/Cell Info UI" unique_id=1378767716]
+visible = false
 layout_mode = 0
 offset_left = 152.0
 offset_top = 96.0
@@ -292,7 +294,7 @@ offset_bottom = 120.0
 text = "Orogenic"
 horizontal_alignment = 2
 
-[node name="Value_AvgHeight" type="Label" parent="UIController/Cell Info UI"]
+[node name="Value_AvgHeight" type="Label" parent="UIController/Cell Info UI" unique_id=2093305418]
 layout_mode = 0
 offset_left = 152.0
 offset_top = 120.0
@@ -301,53 +303,55 @@ offset_bottom = 144.0
 text = "99"
 horizontal_alignment = 2
 
-[node name="Labels" type="Control" parent="UIController/Cell Info UI"]
+[node name="Labels" type="Control" parent="UIController/Cell Info UI" unique_id=1851060163]
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="Label_Gridcell_coord" type="Label" parent="UIController/Cell Info UI/Labels"]
+[node name="Label_Gridcell_coord" type="Label" parent="UIController/Cell Info UI/Labels" unique_id=979584788]
 layout_mode = 0
 offset_right = 88.0
 offset_bottom = 24.0
 text = "GridCell:"
 
-[node name="Label_NumPlatePts" type="Label" parent="UIController/Cell Info UI/Labels"]
+[node name="Label_NumPlatePts" type="Label" parent="UIController/Cell Info UI/Labels" unique_id=701369386]
 layout_mode = 0
 offset_top = 24.0
 offset_right = 127.0
 offset_bottom = 48.0
 text = "# of Platepoints:"
 
-[node name="Label_UniquePlates" type="Label" parent="UIController/Cell Info UI/Labels"]
+[node name="Label_UniquePlates" type="Label" parent="UIController/Cell Info UI/Labels" unique_id=413651092]
 layout_mode = 0
 offset_top = 48.0
 offset_right = 122.0
 offset_bottom = 72.0
 text = "Unique Plates:"
 
-[node name="Label_HasCollision" type="Label" parent="UIController/Cell Info UI/Labels"]
+[node name="Label_HasCollision" type="Label" parent="UIController/Cell Info UI/Labels" unique_id=1358164101]
+visible = false
 layout_mode = 0
 offset_top = 72.0
 offset_right = 122.0
 offset_bottom = 96.0
 text = "Collision?"
 
-[node name="Label_CollisionType" type="Label" parent="UIController/Cell Info UI/Labels"]
+[node name="Label_CollisionType" type="Label" parent="UIController/Cell Info UI/Labels" unique_id=1880904517]
+visible = false
 layout_mode = 0
 offset_top = 96.0
 offset_right = 122.0
 offset_bottom = 120.0
 text = "Collision Type:"
 
-[node name="Label_AvgHeight" type="Label" parent="UIController/Cell Info UI/Labels"]
+[node name="Label_AvgHeight" type="Label" parent="UIController/Cell Info UI/Labels" unique_id=909717856]
 layout_mode = 0
 offset_top = 120.0
 offset_right = 122.0
 offset_bottom = 144.0
 text = "Avg Height:"
 
-[node name="PlatePoint Info UI" type="Control" parent="UIController"]
+[node name="PlatePoint Info UI" type="Control" parent="UIController" unique_id=1766709084]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 912.0
@@ -355,13 +359,13 @@ offset_top = 404.0
 offset_right = 1136.0
 offset_bottom = 648.0
 
-[node name="Plate # Selector" type="Control" parent="UIController/PlatePoint Info UI"]
+[node name="Plate # Selector" type="Control" parent="UIController/PlatePoint Info UI" unique_id=1383192456]
 anchors_preset = 0
 offset_left = 16.0
 offset_right = 208.0
 offset_bottom = 40.0
 
-[node name="Plate Num Label" type="RichTextLabel" parent="UIController/PlatePoint Info UI/Plate # Selector"]
+[node name="Plate Num Label" type="RichTextLabel" parent="UIController/PlatePoint Info UI/Plate # Selector" unique_id=472358400]
 z_index = 5
 layout_mode = 1
 offset_left = -8.0
@@ -370,21 +374,21 @@ offset_bottom = 24.0
 text = "PlatePoint: "
 horizontal_alignment = 2
 
-[node name="Button_Left" type="Button" parent="UIController/PlatePoint Info UI/Plate # Selector"]
+[node name="Button_Left" type="Button" parent="UIController/PlatePoint Info UI/Plate # Selector" unique_id=1158345450]
 layout_mode = 0
 offset_left = 104.0
 offset_right = 128.0
 offset_bottom = 31.0
 text = "<"
 
-[node name="Button_Right" type="Button" parent="UIController/PlatePoint Info UI/Plate # Selector"]
+[node name="Button_Right" type="Button" parent="UIController/PlatePoint Info UI/Plate # Selector" unique_id=2022227218]
 layout_mode = 0
 offset_left = 136.0
 offset_right = 160.0
 offset_bottom = 31.0
 text = ">"
 
-[node name="Value_Felsic" type="Label" parent="UIController/PlatePoint Info UI"]
+[node name="Value_Felsic" type="Label" parent="UIController/PlatePoint Info UI" unique_id=1006701299]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 32.0
@@ -393,7 +397,7 @@ offset_bottom = 55.0
 text = "9999"
 horizontal_alignment = 2
 
-[node name="Value_Mafic" type="Label" parent="UIController/PlatePoint Info UI"]
+[node name="Value_Mafic" type="Label" parent="UIController/PlatePoint Info UI" unique_id=62321812]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 56.0
@@ -402,7 +406,7 @@ offset_bottom = 79.0
 text = "9999"
 horizontal_alignment = 2
 
-[node name="Value_Age" type="Label" parent="UIController/PlatePoint Info UI"]
+[node name="Value_Age" type="Label" parent="UIController/PlatePoint Info UI" unique_id=2055936822]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 80.0
@@ -411,7 +415,7 @@ offset_bottom = 103.0
 text = "9999"
 horizontal_alignment = 2
 
-[node name="Value_Mass" type="Label" parent="UIController/PlatePoint Info UI"]
+[node name="Value_Mass" type="Label" parent="UIController/PlatePoint Info UI" unique_id=1649337806]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 104.0
@@ -420,7 +424,7 @@ offset_bottom = 127.0
 text = "9999"
 horizontal_alignment = 2
 
-[node name="Value_Thickness" type="Label" parent="UIController/PlatePoint Info UI"]
+[node name="Value_Thickness" type="Label" parent="UIController/PlatePoint Info UI" unique_id=1597930908]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 128.0
@@ -429,7 +433,7 @@ offset_bottom = 151.0
 text = "9999"
 horizontal_alignment = 2
 
-[node name="Value_Density" type="Label" parent="UIController/PlatePoint Info UI"]
+[node name="Value_Density" type="Label" parent="UIController/PlatePoint Info UI" unique_id=760349607]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 152.0
@@ -438,7 +442,7 @@ offset_bottom = 175.0
 text = "9999"
 horizontal_alignment = 2
 
-[node name="Value_Buoyancy" type="Label" parent="UIController/PlatePoint Info UI"]
+[node name="Value_Buoyancy" type="Label" parent="UIController/PlatePoint Info UI" unique_id=1785635842]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 176.0
@@ -447,7 +451,7 @@ offset_bottom = 199.0
 text = "9999"
 horizontal_alignment = 2
 
-[node name="Value_Height" type="Label" parent="UIController/PlatePoint Info UI"]
+[node name="Value_Height" type="Label" parent="UIController/PlatePoint Info UI" unique_id=1575774967]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 200.0
@@ -456,68 +460,68 @@ offset_bottom = 223.0
 text = "9999"
 horizontal_alignment = 2
 
-[node name="Labels" type="Control" parent="UIController/PlatePoint Info UI"]
+[node name="Labels" type="Control" parent="UIController/PlatePoint Info UI" unique_id=1827458344]
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="Label_Felsic" type="Label" parent="UIController/PlatePoint Info UI/Labels"]
+[node name="Label_Felsic" type="Label" parent="UIController/PlatePoint Info UI/Labels" unique_id=1139684344]
 layout_mode = 0
 offset_top = 32.0
 offset_right = 47.0
 offset_bottom = 55.0
 text = "Felsic:"
 
-[node name="Label_Mafic" type="Label" parent="UIController/PlatePoint Info UI/Labels"]
+[node name="Label_Mafic" type="Label" parent="UIController/PlatePoint Info UI/Labels" unique_id=37691645]
 layout_mode = 0
 offset_top = 56.0
 offset_right = 47.0
 offset_bottom = 79.0
 text = "Mafic:"
 
-[node name="Label_Age" type="Label" parent="UIController/PlatePoint Info UI/Labels"]
+[node name="Label_Age" type="Label" parent="UIController/PlatePoint Info UI/Labels" unique_id=1148627863]
 layout_mode = 0
 offset_top = 80.0
 offset_right = 47.0
 offset_bottom = 103.0
 text = "Age:"
 
-[node name="Label_Mass" type="Label" parent="UIController/PlatePoint Info UI/Labels"]
+[node name="Label_Mass" type="Label" parent="UIController/PlatePoint Info UI/Labels" unique_id=1296201205]
 layout_mode = 0
 offset_top = 104.0
 offset_right = 47.0
 offset_bottom = 127.0
 text = "Mass:"
 
-[node name="Label_Thickness" type="Label" parent="UIController/PlatePoint Info UI/Labels"]
+[node name="Label_Thickness" type="Label" parent="UIController/PlatePoint Info UI/Labels" unique_id=1334167409]
 layout_mode = 0
 offset_top = 128.0
 offset_right = 81.0
 offset_bottom = 151.0
 text = "Thickness:"
 
-[node name="Label_Density" type="Label" parent="UIController/PlatePoint Info UI/Labels"]
+[node name="Label_Density" type="Label" parent="UIController/PlatePoint Info UI/Labels" unique_id=200063383]
 layout_mode = 0
 offset_top = 152.0
 offset_right = 81.0
 offset_bottom = 175.0
 text = "Density:"
 
-[node name="Label_Buoyancy" type="Label" parent="UIController/PlatePoint Info UI/Labels"]
+[node name="Label_Buoyancy" type="Label" parent="UIController/PlatePoint Info UI/Labels" unique_id=927111498]
 layout_mode = 0
 offset_top = 176.0
 offset_right = 81.0
 offset_bottom = 199.0
 text = "Buoyancy:"
 
-[node name="Label_Height" type="Label" parent="UIController/PlatePoint Info UI/Labels"]
+[node name="Label_Height" type="Label" parent="UIController/PlatePoint Info UI/Labels" unique_id=385236549]
 layout_mode = 0
 offset_top = 200.0
 offset_right = 81.0
 offset_bottom = 223.0
 text = "Height:"
 
-[node name="Map overlay checkboxs" type="Control" parent="UIController"]
+[node name="Map overlay checkboxs" type="Control" parent="UIController" unique_id=1185205536]
 visible = false
 layout_mode = 3
 anchors_preset = 1
@@ -528,14 +532,14 @@ offset_top = 496.0
 offset_bottom = 648.0
 grow_horizontal = 0
 
-[node name="Checkbox Item" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+[node name="Checkbox Item" parent="UIController/Map overlay checkboxs" unique_id=755214206 instance=ExtResource("3_nb44r")]
 layout_mode = 0
 offset_right = 256.0
 
 [node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item" index="1"]
 text = "Plate points"
 
-[node name="Checkbox Item2" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+[node name="Checkbox Item2" parent="UIController/Map overlay checkboxs" unique_id=1492841720 instance=ExtResource("3_nb44r")]
 layout_mode = 0
 offset_top = 24.0
 offset_right = 256.0
@@ -544,7 +548,7 @@ offset_bottom = 48.0
 [node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item2" index="1"]
 text = "Plate point velocities"
 
-[node name="Checkbox Item3" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+[node name="Checkbox Item3" parent="UIController/Map overlay checkboxs" unique_id=1308115732 instance=ExtResource("3_nb44r")]
 layout_mode = 0
 offset_top = 48.0
 offset_right = 256.0
@@ -553,7 +557,7 @@ offset_bottom = 72.0
 [node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item3" index="1"]
 text = "Plate point boundary normals"
 
-[node name="Checkbox Item4" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+[node name="Checkbox Item4" parent="UIController/Map overlay checkboxs" unique_id=686788543 instance=ExtResource("3_nb44r")]
 layout_mode = 0
 offset_top = 72.0
 offset_right = 256.0
@@ -562,7 +566,7 @@ offset_bottom = 96.0
 [node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item4" index="1"]
 text = "Plate velocities"
 
-[node name="Checkbox Item5" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+[node name="Checkbox Item5" parent="UIController/Map overlay checkboxs" unique_id=984348499 instance=ExtResource("3_nb44r")]
 layout_mode = 0
 offset_top = 96.0
 offset_right = 256.0
@@ -571,7 +575,7 @@ offset_bottom = 120.0
 [node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item5" index="1"]
 text = "Plate center points"
 
-[node name="Checkbox Item6" parent="UIController/Map overlay checkboxs" instance=ExtResource("3_nb44r")]
+[node name="Checkbox Item6" parent="UIController/Map overlay checkboxs" unique_id=259642183 instance=ExtResource("3_nb44r")]
 layout_mode = 0
 offset_top = 120.0
 offset_right = 256.0
@@ -580,13 +584,13 @@ offset_bottom = 144.0
 [node name="Label" parent="UIController/Map overlay checkboxs/Checkbox Item6" index="1"]
 text = "Inactive plate points"
 
-[node name="Top bar" type="Control" parent="UIController"]
+[node name="Top bar" type="Control" parent="UIController" unique_id=329518858]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="Play Button" type="Button" parent="UIController/Top bar"]
+[node name="Play Button" type="Button" parent="UIController/Top bar" unique_id=2019561808]
 layout_mode = 0
 offset_left = 136.0
 offset_top = 8.0
@@ -595,7 +599,7 @@ offset_bottom = 56.0
 theme_override_font_sizes/font_size = 24
 text = "->"
 
-[node name="Pause Button" type="Button" parent="UIController/Top bar"]
+[node name="Pause Button" type="Button" parent="UIController/Top bar" unique_id=1843191833]
 layout_mode = 0
 offset_left = 200.0
 offset_top = 8.0
@@ -604,7 +608,7 @@ offset_bottom = 56.0
 theme_override_font_sizes/font_size = 18
 text = "||"
 
-[node name="Timestep label" type="Label" parent="UIController/Top bar"]
+[node name="Timestep label" type="Label" parent="UIController/Top bar" unique_id=174513525]
 layout_mode = 0
 offset_left = 264.0
 offset_top = 16.0
@@ -613,7 +617,7 @@ offset_bottom = 48.0
 text = "Timestep:"
 vertical_alignment = 1
 
-[node name="Timestep Value" type="Label" parent="UIController/Top bar"]
+[node name="Timestep Value" type="Label" parent="UIController/Top bar" unique_id=215805673]
 layout_mode = 0
 offset_left = 344.0
 offset_top = 16.0
@@ -622,21 +626,21 @@ offset_bottom = 47.0
 text = "9999999"
 vertical_alignment = 1
 
-[node name="Map Mode UI" type="Control" parent="UIController"]
+[node name="Map Mode UI" type="Control" parent="UIController" unique_id=54625547]
 layout_mode = 3
 anchors_preset = 0
 offset_top = 192.0
 offset_right = 40.0
 offset_bottom = 232.0
 
-[node name="Button_Elevation" type="Button" parent="UIController/Map Mode UI"]
+[node name="Button_Elevation" type="Button" parent="UIController/Map Mode UI" unique_id=752500600]
 layout_mode = 0
 offset_left = 16.0
 offset_right = 112.0
 offset_bottom = 24.0
 text = "Elevation"
 
-[node name="Button_Age" type="Button" parent="UIController/Map Mode UI"]
+[node name="Button_Age" type="Button" parent="UIController/Map Mode UI" unique_id=509028439]
 layout_mode = 0
 offset_left = 16.0
 offset_top = 40.0
@@ -644,7 +648,7 @@ offset_right = 112.0
 offset_bottom = 71.0
 text = "Age"
 
-[node name="Button_Density" type="Button" parent="UIController/Map Mode UI"]
+[node name="Button_Density" type="Button" parent="UIController/Map Mode UI" unique_id=1435575526]
 layout_mode = 0
 offset_left = 16.0
 offset_top = 80.0
@@ -652,7 +656,7 @@ offset_right = 112.0
 offset_bottom = 111.0
 text = "Density"
 
-[node name="Button_Buyoancy" type="Button" parent="UIController/Map Mode UI"]
+[node name="Button_Buyoancy" type="Button" parent="UIController/Map Mode UI" unique_id=2138834224]
 layout_mode = 0
 offset_left = 16.0
 offset_top = 120.0

@@ -12,7 +12,7 @@ public class PlatePoint
 		Continental	//does not subduct
 	}
 	public CrustType Crust = CrustType.Oceanic;
-	public PlateCollisionType collisionType;
+	//public PlateCollisionType collisionType;
 
 	//kg/m^3
 	public const float DENSITY_FELSIC = 2600f;	//2300-2800 i think
@@ -128,12 +128,15 @@ public class PlatePoint
 			volume = 10;
 		}
 
-		thickness = volume * area;
+		thickness = volume / area;
 		density = mass / volume;
-		
 
-		buoyancy = (DENSITY_MAFIC_OLD - density) / DENSITY_MAFIC_OLD;
-		height = thickness * buoyancy; //km. values seem to mainly be between 0 and 0.5, todo look into this
+
+		//buoyancy = (DENSITY_MAFIC_OLD - density) / DENSITY_MAFIC_OLD;
+		float floatratio = 1f - (density / DENSITY_MAFIC_OLD);
+		height = thickness * floatratio;
+		buoyancy = DENSITY_MAFIC_OLD - density;
+		//height = thickness * buoyancy; //km. values seem to mainly be between 0 and 0.5, todo look into this
 	}
 
 	/// <summary>
@@ -224,10 +227,10 @@ public class PlatePoint
 		age = age + 1f;
 		if (age > 1000f)
 		{
-			float m = Mafic * 0.01f;
+			float m = Mafic * 0.005f;
 			RemoveMaterial(4f, m + 10f);
 		}
-		else AddMaterial(2f, 2f);
+		//else AddMaterial(2f, 2f);
 
 		PhysicalProperties();
 		return true;
@@ -252,7 +255,7 @@ public class PlatePoint
 					behind.Y = Mathf.PosMod(behind.Y, plate.map.worldHeight);
 					Vector2I n = plate.map.worldGrid.GetIndexFromPosition(behind);
 					var newpt = new Vector2(n.X + 0.5f, n.Y + 0.5f);
-					SpawnPoint(newpt, 5f, 10f);
+					SpawnPoint(newpt, 8f, 10f);
 					break;
 
 				case "area":
@@ -264,7 +267,7 @@ public class PlatePoint
 						if (dot > 0.2f) return;
 
 						Vector2 worldPos = new Vector2(otherCell.x + 0.5f, otherCell.y + 0.5f);
-						SpawnPoint(worldPos, 1f, 10f);
+						SpawnPoint(worldPos, 80f, 100f);
 					}, checkSelf: false);
 					break;
 
@@ -292,6 +295,7 @@ public class PlatePoint
 				{
 					foreach (var p in otherCell.points)
 					{
+						if (!otherCell.IsEmptyOrInactive()) isInternal = false;
 						if (p.plate != this.plate)
 						{
 							isInternal = false;
@@ -306,19 +310,19 @@ public class PlatePoint
 					}
 				}
 			}, checkSelf: false);
-
+			if (count == 0) count = 1;
 			var p = plate.AddPointToPlate(worldpos, felsic, mafic);
 			if (p != null)
 			{
-				//p.MarkPointAsBoundary(true);
-				//p.MarkPointAsEdgeBoundary(true);
 				p.Velocity = plate.Velocity;
 				distTravelAsBoundary = 0f;
-				if (isInternal)
+				if (1 > 0)
 				{
 					if (count == 0) count = 1;
 					p.Felsic = f / count;
+					p.Felsic *= 0.99f;
 					p.Mafic = m / count;
+					p.Mafic *= 0.99f;
 					p.age = age / count;
 					p.PhysicalProperties();
 				}

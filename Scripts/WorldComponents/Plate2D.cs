@@ -14,9 +14,9 @@ public partial class Plate2D
 	public float rotation; //in degrees
 
 	public List<PlatePoint> points; //the points that make up this plate, initially created from points on a grid that were inside the voronoi polygon
-    
+	public Dictionary<PlatePoint, int> pointIndices;
 
-    public Vector2 Velocity { get; private set; }  //derived from all points
+	public Vector2 Velocity { get; private set; }  //derived from all points
 
 	public Vector2 sumForce;
 	public int numForcePts = 0;
@@ -35,6 +35,7 @@ public partial class Plate2D
 		this.offset = Vector2.Zero;
 		this.Center = origin;
 		points = new List<PlatePoint>();
+		pointIndices = new Dictionary<PlatePoint, int>();
         this.ID = ID;
     }
 
@@ -64,16 +65,22 @@ public partial class Plate2D
 		return world;
 	}
 
+	public void AddDirect(PlatePoint point)
+	{
+		pointIndices[point] = points.Count;
+		points.Add(point);
+		_localCenterSum += point.localPos;
+	}
+
 	public PlatePoint AddPointToPlate(Vector2 worldPos, float felsic, float mafic)
 	{
 		Vector2 local = WorldToLocal(worldPos);
 		Vector2 oldWorld = new Vector2(worldPos.X, worldPos.Y);
 		var p = new PlatePoint(local, felsic, mafic, this);
 		map.worldGrid.AddPoint(p);
-		points.Add(p);
-		p.prevWorldPos = oldWorld;
 
-		_localCenterSum += p.localPos;
+		AddDirect(p);
+		p.prevWorldPos = oldWorld;
 
 
 		return p;
@@ -87,8 +94,7 @@ public partial class Plate2D
 		point.plate.RemovePoint(point);
 		point.plate = this;
 		point.localPos = WorldToLocal(world);
-		points.Add(point);
-		_localCenterSum += point.localPos;
+		AddDirect(point);
 	}
 
 	public void RemovePoint(PlatePoint point)
@@ -102,7 +108,14 @@ public partial class Plate2D
 	public void RemovePoint(int idx)
 	{
 		var point = points[idx];
+		int lastIdx = points.Count - 1;
+		var lastPoint = points[lastIdx];
+
+		points[idx] = lastPoint;
+		pointIndices[lastPoint] = idx;
+
 		points.RemoveAt(idx);
+		pointIndices.Remove(point);
 
 		_localCenterSum -= point.localPos;
 	}
@@ -171,15 +184,15 @@ public partial class Plate2D
 		Center.Y = Center.Y % map.worldHeight;
 		rotation += angularVelocity;
 
-		for (int i = points.Count - 1; i >= 0; i--)
+		var pointsArr = points.ToArray();
+
+		for (int i = 0; i < pointsArr.Length; i++)
 		{
-			if (i <= points.Count - 1)
-			{
-				var p = points[i];
-				Vector2 newWorldPos = p.WorldPos;
-				map.worldGrid.MovePoint(p, newWorldPos);
-			}
-				
+			var p = pointsArr[i];
+			if (!pointIndices.ContainsKey(p)) continue;
+
+			Vector2 newWorldPos = p.WorldPos;
+			map.worldGrid.MovePoint(p, newWorldPos);
 		}
 	}
 
@@ -236,7 +249,7 @@ public partial class Plate2D
 		Velocity += a * 0.96f;
 		Velocity = Velocity.LimitLength(1f);
 		angularVelocity += alpha * 0.94f;
-		angularVelocity = Mathf.Clamp(angularVelocity, -1000f / points.Count, 1000f / points.Count);
+		angularVelocity = Mathf.Clamp(angularVelocity, -0.2f, 0.2f);
 
 		sumForce = Vector2.Zero;
 		sumTorque = 0f;

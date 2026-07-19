@@ -188,7 +188,6 @@ public partial class UIController : Node
 		LabelCellNumPlatePts.Text = cell.points.Count().ToString();
 		LabelCellUniquePlates.Text = cell.PlateIDs.Count().ToString();
 		LabelHasCollision.Text = cell.ContainsCollision.ToString();
-		LabelCollisionType.Text = cell.collisionType.ToString();
 
 		var avgh = 0f;
 		int count = 0;

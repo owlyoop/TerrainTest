@@ -283,20 +283,29 @@ public partial class MapViewer : Node2D
 	{
 		var plate = map.GetPlateByIndex(_plateIndex);
 
-		CreateOverlay(ref mmPlatePts, ref mmiPlatePts,
+		if (OverlayPlatePt)
+		{
+			CreateOverlay(ref mmPlatePts, ref mmiPlatePts,
 			CreateWireMesh(wmBox, 2f),
 			plate.points.Count(),
 			PlatePtColor);
+		}
+
+		if (OverlayPlatePtVelocity)
+		{
+			CreateOverlay(ref mmPlatePtVels, ref mmiPlatePtVels,
+			CreateWireMesh(wmSimpleArrow, 1f),
+			plate.points.Count(),
+			PlatePtVelColor);
+		}
+		
 
 		CreateOverlay(ref mmPlateVels, ref mmiPlateVels,
 			CreateWireMesh(wmArrow, 12f),
 			map.Plates.Count(),
 			PlateVelocityColor);
 
-		CreateOverlay(ref mmPlatePtVels, ref mmiPlatePtVels,
-			CreateWireMesh(wmSimpleArrow, 1f),
-			plate.points.Count(),
-			PlatePtVelColor);
+		
 
 		CreateOverlay(ref mmPlateCenters, ref mmiPlateCenters,
 			CreateWireMesh(wmPlateCenter, 1f),
@@ -504,6 +513,22 @@ public partial class MapViewer : Node2D
 				AddWeight(plateIdx, x0 + 1, y0, val, w10);
 				AddWeight(plateIdx, x0, y0 + 1, val, w01);
 				AddWeight(plateIdx, x0 + 1, y0 + 1, val, w11);
+
+				// slow
+				/*for (int i = -1; i <= 1; i++)
+				{
+					for (int j = -1; j <= 1; j++)
+					{
+						int gridX = x0 + i;
+						int gridY = y0 + j;
+
+						float distance = Mathf.Sqrt(Mathf.Pow(cx - gridX, 2) + Mathf.Pow(cy - gridY, 2));
+
+						float weight = Mathf.Max(0f, 1.5f - distance);
+
+						AddWeight(plateIdx, gridX, gridY, val, weight);
+					}
+				}*/
 			}
 
 			for (int x = 0; x < width; x++)
@@ -517,6 +542,7 @@ public partial class MapViewer : Node2D
 			}
 		});
 
+		//avg
 		Parallel.For(0, width, x =>
 		{
 			for (int y = 0; y < height; y++)
@@ -540,6 +566,27 @@ public partial class MapViewer : Node2D
 				SetPixelWorld(x, y, GetPixelColor(val));
 			}
 		});
+
+		//max
+		/*Parallel.For(0, width, x =>
+		{
+			for (int y = 0; y < height; y++)
+			{
+				float val = 0f;
+				float totalWeight = 0f;
+				for (int p = 0; p < final.GetLength(0); p++)
+				{
+					float plateWeight = weights[p, x, y];
+					if (plateWeight > 0)
+					{
+						val = Mathf.Max(val, final[p, x, y]);
+						totalWeight += plateWeight;
+					}
+				}
+
+				SetPixelWorld(x, y, GetPixelColor(val));
+			}
+		});*/
 	}
 
 	float GetPixelValue(PlatePoint point)
@@ -548,7 +595,7 @@ public partial class MapViewer : Node2D
 		switch (mapMode)
 		{
 			case MapMode.Elevation:
-				val = Mathf.Remap(point.height, 0f, 1f, 0f, 1f);
+				val = Mathf.Remap(point.height, 0f, 10f, 0f, 1f);
 				val = Mathf.Clamp(val, 0f, 1f);
 				break;
 
@@ -562,7 +609,7 @@ public partial class MapViewer : Node2D
 				break;
 
 			case MapMode.Buoyancy:
-				val = Mathf.Remap(point.buoyancy, 0.1f, 0.4f, 0f, 1f);
+				val = Mathf.Remap(point.buoyancy, 600f, 1000f, 0f, 1f);
 				break;
 
 			default:

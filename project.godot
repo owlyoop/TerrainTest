@@ -8,11 +8,15 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="TerrainTest"
 run/main_scene="uid://blfe0oll6l5dr"
-config/features=PackedStringArray("4.5", "C#", "Forward Plus")
+config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [dotnet]
@@ -21,7 +25,7 @@ project/assembly_name="TerrainTest"
 
 [editor]
 
-movie_writer/movie_file="C:/Users/treyk/Godot/projects/TerrainTest/Buh.avi"
+movie_writer/movie_file="C:/Users/treyk/Godot/projects/TerrainTest/demo1.avi"
 movie_writer/fps=30
 
 [input]

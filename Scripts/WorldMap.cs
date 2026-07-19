@@ -63,7 +63,7 @@ public partial class WorldMap : Node
 			float rx = (float)GD.RandRange(-1f, 1f);
 			float ry = (float)GD.RandRange(-1f, 1f);
 			float speed = (float)GD.RandRange(2f, 4f);
-			p.InitializePlateVelocity(new Vector2(rx, ry) * (speed * 0.05f));
+			p.InitializePlateVelocity(new Vector2(rx, ry) * (speed * 0.025f));
 			p.InitializeCenter();
 		}
 		worldGrid.InitializeBoundaries();
@@ -79,7 +79,6 @@ public partial class WorldMap : Node
 	//Main Tectonic Plate Loop
 	public void Timestep()
     {
-		PlateCollision.ClearGradientCache();
 
 		var start = Time.GetTicksUsec();
 		//move all tect plates
@@ -172,19 +171,20 @@ public partial class WorldMap : Node
 				}
 
 				float a = noiseGen.GetNoise2D(cellPos.X, cellPos.Y);
-				float b = noiseGen.GetNoise2D((cellPos.X * 5.5f) + 100f, (cellPos.Y * 5.5f) + 100f);
+				float b = noiseGen.GetNoise2D((cellPos.X * 2.5f) + 1000f, (cellPos.Y * 2.5f) + 1000f);
 
-				float fw = Mathf.Clamp(b * 3f, 0f, 1f);
+				float fw = Mathf.Abs(b); 
+				fw = Mathf.Clamp(fw * 2f, 0f, 1f);
 				float mw = 1f - fw;
 				float mag = Mathf.Abs(a);
 
-				float felsic = fw * mag * 10000f;
-				float mafic = mw * mag * 10000f;
+				float felsic = fw * mag * 50000f;
+				float mafic = mw * mag * 50000f;
 
 
 				var pt = closestPlate.AddPointToPlate(new Vector2(x, y), 
-					felsic + (felsic * (closestPlate.ID * 0.1f)), 
-					mafic + (mafic * (closestPlate.ID * 0.1f)));
+					felsic + (felsic * (closestPlate.ID * 0.0025f)), 
+					mafic + (mafic * (closestPlate.ID * 0.0025f)));
 				pt.age = MathF.Abs(fw) * 20f;
 				//pt.age = 0f;
 			}
